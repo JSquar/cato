@@ -1,0 +1,162 @@
+Access chains for shared memory segments.
+The instructions chains are ordered in reverse (backwards from the load/store to the
+allocate_shared_memory function call instruction)
+
+1D ARRAYS:
+  LOAD PATTERNS:
+    [0]-ELEMENT ACCESS:
+        %2 = load i32, i32* %1, align 4, !tbaa !2
+         |  %1 = bitcast i8* %call to i32*
+         |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685) 
+    [N]-ELEMENT ACCESS: 
+        %3 = load i32, i32* %arrayidx1, align 4, !tbaa !2
+         |  %arrayidx1 = getelementptr inbounds i32, i32* %1, i64 1
+         |  %1 = bitcast i8* %call to i32*
+         |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685
+
+  STORE PATTERNS:
+    0-ELEMENT ACCESS:
+        store i32 0, i32* %1, align 4, !tbaa !2
+        |  %1 = bitcast i8* %call to i32*
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+    N-ELEMENT ACCESS:
+        store i32 1, i32* %arrayidx1, align 4, !tbaa !2
+        |  %arrayidx1 = getelementptr inbounds i32, i32* %1, i64 1
+        |  %1 = bitcast i8* %call to i32*
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+
+
+2D ARRAYS Version 1 (Non continuous memory allocation):
+  -multiple calls of allocate_shared_memory
+  LOAD PATTERNS:
+    [0][0]-ELEMENT ACCESS:
+        %9 = load i32, i32* %8, align 4, !tbaa !6
+        |  %8 = load i32*, i32** %1, align 8, !tbaa !2
+        |  %1 = bitcast i8* %call to i32**
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+    [0][N]-ELEMENT ACCESS:
+        %10 = load i32, i32* %arrayidx15, align 4, !tbaa !6
+        |  %arrayidx15 = getelementptr inbounds i32, i32* %8, i64 1
+        |  %8 = load i32*, i32** %1, align 8, !tbaa !2
+        |  %1 = bitcast i8* %call to i32**
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+    [N][0]-ELEMENT ACCESS:
+        %12 = load i32, i32* %11, align 4, !tbaa !6
+        |  %11 = load i32*, i32** %arrayidx3, align 8, !tbaa !2
+        |  %arrayidx3 = getelementptr inbounds i32*, i32** %1, i64 1
+        |  %1 = bitcast i8* %call to i32**
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+    [N][N]-ELEMENT ACCESS:
+        %13 = load i32, i32* %arrayidx19, align 4, !tbaa !6
+        |  %arrayidx19 = getelementptr inbounds i32, i32* %11, i64 1
+        |  %11 = load i32*, i32** %arrayidx3, align 8, !tbaa !2
+        |  %arrayidx3 = getelementptr inbounds i32*, i32** %1, i64 1
+        |  %1 = bitcast i8* %call to i32**
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+
+  STORE PATTERNS:
+    [0][0]-ELEMENT ACCESS:
+        store i32 0, i32* %4, align 4, !tbaa !6
+        |  %4 = load i32*, i32** %1, align 8, !tbaa !2
+        |  %1 = bitcast i8* %call to i32**
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+    [0][N]-ELEMENT ACCESS:
+        store i32 1, i32* %arrayidx7, align 4, !tbaa !6
+        |  %arrayidx7 = getelementptr inbounds i32, i32* %5, i64 1
+        |  %5 = load i32*, i32** %1, align 8, !tbaa !2
+        |  %1 = bitcast i8* %call to i32**
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+    [N][0]-ELEMENT ACCESS:
+        store i32 2, i32* %6, align 4, !tbaa !6
+        |  %6 = load i32*, i32** %arrayidx3, align 8, !tbaa !2
+        |  %arrayidx3 = getelementptr inbounds i32*, i32** %1, i64 1
+        |  %1 = bitcast i8* %call to i32**
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+    [N][N]-ELEMENT ACCESS:
+        store i32 3, i32* %arrayidx11, align 4, !tbaa !6
+        |  %arrayidx11 = getelementptr inbounds i32, i32* %7, i64 1
+        |  %7 = load i32*, i32** %arrayidx3, align 8, !tbaa !2
+        |  %arrayidx3 = getelementptr inbounds i32*, i32** %1, i64 1
+        |  %1 = bitcast i8* %call to i32**
+        |  %call = call i8* @_Z22allocate_shared_memoryli(i64 16, i32 1275068685)
+        
+    
+2D ARRAYS Version 2 (Continuous memory allocation):
+  -multiple calls of allocate_shared_memory (one for the pointer array, one for data
+  array)
+  
+  -SAME PATTERNS AS PREVIOUS VERSION
+
+
+DIFFERENCES BETWEEN ARRAY VERSIONS:
+    - Version 1 has one allocate_shared_memory call for the pointer array
+      and N = number of rows many  calls for the data arrays for each row.
+    - Version 2 has one allocate_shared_memory call for the pointer array
+      and one call for the data array.
+
+
+3D Arrays Version 1
+    PATTERNS:
+        [0][0][0]-ELEMENT ACCESS:
+              %call = call i8* @_Z22allocate_shared_memorylii(i64 16, i32 1275069445, i32 3)
+              %1 = bitcast i8* %call to i32***
+              %28 = load i32**, i32*** %1, align 8, !tbaa !2
+              %29 = load i32*, i32** %28, align 8, !tbaa !2
+              %30 = load i32, i32* %29, align 4, !tbaa !6
+        [0][0][N]-ELEMENT ACCESS:
+              %call = call i8* @_Z22allocate_shared_memorylii(i64 16, i32 1275069445, i32 3)
+              %1 = bitcast i8* %call to i32***
+              %28 = load i32**, i32*** %1, align 8, !tbaa !2
+              %29 = load i32*, i32** %28, align 8, !tbaa !2
+              %arrayidx45 = getelementptr inbounds i32, i32* %29, i64 1
+              %31 = load i32, i32* %arrayidx45, align 4, !tbaa !6
+        [0][N][0]-ELEMENT ACCESS:
+              %call = call i8* @_Z22allocate_shared_memorylii(i64 16, i32 1275069445, i32 3)
+              %1 = bitcast i8* %call to i32***
+              %28 = load i32**, i32*** %1, align 8, !tbaa !2
+              %arrayidx47 = getelementptr inbounds i32*, i32** %28, i64 1
+              %32 = load i32*, i32** %arrayidx47, align 8, !tbaa !2
+              %33 = load i32, i32* %32, align 4, !tbaa !6
+        [0][N][N]-ELEMENT ACCESS:
+              %call = call i8* @_Z22allocate_shared_memorylii(i64 16, i32 1275069445, i32 3)
+              %1 = bitcast i8* %call to i32***
+              %28 = load i32**, i32*** %1, align 8, !tbaa !2
+              %arrayidx47 = getelementptr inbounds i32*, i32** %28, i64 1
+              %32 = load i32*, i32** %arrayidx47, align 8, !tbaa !2
+              %arrayidx51 = getelementptr inbounds i32, i32* %32, i64 1
+              %34 = load i32, i32* %arrayidx51, align 4, !tbaa !6
+        [N][0][0]-ELEMENT ACCESS:
+              %call = call i8* @_Z22allocate_shared_memorylii(i64 16, i32 1275069445, i32 3)
+              %1 = bitcast i8* %call to i32***
+              %arrayidx3 = getelementptr inbounds i32**, i32*** %1, i64 1
+              %35 = load i32**, i32*** %arrayidx3, align 8, !tbaa !2
+              %36 = load i32*, i32** %35, align 8, !tbaa !2
+              %37 = load i32, i32* %36, align 4, !tbaa !6
+        [N][0][N]-ELEMENT ACCESS:
+              %call = call i8* @_Z22allocate_shared_memorylii(i64 16, i32 1275069445, i32 3)
+              %1 = bitcast i8* %call to i32***
+              %arrayidx3 = getelementptr inbounds i32**, i32*** %1, i64 1
+              %35 = load i32**, i32*** %arrayidx3, align 8, !tbaa !2
+              %36 = load i32*, i32** %35, align 8, !tbaa !2
+              %arrayidx57 = getelementptr inbounds i32, i32* %36, i64 1
+              %38 = load i32, i32* %arrayidx57, align 4, !tbaa !6
+        [N][N][0]-ELEMENT ACCESS:
+              %call = call i8* @_Z22allocate_shared_memorylii(i64 16, i32 1275069445, i32 3)
+              %1 = bitcast i8* %call to i32***
+              %arrayidx3 = getelementptr inbounds i32**, i32*** %1, i64 1
+              %35 = load i32**, i32*** %arrayidx3, align 8, !tbaa !2
+              %arrayidx59 = getelementptr inbounds i32*, i32** %35, i64 1
+              %39 = load i32*, i32** %arrayidx59, align 8, !tbaa !2
+              %40 = load i32, i32* %39, align 4, !tbaa !6
+        [N][N][N]-ELEMENT ACCESS:
+              %call = call i8* @_Z22allocate_shared_memorylii(i64 16, i32 1275069445, i32 3)
+              %1 = bitcast i8* %call to i32***
+              %arrayidx3 = getelementptr inbounds i32**, i32*** %1, i64 1
+              %35 = load i32**, i32*** %arrayidx3, align 8, !tbaa !2
+              %arrayidx59 = getelementptr inbounds i32*, i32** %35, i64 1
+              %39 = load i32*, i32** %arrayidx59, align 8, !tbaa !2
+              %arrayidx63 = getelementptr inbounds i32, i32* %39, i64 1
+              %41 = load i32, i32* %arrayidx63, align 4, !tbaa !6
+
+
+

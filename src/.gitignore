@@ -1,0 +1,17 @@
+*.o
+*.out
+./build
+*.ll
+*.tmp
+*.s
+*.bc
+# output of pass:
+translated
+# test-suite outputs:
+test-suite/tests/C/basic_non_omp/Output
+test-suite/tests/C/basic_omp/Output
+test-suite/tests/C/bigger_tests/Output
+test-suite/tests/C++/Output
+# logs
+./logs
+

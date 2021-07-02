@@ -1,0 +1,116 @@
+MAX:
+  %4 = call i32 @__kmpc_reduce_nowait(%struct.ident_t* @0, i32 %2, i32 1, i64 8, i8* %3, void (i8*, i8*)* @.omp.reduction.reduction_func, [8 x i32]* @.gomp_critical_user_.reduction.var)
+  switch i32 %4, label %.omp.reduction.default [
+    i32 1, label %.omp.reduction.case1
+    i32 2, label %.omp.reduction.case2
+  ]
+
+.omp.reduction.case1:                             ; preds = %entry
+  %5 = load i32, i32* %result, align 4, !tbaa !2
+  %6 = load i32, i32* %result1, align 4, !tbaa !2
+  %cmp = icmp sgt i32 %5, %6
+  br i1 %cmp, label %cond.true, label %cond.false
+
+cond.true:                                        ; preds = %.omp.reduction.case1
+  br label %cond.end
+
+cond.false:                                       ; preds = %.omp.reduction.case1
+  br label %cond.end
+
+cond.end:                                         ; preds = %cond.false, %cond.true
+  %cond = phi i32 [ %5, %cond.true ], [ %6, %cond.false ]
+  store i32 %cond, i32* %result, align 4, !tbaa !2
+  call void @__kmpc_end_reduce_nowait(%struct.ident_t* @0, i32 %2, [8 x i32]* @.gomp_critical_user_.reduction.var)
+  br label %.omp.reduction.default
+
+.omp.reduction.case2:                             ; preds = %entry
+  %7 = load i32, i32* %result1, align 4, !tbaa !2
+  %8 = atomicrmw max i32* %result, i32 %7 monotonic
+  br label %.omp.reduction.default
+
+.omp.reduction.default:                           ; preds = %.omp.reduction.case2, %cond.end, %entry
+  call void @llvm.lifetime.end.p0i8(i64 4, i8* %0) #5
+  ret void
+========================================================================================================
+MIN:
+  %4 = call i32 @__kmpc_reduce_nowait(%struct.ident_t* @0, i32 %2, i32 1, i64 8, i8* %3, void (i8*, i8*)* @.omp.reduction.reduction_func, [8 x i32]* @.gomp_critical_user_.reduction.var)
+  switch i32 %4, label %.omp.reduction.default [
+    i32 1, label %.omp.reduction.case1
+    i32 2, label %.omp.reduction.case2
+  ]
+
+.omp.reduction.case1:                             ; preds = %entry
+  %5 = load i32, i32* %result, align 4, !tbaa !2
+  %6 = load i32, i32* %result1, align 4, !tbaa !2
+  %cmp = icmp slt i32 %5, %6
+  br i1 %cmp, label %cond.true, label %cond.false
+
+cond.true:                                        ; preds = %.omp.reduction.case1
+  br label %cond.end
+
+cond.false:                                       ; preds = %.omp.reduction.case1
+  br label %cond.end
+
+cond.end:                                         ; preds = %cond.false, %cond.true
+  %cond = phi i32 [ %5, %cond.true ], [ %6, %cond.false ]
+  store i32 %cond, i32* %result, align 4, !tbaa !2
+  call void @__kmpc_end_reduce_nowait(%struct.ident_t* @0, i32 %2, [8 x i32]* @.gomp_critical_user_.reduction.var)
+  br label %.omp.reduction.default
+
+.omp.reduction.case2:                             ; preds = %entry
+  %7 = load i32, i32* %result1, align 4, !tbaa !2
+  %8 = atomicrmw min i32* %result, i32 %7 monotonic
+  br label %.omp.reduction.default
+
+.omp.reduction.default:                           ; preds = %.omp.reduction.case2, %cond.end, %entry
+  call void @llvm.lifetime.end.p0i8(i64 4, i8* %0) #5
+  ret void
+==============================================================================================================
+PLUS:
+  %5 = call i32 @__kmpc_reduce_nowait(%struct.ident_t* @0, i32 %3, i32 1, i64 8, i8* %4, void (i8*, i8*)* @.omp.reduction.reduction_func, [8 x i32]* @.gomp_critical_user_.reduction.var)
+  switch i32 %5, label %.omp.reduction.default [
+    i32 1, label %.omp.reduction.case1
+    i32 2, label %.omp.reduction.case2
+  ]
+
+.omp.reduction.case1:                             ; preds = %entry
+  %6 = load i32, i32* %result, align 4, !tbaa !2
+  %7 = load i32, i32* %result1, align 4, !tbaa !2
+  %add2 = add nsw i32 %6, %7
+  store i32 %add2, i32* %result, align 4, !tbaa !2
+  call void @__kmpc_end_reduce_nowait(%struct.ident_t* @0, i32 %3, [8 x i32]* @.gomp_critical_user_.reduction.var)
+  br label %.omp.reduction.default
+
+.omp.reduction.case2:                             ; preds = %entry
+  %8 = load i32, i32* %result1, align 4, !tbaa !2
+  %9 = atomicrmw add i32* %result, i32 %8 monotonic
+  br label %.omp.reduction.default
+
+.omp.reduction.default:                           ; preds = %.omp.reduction.case2, %.omp.reduction.case1, %entry
+  call void @llvm.lifetime.end.p0i8(i64 4, i8* %0) #5
+  ret void
+===============================================================================================================
+MINUS:
+  %5 = call i32 @__kmpc_reduce_nowait(%struct.ident_t* @0, i32 %3, i32 1, i64 8, i8* %4, void (i8*, i8*)* @.omp.reduction.reduction_func, [8 x i32]* @.gomp_critical_user_.reduction.var)
+  switch i32 %5, label %.omp.reduction.default [
+    i32 1, label %.omp.reduction.case1
+    i32 2, label %.omp.reduction.case2
+  ]
+
+.omp.reduction.case1:                             ; preds = %entry
+  %6 = load i32, i32* %result, align 4, !tbaa !2
+  %7 = load i32, i32* %result1, align 4, !tbaa !2
+  %add = add nsw i32 %6, %7
+  store i32 %add, i32* %result, align 4, !tbaa !2
+  call void @__kmpc_end_reduce_nowait(%struct.ident_t* @0, i32 %3, [8 x i32]* @.gomp_critical_user_.reduction.var)
+  br label %.omp.reduction.default
+
+.omp.reduction.case2:                             ; preds = %entry
+  %8 = load i32, i32* %result1, align 4, !tbaa !2
+  %9 = atomicrmw add i32* %result, i32 %8 monotonic
+  br label %.omp.reduction.default
+
+.omp.reduction.default:                           ; preds = %.omp.reduction.case2, %.omp.reduction.case1, %entry
+  call void @llvm.lifetime.end.p0i8(i64 4, i8* %0) #5
+  ret void
+================================================================================================================

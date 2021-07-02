@@ -1,0 +1,177 @@
+-----------------------------------------------------------------------------------
+    int* a = new int[size];
+#pragma omp parallel shared(a)
+    {
+        int rank = omp_get_thread_num();
+
+        a[rank] = rank;
+        a[rank+4] = 42;
+    }
+
+
+  call void @llvm.lifetime.start.p0i8(i64 8, i8* %0) #8
+  %call = call i8* @_Znam(i64 32) #9
+  %1 = bitcast i8* %call to i32*
+  store i32* %1, i32** %a, align 8, !tbaa !2
+  call void (%ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(%ident_t* @0, i32 1, void (i32*, i32*, ...)* bitcast (void (i32*, i32*, i32**)* @.omp_outlined. to void (i32*, i32*, ...)*), i32** %a)
+
+  
+; Function Attrs: nounwind uwtable
+define internal void @.omp_outlined.(i32* noalias %.global_tid., i32* noalias %.bound_tid., i32** dereferenceable(8) %a) #4 personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*) {
+entry:
+  %call = invoke i32 @omp_get_thread_num()
+          to label %invoke.cont unwind label %lpad
+
+invoke.cont:                                      ; preds = %entry
+  %0 = load i32*, i32** %a, align 8, !tbaa !2
+  %idxprom = sext i32 %call to i64
+  %arrayidx = getelementptr inbounds i32, i32* %0, i64 %idxprom
+  store i32 %call, i32* %arrayidx, align 4, !tbaa !6
+  %1 = load i32*, i32** %a, align 8, !tbaa !2
+  %add = add nsw i32 %call, 4
+  %idxprom1 = sext i32 %add to i64
+  %arrayidx2 = getelementptr inbounds i32, i32* %1, i64 %idxprom1
+  store i32 42, i32* %arrayidx2, align 4, !tbaa !6
+  ret void
+-----------------------------------------------------------------------------------
+
+    int* a = new int[8];
+
+#pragma omp parallel shared(a)
+    {
+        int rank = omp_get_thread_num();
+
+        a[rank] = rank;
+        a[rank+4] = 42;
+    }
+
+
+  %a = alloca i32*, align 8
+  %0 = bitcast i32** %a to i8*
+  call void @llvm.lifetime.start.p0i8(i64 8, i8* %0) #7
+  %call = call i8* @_Znam(i64 32) #8
+  %1 = bitcast i8* %call to i32*
+  store i32* %1, i32** %a, align 8, !tbaa !2
+  call void (%ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(%ident_t* @0, i32 1, void (i32*, i32*, ...)* bitcast (void (i32*, i32*, i32**)* @.omp_outlined. to void (i32*, i32*, ...)*), i32** %a)
+
+
+; Function Attrs: nounwind uwtable
+define internal void @.omp_outlined.(i32* noalias %.global_tid., i32* noalias %.bound_tid., i32** dereferenceable(8) %a) #3 personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*) {
+entry:
+  %call = invoke i32 @omp_get_thread_num()
+          to label %invoke.cont unwind label %lpad
+
+invoke.cont:                                      ; preds = %entry
+  %0 = load i32*, i32** %a, align 8, !tbaa !2
+  %idxprom = sext i32 %call to i64
+  %arrayidx = getelementptr inbounds i32, i32* %0, i64 %idxprom
+  store i32 %call, i32* %arrayidx, align 4, !tbaa !6
+  %1 = load i32*, i32** %a, align 8, !tbaa !2
+  %add = add nsw i32 %call, 4
+  %idxprom1 = sext i32 %add to i64
+  %arrayidx2 = getelementptr inbounds i32, i32* %1, i64 %idxprom1
+  store i32 42, i32* %arrayidx2, align 4, !tbaa !6
+  ret void
+-----------------------------------------------------------------------------------
+
+
+    int* a = new int;
+    *a = 42;
+
+#pragma omp parallel shared(a)
+    {
+        *a += 1;
+    }
+
+
+  %a = alloca i32*, align 8
+  %0 = bitcast i32** %a to i8*
+  call void @llvm.lifetime.start.p0i8(i64 8, i8* %0) #5
+  %call = call i8* @_Znwm(i64 4) #6
+  %1 = bitcast i8* %call to i32*
+  store i32* %1, i32** %a, align 8, !tbaa !2
+  store i32 42, i32* %1, align 4, !tbaa !6
+  call void (%ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(%ident_t* @0, i32 1, void (i32*, i32*, ...)* bitcast (void (i32*, i32*, i32**)* @.omp_outlined. to void (i32*, i32*, ...)*), i32** %a)
+
+
+; Function Attrs: nounwind uwtable
+define internal void @.omp_outlined.(i32* noalias %.global_tid., i32* noalias %.bound_tid., i32** dereferenceable(8) %a) #3 {
+entry:
+  %0 = load i32*, i32** %a, align 8, !tbaa !2
+  %1 = load i32, i32* %0, align 4, !tbaa !6
+  %add = add nsw i32 %1, 1
+  store i32 %add, i32* %0, align 4, !tbaa !6
+  ret void
+}
+
+-----------------------------------------------------------------------------------
+
+int main()
+{
+    int* a = new int;
+    *a = 0;
+
+#pragma omp parallel shared(a)
+    {
+        *a = 42;
+        *a += 1;
+    }
+
+
+  %a = alloca i32*, align 8
+  %0 = bitcast i32** %a to i8*
+  call void @llvm.lifetime.start.p0i8(i64 8, i8* %0) #5
+  %call = call i8* @_Znwm(i64 4) #6
+  %1 = bitcast i8* %call to i32*
+  store i32* %1, i32** %a, align 8, !tbaa !2
+  store i32 0, i32* %1, align 4, !tbaa !6
+  call void (%ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(%ident_t* @0, i32 1, void (i32*, i32*, ...)* bitcast (void (i32*, i32*, i32**)* @.omp_outlined. to void (i32*, i32*, ...)*), i32** %a)
+
+; Function Attrs: nounwind uwtable
+define internal void @.omp_outlined.(i32* noalias %.global_tid., i32* noalias %.bound_tid., i32** dereferenceable(8) %a) #3 {
+entry:
+  %0 = load i32*, i32** %a, align 8, !tbaa !2
+  store i32 42, i32* %0, align 4, !tbaa !6
+  %1 = load i32*, i32** %a, align 8, !tbaa !2
+  %2 = load i32, i32* %1, align 4, !tbaa !6
+  %add = add nsw i32 %2, 1
+  store i32 %add, i32* %1, align 4, !tbaa !6
+  ret void
+}
+
+-----------------------------------------------------------------------------------
+
+    int* a = new int;
+    *a = 0;
+
+#pragma omp parallel shared(a)
+    {
+        *a += 1;
+        *a += 3;
+    }
+
+
+  %a = alloca i32*, align 8
+  %0 = bitcast i32** %a to i8*
+  call void @llvm.lifetime.start.p0i8(i64 8, i8* %0) #5
+  %call = call i8* @_Znwm(i64 4) #6
+  %1 = bitcast i8* %call to i32*
+  store i32* %1, i32** %a, align 8, !tbaa !2
+  store i32 0, i32* %1, align 4, !tbaa !6
+  call void (%ident_t*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(%ident_t* @0, i32 1, void (i32*, i32*, ...)* bitcast (void (i32*, i32*, i32**)* @.omp_outlined. to void (i32*, i32*, ...)*), i32** %a)
+
+
+; Function Attrs: nounwind uwtable
+define internal void @.omp_outlined.(i32* noalias %.global_tid., i32* noalias %.bound_tid., i32** dereferenceable(8) %a) #3 {
+entry:
+  %0 = load i32*, i32** %a, align 8, !tbaa !2
+  %1 = load i32, i32* %0, align 4, !tbaa !6
+  %add = add nsw i32 %1, 1
+  store i32 %add, i32* %0, align 4, !tbaa !6
+  %2 = load i32*, i32** %a, align 8, !tbaa !2
+  %3 = load i32, i32* %2, align 4, !tbaa !6
+  %add1 = add nsw i32 %3, 3
+  store i32 %add1, i32* %2, align 4, !tbaa !6
+  ret void
+}
+-----------------------------------------------------------------------------------

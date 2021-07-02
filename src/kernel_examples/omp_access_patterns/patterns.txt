@@ -1,0 +1,83 @@
+Access chains for shared memory segments.
+The instructions chains are ordered in reverse (backwards from the load/store to the
+allocate_shared_memory function call instruction)
+
+1D ARRAYS:
+  LOAD PATTERNS:
+    [0]-ELEMENT ACCESS:
+      %4 = load i32*, i32** %arr, align 8, !tbaa !2
+      %5 = load i32, i32* %4, align 4, !tbaa !6
+    [N]-ELEMENT ACCESS: 
+      %4 = load i32*, i32** %arr, align 8, !tbaa !2
+      %arrayidx6 = getelementptr inbounds i32, i32* %4, i64 2
+      %7 = load i32, i32* %arrayidx6, align 4, !tbaa !6
+
+  STORE PATTERNS:
+    0-ELEMENT ACCESS:
+      %0 = load i32*, i32** %arr, align 8, !tbaa !2
+      store i32 0, i32* %0, align 4, !tbaa !6
+    N-ELEMENT ACCESS:
+      %1 = load i32*, i32** %arr, align 8, !tbaa !2
+      %arrayidx1 = getelementptr inbounds i32, i32* %1, i64 1
+      store i32 1, i32* %arrayidx1, align 4, !tbaa !6
+
+
+2D ARRAYS Version 1 (Non continuous memory allocation):
+  -multiple calls of allocate_shared_memory
+  LOAD PATTERNS:
+    [0][0]-ELEMENT ACCESS:
+      %8 = load i32**, i32*** %arr, align 8, !tbaa !2
+      %9 = load i32*, i32** %8, align 8, !tbaa !2
+      %10 = load i32, i32* %9, align 4, !tbaa !6
+    [0][N]-ELEMENT ACCESS:
+      %8 = load i32**, i32*** %arr, align 8, !tbaa !2
+      %9 = load i32*, i32** %8, align 8, !tbaa !2
+      %arrayidx11 = getelementptr inbounds i32, i32* %9, i64 1
+      %11 = load i32, i32* %arrayidx11, align 4, !tbaa !6
+    [N][0]-ELEMENT ACCESS:
+      %8 = load i32**, i32*** %arr, align 8, !tbaa !2
+      %arrayidx12 = getelementptr inbounds i32*, i32** %8, i64 1
+      %12 = load i32*, i32** %arrayidx12, align 8, !tbaa !2
+      %13 = load i32, i32* %12, align 4, !tbaa !6
+    [N][N]-ELEMENT ACCESS:
+      %8 = load i32**, i32*** %arr, align 8, !tbaa !2
+      %arrayidx12 = getelementptr inbounds i32*, i32** %8, i64 1
+      %12 = load i32*, i32** %arrayidx12, align 8, !tbaa !2
+      %arrayidx15 = getelementptr inbounds i32, i32* %12, i64 1
+      %14 = load i32, i32* %arrayidx15, align 4, !tbaa !6
+
+  STORE PATTERNS:
+    [0][0]-ELEMENT ACCESS:
+      %0 = load i32**, i32*** %arr, align 8, !tbaa !2
+      %1 = load i32*, i32** %0, align 8, !tbaa !2
+      store i32 0, i32* %1, align 4, !tbaa !6
+    [0][N]-ELEMENT ACCESS:
+      %2 = load i32**, i32*** %arr, align 8, !tbaa !2
+      %3 = load i32*, i32** %2, align 8, !tbaa !2
+      %arrayidx3 = getelementptr inbounds i32, i32* %3, i64 1
+      store i32 1, i32* %arrayidx3, align 4, !tbaa !6
+    [N][0]-ELEMENT ACCESS:
+      %4 = load i32**, i32*** %arr, align 8, !tbaa !2
+      %arrayidx4 = getelementptr inbounds i32*, i32** %4, i64 1
+      %5 = load i32*, i32** %arrayidx4, align 8, !tbaa !2
+      store i32 2, i32* %5, align 4, !tbaa !6
+    [N][N]-ELEMENT ACCESS:
+      %6 = load i32**, i32*** %arr, align 8, !tbaa !2
+      %arrayidx6 = getelementptr inbounds i32*, i32** %6, i64 1
+      %7 = load i32*, i32** %arrayidx6, align 8, !tbaa !2
+      %arrayidx7 = getelementptr inbounds i32, i32* %7, i64 1
+      store i32 3, i32* %arrayidx7, align 4, !tbaa !6
+        
+    
+2D ARRAYS Version 2 (Continuous memory allocation):
+  -multiple calls of allocate_shared_memory (one for the pointer array, one for data
+  array)
+  
+  -SAME PATTERNS AS PREVIOUS VERSION
+
+
+DIFFERENCES BETWEEN ARRAY VERSIONS:
+    - Version 1 has one allocate_shared_memory call for the pointer array
+      and N = number of rows many  calls for the data arrays for each row.
+    - Version 2 has one allocate_shared_memory call for the pointer array
+      and one call for the data array.
