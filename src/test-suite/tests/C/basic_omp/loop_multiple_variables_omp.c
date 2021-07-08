@@ -1,4 +1,4 @@
-// RUN: ${DAS_TOOL_ROOT}/src/scripts/cexecute_pass.py %s -o %t
+// RUN: ${CATO_ROOT}/src/scripts/cexecute_pass.py %s -o %t
 // RUN: diff <(mpirun -np 4 %t) %s.reference_output
 #include <stdio.h>
 #include <stdlib.h>

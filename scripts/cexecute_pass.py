@@ -23,8 +23,8 @@ parser.add_argument("-l", "--logging", action="store_true", help="Enables loggin
 arguments = parser.parse_args()
 
 CXXFLAGS = "-O2 -g0 -fopenmp -Wunknown-pragmas"
-PASS_PATH = os.environ["DAS_TOOL_ROOT"] + "/src/build/cato/libCatoPass.so"
-RTLIB_DIR = os.environ["DAS_TOOL_ROOT"] + "/src/build/cato/rtlib"
+PASS_PATH = os.environ["CATO_ROOT"] + "/src/build/cato/libCatoPass.so"
+RTLIB_DIR = os.environ["CATO_ROOT"] + "/src/build/cato/rtlib"
 LOGGING = ""
 if(arguments.logging):
     LOGGING = "-mllvm --cato-logging"

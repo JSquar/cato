@@ -2,7 +2,7 @@
 set -e
 
 : ${PREFIX:=$HOME/.local}
-: ${REPO_PATH:=$DAS_TOOL_ROOT/../llvm-project}
+: ${REPO_PATH:=$CATO_ROOT/../llvm-project}
 : ${CC:=gcc}
 : ${CXX:=g++}
 
@@ -31,7 +31,7 @@ fi
 
 # earlyoom should be running! (to kill installation freeze due to oom, optional)
 if [[ $(ps aux|grep earlyoom|grep -v grep|wc -l ) -eq 0 ]]; then
-    echo -e "${YELLOW}Earlyoom is not running! Continue? (y/n)${NC}"
+    echo -e "${YELLOW}Earlyoom is not running, you should pay attention that your installation goes not oom. Continue? (y/n)${NC}"
     if read; then
         case ${REPLY} in
             y|Y|yes|Yes)
@@ -79,23 +79,27 @@ cd build
 CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=gold -G "Unix Makefiles" ../llvm
 
 # attempt three full parallel builds to get as far as possible, start afterwards the "finally"-build with a single process
+counter=1
 ( (echo -e "\n\n${GREEN}Full parallel build (Attempt 1)${NC}\n\n"; \
 sleep 1s; \
 make -j $(nproc) ) || \
 \
 (echo -e "\n\n${GREEN}Full parallel build (Attempt 2)${NC}\n\n"; \
 sleep 1s; \
+counter=$((counter+1)); \
 make -j $(nproc) ) || \
 \
 (echo -e "\n\n${GREEN}Full parallel build (Attempt 3)${NC}\n\n"; \
 sleep 1s; \
+counter=$((counter+1)); \
 make -j $(nproc) ) || \
 \
-(echo -e "\n\n${GREEN}Sequential build${NC}\n\n"; \
+(echo -e "\n\n${GREEN}Final try: sequential build${NC}\n\n"; \
 sleep 1s; \
+counter=$((counter+1)); \
 make -j 1) ) &&\
 \
-(echo -e "\n\n${GREEN}Install LLVM into ${PREFIX}${NC}\n\n"; \
+(echo -e "\n\n${GREEN}Install LLVM into ${PREFIX}${NC} (Took ${counter} attempt(s))\n\n"; \
 sleep 1s; \
 make install)
 

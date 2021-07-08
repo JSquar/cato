@@ -34,18 +34,18 @@ RuntimeHandler::RuntimeHandler(Module &M)
 
 bool RuntimeHandler::load_rtlib()
 {
-    std::string das_tool_root = std::getenv("DAS_TOOL_ROOT");
+    std::string cato_root = std::getenv("CATO_ROOT");
 
-    if (das_tool_root.empty())
+    if (cato_root.empty())
     {
-        errs() << "ERROR: Environment variable DAS_TOOL_ROOT is not set.\n";
+        errs() << "ERROR: Environment variable CATO_ROOT is not set.\n";
         return false;
     }
 
     SMDiagnostic rtlib_error;
 
     // Open the rtlib.bc file as a LLVM Module Object
-    _rtlib_module = getLazyIRFileModule(das_tool_root + "/src/build/rtlib.bc", rtlib_error,
+    _rtlib_module = getLazyIRFileModule(cato_root + "/src/build/rtlib.bc", rtlib_error,
                                         _M->getContext());
 
     if (_rtlib_module == nullptr)

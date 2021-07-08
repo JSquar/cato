@@ -5,11 +5,11 @@ set -u
 i=0
 # formats all code with clang-format
 
-(clang-format -i -style=file $DAS_TOOL_ROOT/src/cato/*.cpp ; clang-format -i -style=file $DAS_TOOL_ROOT/src/cato/*.h )&
+(clang-format -i -style=file $CATO_ROOT/src/cato/*.cpp ; clang-format -i -style=file $CATO_ROOT/src/cato/*.h )&
 pids[${i}]=$!
     let i++
 
-(clang-format -i -style=file $DAS_TOOL_ROOT/src/cato/rtlib/*.cpp ; clang-format -i -style=file $DAS_TOOL_ROOT/src/cato/rtlib/*.h )&
+(clang-format -i -style=file $CATO_ROOT/src/cato/rtlib/*.cpp ; clang-format -i -style=file $CATO_ROOT/src/cato/rtlib/*.h )&
 pids[${i}]=$!
     let i++
 

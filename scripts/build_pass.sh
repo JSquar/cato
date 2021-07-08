@@ -4,10 +4,10 @@ CPUS=$(nproc)
 let CPUS-=1
 
 RTLIBFLAGS="-O2 -g0 -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
-RTLIB_PATH="${DAS_TOOL_ROOT}/src/cato/rtlib/rtlib.cpp"
-RTLIB_OUT="${DAS_TOOL_ROOT}/src/build/rtlib.bc"
+RTLIB_PATH="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
+RTLIB_OUT="${CATO_ROOT}/src/build/rtlib.bc"
 
-SRC_PATH="${DAS_TOOL_ROOT}/src"
+SRC_PATH="${CATO_ROOT}/src"
 
 if [ -n "$1" ] && [ $1 = "--rebuild" ]; then
     rm -rf ${SRC_PATH}/build 
