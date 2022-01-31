@@ -6,6 +6,7 @@ set -e
 : ${CC:=gcc}
 : ${CXX:=g++}
 : ${NPROCS:=$(nproc)}
+: ${COUNTER:=1}
 
 # PREFIX: Where shall llvm be installed to?
 # REPO_PATH: Where is the git repo of llvm found (https://github.com/llvm/llvm-project.git)?
@@ -65,31 +66,31 @@ CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compil
 
 echo -e "${GREEN}Start installation with ${NPROCS} thread(s)${NC}"
 # attempt three full parallel builds to get as far as possible, start afterwards the "finally"-build with a single process
-counter=1
-( (echo -e "\n\n${GREEN}Full parallel build (Attempt 1)${NC}\n\n"; \
+
+( (echo -e "\n\n${GREEN}Full parallel build (Attempt ${COUNTER})${NC}\n\n"; \
 sleep 1s; \
-make -j ${NPROCS} ) || \
+if [[ ${COUNTER} -le 3 ]]; then make -j ${NPROCS}; else echo "Skip build attempt"; exit; fi ) || \
 \
-(echo -e "\n\n${GREEN}Full parallel build (Attempt 2)${NC}\n\n"; \
+(echo -e "\n\n${GREEN}Full parallel build (Attempt ${COUNTER})${NC}\n\n"; \
 sleep 1s; \
-counter=$((counter+1)); \
-make -j ${NPROCS} ) || \
+COUNTER=$((COUNTER+1)); \
+if [[ ${COUNTER} -le 3 ]]; then make -j ${NPROCS}; else echo "Skip build attempt"; exit; fi ) || \
 \
-(echo -e "\n\n${GREEN}Full parallel build (Attempt 3)${NC}\n\n"; \
+(echo -e "\n\n${GREEN}Full parallel build (Attempt ${COUNTER})${NC}\n\n"; \
 sleep 1s; \
-counter=$((counter+1)); \
-make -j ${NPROCS} ) || \
+COUNTER=$((COUNTER+1)); \
+if [[ ${COUNTER} -le 3 ]]; then make -j ${NPROCS}; else echo "Skip build attempt"; exit; fi ) || \
 \
 (echo -e "\n\n${GREEN}Final try: sequential build${NC}\n\n"; \
 sleep 1s; \
-counter=$((counter+1)); \
+COUNTER=$((COUNTER+1)); \
 make -j 1) ) &&\
 \
-(echo -e "\n\n${GREEN}Install LLVM into ${PREFIX}${NC} (Took ${counter} attempt(s))\n\n"; \
+(echo -e "\n\n${GREEN}Install LLVM into ${PREFIX}${NC} (Took ${COUNTER} attempt(s))\n\n"; \
 sleep 1s; \
 make install)
 
-echo -e "${GREEN}Installed LLVM (Took ${counter} attempt(s))${NC}"
+echo -e "${GREEN}Installed LLVM (Took ${COUNTER} attempt(s))${NC}"
 
 # move llvm-lit to installation dir, since it is not moved during installation...for reasons
 if [[ -f $REPO_PATH/build/bin/llvm-lit ]]; then
