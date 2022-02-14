@@ -1,7 +1,7 @@
 #!/bin/bash
-CPUS=$(nproc)
+
 #nprocs -1 as building rtlib will use one CPU as well
-let CPUS-=1
+: ${CPUS:=1}
 
 RTLIBFLAGS="-O2 -g0 -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
 RTLIB_PATH="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
@@ -18,9 +18,13 @@ fi
 mkdir -p ${SRC_PATH}/build
 cd ${SRC_PATH}/build
 
-(mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_PATH)& pid=$!
+# (mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_PATH)& pid=$!
+echo "Build collection of external C++ functions"
+mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_PATH
 
 #build the pass
+echo "Build LLVM pass"
+# cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug ..
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 make -j$CPU
-wait $pid
+# wait $pid
