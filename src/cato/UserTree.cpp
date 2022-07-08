@@ -59,7 +59,8 @@ void UserTree::generate_tree(UserTreeNode *curr_node)
             auto *last_inst = curr_node->parent->value;
             Value *matching_argument = nullptr;
 
-            for (unsigned int i = 0; i < call_inst->getNumArgOperands(); i++)
+            // for (unsigned int i = 0; i < call_inst->getNumArgOperands(); i++)
+            for (unsigned int i = 0; i < call_inst->arg_size(); i++)
             {
                 if (last_inst == call_inst->getArgOperand(i))
                 {
