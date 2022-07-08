@@ -1,3 +1,13 @@
+#!/usr/bin/env bash
+###
+# Author: Michael Blesel
+# -----
+# Last Modified: Wednesday, 29th June 2022 1:11:37 pm
+# Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+# -----
+# Copyright (c) 2020 Michael Blesel
+# 
+###
 #!/bin/bash
 CPUS=$(nproc)
 #nprocs -1 as building rtlib will use one CPU as well
