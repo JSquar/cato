@@ -649,7 +649,7 @@ struct CatoPass : public ModulePass
                         auto *last_inst = path[i - 1];
                         Value *matching_argument = nullptr;
 
-                        for (unsigned int j = 0; j < call_inst->getNumArgOperands(); j++)
+                        for (unsigned int j = 0; j < call_inst->arg_size(); j++)
                         {
                             if (last_inst == call_inst->getArgOperand(j))
                             {
@@ -725,7 +725,7 @@ struct CatoPass : public ModulePass
                         auto *last_inst = path[i - 1];
                         Value *matching_argument = nullptr;
 
-                        for (unsigned int j = 0; j < call_inst->getNumArgOperands(); j++)
+                        for (unsigned int j = 0; j < call_inst->arg_size(); j++)
                         {
                             if (last_inst == call_inst->getArgOperand(j))
                             {
@@ -962,7 +962,7 @@ struct CatoPass : public ModulePass
                         auto *last_inst = path[i - 1];
                         Value *matching_argument = nullptr;
 
-                        for (unsigned int j = 0; j < call_inst->getNumArgOperands(); j++)
+                        for (unsigned int j = 0; j < call_inst->arg_size(); j++)
                         {
                             if (last_inst == call_inst->getArgOperand(j))
                             {
@@ -1036,7 +1036,7 @@ struct CatoPass : public ModulePass
                         auto *last_inst = path[i - 1];
                         Value *matching_argument = nullptr;
 
-                        for (unsigned int j = 0; j < call_inst->getNumArgOperands(); j++)
+                        for (unsigned int j = 0; j < call_inst->arg_size(); j++)
                         {
                             if (last_inst == call_inst->getArgOperand(j))
                             {
@@ -1311,7 +1311,7 @@ struct CatoPass : public ModulePass
                             auto *last_inst = path[i - 1];
                             Value *matching_argument = nullptr;
 
-                            for (unsigned int j = 0; j < call_inst->getNumArgOperands(); j++)
+                            for (unsigned int j = 0; j < call_inst->arg_size(); j++)
                             {
                                 if (last_inst == call_inst->getArgOperand(j))
                                 {
@@ -1390,7 +1390,7 @@ struct CatoPass : public ModulePass
                             auto *last_inst = path[i - 1];
                             Value *matching_argument = nullptr;
 
-                            for (unsigned int j = 0; j < call_inst->getNumArgOperands(); j++)
+                            for (unsigned int j = 0; j < call_inst->arg_size(); j++)
                             {
                                 if (last_inst == call_inst->getArgOperand(j))
                                 {

@@ -169,6 +169,7 @@ bool RuntimeHandler::insert_cato_init_and_fin(llvm::Function *func, bool logging
     }
     else
     {
+        // Todo createLoad with single argument has been deprecated and removed in llvm 14, see https://github.com/llvm/llvm-project/blob/75e33f71c2dae584b13a7d1186ae0a038ba98838/llvm/include/llvm/IR/IRBuilder.h#L1678
         Value *return_value = builder.CreateLoad(return_value_buffer);
         builder.CreateRet(return_value);
     }
