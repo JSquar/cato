@@ -33,4 +33,4 @@
 
 # user defined stuff
 **/.vscode
-src/build
+**/build
