@@ -681,7 +681,7 @@ struct CatoPass : public ModulePass
                 args.insert(args.begin(), path[0]);
             }
 
-            // Do the acutal replacement of the load instruction with a call to the cato
+            // Do the actual replacement of the load instruction with a call to the CATO
             // runtime library
             if (args.size() >= 3)
             {
@@ -690,10 +690,9 @@ struct CatoPass : public ModulePass
                 builder.SetInsertPoint(load);
                 Value *void_ptr = builder.CreateBitCast(load_value, Type::getInt8PtrTy(Ctx));
                 args.insert(args.begin() + 1, void_ptr);
-                auto *load_call =
-                    builder.CreateCall(runtime.functions.shared_memory_sequential_load, args);
-                auto *bitcast = builder.CreateBitCast(void_ptr, load->getPointerOperandType());
-                auto *new_load = builder.CreateLoad(bitcast);
+                CallInst *load_call = builder.CreateCall(runtime.functions.shared_memory_sequential_load, args);
+                Value *bitcast = builder.CreateBitCast(void_ptr, load->getPointerOperandType());
+                Value *new_load = builder.CreateLoad(bitcast->getType()->getPointerElementType(), bitcast, "CATO: New Load Call");
                 load->replaceAllUsesWith(new_load);
                 load->eraseFromParent();
             }
@@ -991,7 +990,7 @@ struct CatoPass : public ModulePass
                 args.insert(args.begin(), void_base_ptr);
             }
 
-            // Do the acutal replacement of the load instruction with a call to the cato
+            // Do the actutal replacement of the load instruction with a call to the cato
             // runtime library
             if (args.size() >= 3)
             {
@@ -1000,10 +999,9 @@ struct CatoPass : public ModulePass
                 builder.SetInsertPoint(load);
                 Value *void_ptr = builder.CreateBitCast(load_value, Type::getInt8PtrTy(Ctx));
                 args.insert(args.begin() + 1, void_ptr);
-                auto *load_call =
-                    builder.CreateCall(runtime.functions.shared_memory_sequential_load, args);
-                auto *bitcast = builder.CreateBitCast(void_ptr, load->getPointerOperandType());
-                auto *new_load = builder.CreateLoad(bitcast);
+                auto *load_call = builder.CreateCall(runtime.functions.shared_memory_sequential_load, args);
+                Value *bitcast = builder.CreateBitCast(void_ptr, load->getPointerOperandType());
+                Value *new_load = builder.CreateLoad(bitcast->getType()->getPointerElementType(), bitcast, "CATO: Replacement of load call");
                 load->replaceAllUsesWith(new_load);
                 load->eraseFromParent();
             }
@@ -1180,9 +1178,7 @@ struct CatoPass : public ModulePass
                     // for the mpi window to be created
                     if (auto *gep = dyn_cast<GetElementPtrInst>(single_value_var))
                     {
-                        auto *new_gep =
-                            builder.CreateGEP(gep->getPointerOperand(),
-                                              {gep->getOperand(1), gep->getOperand(2)});
+                        auto *new_gep = builder.CreateGEP(gep->getPointerOperand(), {gep->getOperand(1), gep->getOperand(2)});
                         void_ptr = builder.CreateBitCast(new_gep, Type::getInt8PtrTy(Ctx));
                     }
                     else
