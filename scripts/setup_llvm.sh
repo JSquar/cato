@@ -8,6 +8,15 @@ set -e
 : ${NPROCS:=$(nproc)}
 : ${COUNTER:=1}
 : ${BUILD_TYPE:=RelWithDebInfo}
+: ${LINKER:=""}
+
+if [[ -z ${LINKER} ]]; then
+    if [[ ${CC} == "gcc" ]]; then
+        LINKER=gold
+    else
+        LINKER=lld
+    fi
+fi
 
 # PREFIX: Where shall llvm be installed to?
 # REPO_PATH: Where is the git repo of llvm found (https://github.com/llvm/llvm-project.git)?
@@ -18,6 +27,7 @@ echo -e "${GREEN}Init build (build type ${BUILD_TYPE}) of LLVM (clang; clang-too
 echo -e "${GREEN}Installation will be performed in $PREFIX${NC}"
 echo -e "${GREEN}CC=${CC}${NC}"
 echo -e "${GREEN}CXX=${CXX}${NC}"
+echo -e "${GREEN}LINKER=${LINKER}${NC}"
  
 echo "Press <enter> to continue... "
 read
@@ -63,7 +73,7 @@ fi #found build dir
 mkdir -p build
 cd build
 
-CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=lld -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -G "Unix Makefiles" ../llvm
+CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=${LINKER} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -G "Unix Makefiles" ../llvm
 
 echo -e "${GREEN}Start installation with ${NPROCS} thread(s)${NC}"
 # attempt three full parallel builds to get as far as possible, start afterwards the "finally"-build with a single process
