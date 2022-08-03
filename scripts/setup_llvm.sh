@@ -62,7 +62,9 @@ fi #found build dir
 mkdir -p build
 cd build
 
-CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=gold -DCMAKE_BUILD_TYPE=RelWithDebInfo -G "Unix Makefiles" ../llvm
+#CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=gold -DCMAKE_BUILD_TYPE=RelWithDebInfo -G "Unix Makefiles" ../llvm
+# Build debug build to enable LLVM_DEBUG macro
+CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=gold -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" ../llvm
 
 echo -e "${GREEN}Start installation with ${NPROCS} thread(s)${NC}"
 # attempt three full parallel builds to get as far as possible, start afterwards the "finally"-build with a single process

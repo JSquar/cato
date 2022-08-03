@@ -1343,14 +1343,11 @@ struct CatoPass : public ModulePass
                         load->getFunction()->getEntryBlock().getFirstNonPHI());
                     Value *load_value = builder.CreateAlloca(load->getType());
                     builder.SetInsertPoint(load);
-                    Value *void_ptr =
-                        builder.CreateBitCast(load_value, Type::getInt8PtrTy(Ctx));
+                    Value *void_ptr = builder.CreateBitCast(load_value, Type::getInt8PtrTy(Ctx));
                     args.insert(args.begin() + 1, void_ptr);
-                    auto *load_call =
-                        builder.CreateCall(runtime.functions.shared_memory_load, args);
-                    auto *bitcast =
-                        builder.CreateBitCast(void_ptr, load->getPointerOperandType());
-                    auto *new_load = builder.CreateLoad(bitcast);
+                    CallInst *load_call = builder.CreateCall(runtime.functions.shared_memory_load, args);
+                    auto *bitcast = builder.CreateBitCast(void_ptr, load->getPointerOperandType());
+                    LoadInst *new_load = builder.CreateLoad(bitcast);
                     load->replaceAllUsesWith(new_load);
                     load->eraseFromParent();
                 }
