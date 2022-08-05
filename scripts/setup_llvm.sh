@@ -7,13 +7,14 @@ set -e
 : ${CXX:=g++}
 : ${NPROCS:=$(nproc)}
 : ${COUNTER:=1}
+: ${BUILD_TYPE:=RelWithDebInfo}
 
 # PREFIX: Where shall llvm be installed to?
 # REPO_PATH: Where is the git repo of llvm found (https://github.com/llvm/llvm-project.git)?
 
 echo 1000 > /proc/self/oom_score_adj || true
 
-echo -e "${GREEN}Init build of LLVM (clang; clang-tools; compiler-rt; lld; lldb; openmp) in $REPO_PATH${NC}"
+echo -e "${GREEN}Init build (build type ${BUILD_TYPE}) of LLVM (clang; clang-tools; compiler-rt; lld; lldb; openmp) in $REPO_PATH${NC}"
 echo -e "${GREEN}Installation will be performed in $PREFIX${NC}"
 echo -e "${GREEN}CC=${CC}${NC}"
 echo -e "${GREEN}CXX=${CXX}${NC}"
@@ -62,9 +63,7 @@ fi #found build dir
 mkdir -p build
 cd build
 
-#CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=gold -DCMAKE_BUILD_TYPE=RelWithDebInfo -G "Unix Makefiles" ../llvm
-# Build debug build to enable LLVM_DEBUG macro
-CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=gold -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" ../llvm
+CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=lld -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -G "Unix Makefiles" ../llvm
 
 echo -e "${GREEN}Start installation with ${NPROCS} thread(s)${NC}"
 # attempt three full parallel builds to get as far as possible, start afterwards the "finally"-build with a single process
