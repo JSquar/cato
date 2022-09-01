@@ -17,10 +17,10 @@ spack unload --all
 spack load netcdf-c
 spack unload openmpi # macht z.Zt nur Ärger, weil andere Flags und neues Interface
 spack load mpich
-spack load --first llvm@14.0.6
+spack load llvm@14.0.6 build_type=RelWithDebInfo
 spack load --first cmake
 
 # export LIBS="$(nc-config --libs) ${LIBS}"
 export CATO_LIBS="-lnetcdf"
-export CPLUS_INCLUDE_PATH="$(spack location -i mpi)/include"
+export CPLUS_INCLUDE_PATH="$(spack location -i mpich)/include"
 # export RPATH_LIBS=",-rpath,$(nc-config --prefix)/lib" ${RPATH_LIBS}
