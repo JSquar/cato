@@ -18,6 +18,7 @@ spack load netcdf-c
 spack unload openmpi # macht z.Zt nur Ärger, weil andere Flags und neues Interface
 spack load mpich
 spack load llvm@14.0.6 build_type=RelWithDebInfo
+#spack load llvm@14.0.6 build_type=Debug
 spack load --first cmake
 
 # export LIBS="$(nc-config --libs) ${LIBS}"

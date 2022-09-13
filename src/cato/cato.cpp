@@ -690,9 +690,13 @@ struct CatoPass : public ModulePass
                 builder.SetInsertPoint(load);
                 Value *void_ptr = builder.CreateBitCast(load_value, Type::getInt8PtrTy(Ctx));
                 args.insert(args.begin() + 1, void_ptr);
-                CallInst *load_call = builder.CreateCall(runtime.functions.shared_memory_sequential_load, args);
-                Value *bitcast = builder.CreateBitCast(void_ptr, load->getPointerOperandType());
-                Value *new_load = builder.CreateLoad(bitcast->getType()->getPointerElementType(), bitcast, "CATO: New Load Call");
+                CallInst *load_call =
+                    builder.CreateCall(runtime.functions.shared_memory_sequential_load, args);
+                Value *bitcast =
+                    builder.CreateBitCast(void_ptr, load->getPointerOperandType());
+                Value *new_load =
+                    builder.CreateLoad(bitcast->getType()->getPointerElementType(), bitcast,
+                                       "CATO: New Load Call");
                 load->replaceAllUsesWith(new_load);
                 load->eraseFromParent();
             }
@@ -999,9 +1003,13 @@ struct CatoPass : public ModulePass
                 builder.SetInsertPoint(load);
                 Value *void_ptr = builder.CreateBitCast(load_value, Type::getInt8PtrTy(Ctx));
                 args.insert(args.begin() + 1, void_ptr);
-                auto *load_call = builder.CreateCall(runtime.functions.shared_memory_sequential_load, args);
-                Value *bitcast = builder.CreateBitCast(void_ptr, load->getPointerOperandType());
-                Value *new_load = builder.CreateLoad(bitcast->getType()->getPointerElementType(), bitcast, "CATO: Replacement of load call");
+                auto *load_call =
+                    builder.CreateCall(runtime.functions.shared_memory_sequential_load, args);
+                Value *bitcast =
+                    builder.CreateBitCast(void_ptr, load->getPointerOperandType());
+                Value *new_load =
+                    builder.CreateLoad(bitcast->getType()->getPointerElementType(), bitcast,
+                                       "CATO: Replacement of load call");
                 load->replaceAllUsesWith(new_load);
                 load->eraseFromParent();
             }
@@ -1174,11 +1182,13 @@ struct CatoPass : public ModulePass
                     Value *void_ptr = nullptr;
                     // If this is a GEP that means we are working with a struct
                     // and the base pointer to the single value shared var has to
-                    // be declared at declared at the beginning of the function
+                    // be declared at the beginning of the function
                     // for the mpi window to be created
                     if (auto *gep = dyn_cast<GetElementPtrInst>(single_value_var))
                     {
-                        auto *new_gep = builder.CreateGEP(gep->getPointerOperand(), {gep->getOperand(1), gep->getOperand(2)});
+                        auto *new_gep =
+                            builder.CreateGEP(nullptr, gep->getPointerOperand(),
+                                              {gep->getOperand(1), gep->getOperand(2)});
                         void_ptr = builder.CreateBitCast(new_gep, Type::getInt8PtrTy(Ctx));
                     }
                     else
@@ -1335,7 +1345,7 @@ struct CatoPass : public ModulePass
                     args.insert(args.begin(), void_ptr);
                 }
 
-                // Do the acutal replacement of the load instruction with a call to the cato
+                // Do the actual replacement of the load instruction with a call to the cato
                 // runtime library
                 if (args.size() >= 3)
                 {
@@ -1343,11 +1353,14 @@ struct CatoPass : public ModulePass
                         load->getFunction()->getEntryBlock().getFirstNonPHI());
                     Value *load_value = builder.CreateAlloca(load->getType());
                     builder.SetInsertPoint(load);
-                    Value *void_ptr = builder.CreateBitCast(load_value, Type::getInt8PtrTy(Ctx));
+                    Value *void_ptr =
+                        builder.CreateBitCast(load_value, Type::getInt8PtrTy(Ctx));
                     args.insert(args.begin() + 1, void_ptr);
-                    CallInst *load_call = builder.CreateCall(runtime.functions.shared_memory_load, args);
-                    auto *bitcast = builder.CreateBitCast(void_ptr, load->getPointerOperandType());
-                    LoadInst *new_load = builder.CreateLoad(bitcast);
+                    CallInst *load_call =
+                        builder.CreateCall(runtime.functions.shared_memory_load, args);
+                    Value *bitcast =
+                        builder.CreateBitCast(void_ptr, load->getPointerOperandType());
+                    LoadInst *new_load = builder.CreateLoad(bitcast->getType(), bitcast);
                     load->replaceAllUsesWith(new_load);
                     load->eraseFromParent();
                 }
@@ -1627,7 +1640,7 @@ struct CatoPass : public ModulePass
     {
         for (auto &microtask : microtasks)
         {
-            std::vector<ReductionData> *reduction_data_vec = microtask->get_reduction();
+            std::vector<ReductionData> *reduction_data_vec = microtask->get_reductions();
             if (reduction_data_vec != nullptr)
             {
                 for (ReductionData reduction_data : *reduction_data_vec)
@@ -1642,23 +1655,23 @@ struct CatoPass : public ModulePass
                     Value *reduction_data_size = reduction_data.reduce->getOperand(3);
                     Function *reduction_function = dyn_cast<Function>(
                         reduction_data.reduce->getOperand(5)->stripPointerCasts());
-                    // To get to the declaration of the red_list we need to extract
+                    // To get to the declaration of the reduction_lst we need to extract
                     // it from the bitcast to void which is given to the kmpc call
-                    Value *red_list = nullptr;
+                    Value *reduction_lst = nullptr;
                     if (auto *bitcast =
                             dyn_cast<BitCastInst>(reduction_data.reduce->getOperand(4)))
                     {
-                        red_list = bitcast->getOperand(0);
+                        reduction_lst = bitcast->getOperand(0);
                     }
-                    // To get the local variable for the reduction we look for stores to the
-                    // red_list a pointer to the local variable will be stored into the
-                    // red_list at some point.
+                    // To get the local variable to be reduced we look for stores to the
+                    // reduction_lst. A pointer to the local variable will be stored into the
+                    // reduction_lst at some point.
                     Value *local_reduction_var = nullptr;
-                    for (auto *user : red_list->users())
+                    for (User *user : reduction_lst->users())
                     {
                         if (auto *gep = dyn_cast<GetElementPtrInst>(user))
                         {
-                            for (auto user2 : gep->users())
+                            for (User *user2 : gep->users())
                             {
                                 if (auto *store = dyn_cast<StoreInst>(user2))
                                 {
@@ -1672,8 +1685,8 @@ struct CatoPass : public ModulePass
                     Debug(num_reduction_variables->dump(););
                     Debug(errs() << "    Reduction data size: ";);
                     Debug(reduction_data_size->dump(););
-                    Debug(errs() << "    Reduction red_list: ";);
-                    Debug(red_list->dump(););
+                    Debug(errs() << "    Reduction reduction_lst: ";);
+                    Debug(reduction_lst->dump(););
                     Debug(errs() << "    Reduction local var: ";);
                     Debug(local_reduction_var->dump(););
 
@@ -1695,12 +1708,11 @@ struct CatoPass : public ModulePass
                         bool integer_type = true;
 
                         // To determine the type of the reduction operation we search for the
-                        // case2 branch of the switch statement for an AtomicRMWInst. this
+                        // case2 branch of the switch statement for an AtomicRMWInst. This
                         // instruction is used by the OpenMP code to reduce the result of the
-                        // local variable reduction with the preexisting value of the shared
-                        // variable which is to be reduced by the function
+                        // local variable reduction with its preexisting value
                         Debug(errs() << "";);
-                        for (auto &instr : *case2)
+                        for (Instruction &instr : *case2)
                         {
                             if (auto *atomicrmw = dyn_cast<AtomicRMWInst>(&instr))
                             {
@@ -1784,7 +1796,7 @@ struct CatoPass : public ModulePass
 
                                     // Find the pointer to the shared variable that gets the
                                     // reduction result
-                                    for (auto &instr : *case2)
+                                    for (Instruction &instr : *case2)
                                     {
                                         if (auto *load = dyn_cast<LoadInst>(&instr))
                                         {
@@ -1827,13 +1839,14 @@ struct CatoPass : public ModulePass
                         // value of the reduction target variable This only needs to be done by
                         // one MPI process
                         // TODO clean up this part of the code
-                        auto *mpi_rank = builder.CreateCall(runtime.functions.get_mpi_rank);
-                        auto *split_block =
+                        CallInst *mpi_rank =
+                            builder.CreateCall(runtime.functions.get_mpi_rank);
+                        BasicBlock *split_block =
                             SplitBlock(case_default, &*builder.GetInsertPoint());
                         BasicBlock *master_reduction_block = BasicBlock::Create(
                             Ctx, "master_reduction", case_default->getParent());
                         builder.SetInsertPoint(case_default->getTerminator());
-                        auto *condition = builder.CreateICmpEQ(mpi_rank, builder.getInt32(0));
+                        Value *condition = builder.CreateICmpEQ(mpi_rank, builder.getInt32(0));
                         builder.CreateCondBr(condition, master_reduction_block, split_block);
                         case_default->getTerminator()->eraseFromParent();
 
@@ -1849,6 +1862,7 @@ struct CatoPass : public ModulePass
                         if (integer_type)
                         {
                             auto *add = builder.CreateAtomicRMW(bin_op, reduction_target, load,
+                                                                MaybeAlign(),
                                                                 AtomicOrdering::Monotonic);
                         }
                         // For floating point types we need to add more specific IR code
@@ -1856,9 +1870,9 @@ struct CatoPass : public ModulePass
                         {
                             if (bin_op == AtomicRMWInst::BinOp::Add)
                             {
-                                auto *add = builder.CreateAtomicRMW(AtomicRMWInst::BinOp::FAdd,
-                                                                    reduction_target, load,
-                                                                    AtomicOrdering::Monotonic);
+                                auto *add = builder.CreateAtomicRMW(
+                                    AtomicRMWInst::BinOp::FAdd, reduction_target, load,
+                                    MaybeAlign(), AtomicOrdering::Monotonic);
                             }
                             // TODO see if shared_value load/store calls are necessary here
                             else if (bin_op == AtomicRMWInst::BinOp::Max)

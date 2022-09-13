@@ -11,11 +11,11 @@ Microtask::Microtask(CallInst *fork_call)
     _fork_call = fork_call;
 
     // Get the microtask function from the fork calls arguments
-    auto *microtask_arg = fork_call->getArgOperand(2);
+    Value *microtask_arg = fork_call->getArgOperand(2);
     _function = dyn_cast<Function>(microtask_arg->stripPointerCasts());
 
     // Collect the shared variables
-    for (auto &argument : _function->args())
+    for (Argument &argument : _function->args())
     {
         // The first shared variable has index 2
         if (argument.getArgNo() > 1)
@@ -24,14 +24,15 @@ Microtask::Microtask(CallInst *fork_call)
             int pointer_depth = get_pointer_depth(&argument);
 
             assert(pointer_depth > 0 && "Shared Variable is not of pointer type");
-            if (pointer_depth == 1)
-            {
-                _shared_variables.push_back(&argument);
-            }
-            else
-            {
-                _shared_variables.push_back(&argument);
-            }
+            _shared_variables.push_back(&argument);
+            // if (pointer_depth == 1)
+            // {
+            //     _shared_variables.push_back(&argument);
+            // }
+            // else
+            // {
+            //     _shared_variables.push_back(&argument);
+            // }
         }
     }
 
@@ -134,7 +135,7 @@ std::vector<ParallelForData> *Microtask::get_parallel_for()
     }
 }
 
-std::vector<ReductionData> *Microtask::get_reduction()
+std::vector<ReductionData> *Microtask::get_reductions()
 {
     if (_reduction.size() > 0)
     {
