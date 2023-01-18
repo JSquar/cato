@@ -78,7 +78,7 @@ class Microtask
 
     std::vector<ParallelForData> *get_parallel_for();
 
-    std::vector<ReductionData> *get_reduction();
+    std::vector<ReductionData> *get_reductions();
 
     std::vector<CriticalData> *get_critical();
 
