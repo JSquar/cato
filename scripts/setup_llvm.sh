@@ -63,7 +63,8 @@ fi #found build dir
 mkdir -p build
 cd build
 
-CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_USE_LINKER=lld -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -G "Unix Makefiles" ../llvm
+# https://bugs.llvm.org/show_bug.cgi?id=42446 sagt, dass -DLLVM_USE_LINKER=lld nicht funktioniert
+CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -G "Unix Makefiles" ../llvm
 
 echo -e "${GREEN}Start installation with ${NPROCS} thread(s)${NC}"
 # attempt three full parallel builds to get as far as possible, start afterwards the "finally"-build with a single process
