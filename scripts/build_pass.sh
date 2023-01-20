@@ -2,8 +2,8 @@
 ###
 # Author: Michael Blesel
 # -----
-# Last Modified: Wednesday, 29th June 2022 1:11:37 pm
-# Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+#Last Modified: Thursday, 19th January 2023 2:49:57 pm
+#Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
 # -----
 # Copyright (c) 2020 Michael Blesel
 # 
@@ -20,6 +20,7 @@ RTLIB_OUT="${CATO_ROOT}/src/build/rtlib.bc"
 SRC_PATH="${CATO_ROOT}/src"
 
 if [ -n "$1" ] && [ $1 = "--rebuild" ]; then
+    echo "Delete old build dir"
     rm -rf ${SRC_PATH}/build 
 elif [ -n "$1" ]; then
     echo "use --rebuild to first clean build dir"
