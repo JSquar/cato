@@ -27,7 +27,7 @@ RTLIB_DIR="${CATO_ROOT}/src/build/cato/rtlib"
 # mpicc -cc=clang $CXXFLAGS -o $OUT $OUT.o ${RTLIB_DIR}/libCatoRuntime.so -Wl,-rpath,${RTLIB_DIR}
 # source: https://stackoverflow.com/questions/54447985/how-to-automatically-register-and-load-modern-pass-in-clang
 mpicc -cc=clang $CXXFLAGS -o $OUT.o -fpass-plugin=$PASS_PATH $LOGGING -c $1  
-mpicc -cc=clang $CXXFLAGS -o ${OUT}_translated.ll -fpass-plugin=$PASS_PATH $LOGGING $1 -S -emit-llvm
+# mpicc -cc=clang $CXXFLAGS -o ${OUT}_translated.ll -fpass-plugin=$PASS_PATH $LOGGING $1 -S -emit-llvm
 mpicc -cc=clang $CXXFLAGS -o $OUT $OUT.o ${RTLIB_DIR}/libCatoRuntime.so -Wl,-rpath,${RTLIB_DIR}
 
 rm $OUT.o

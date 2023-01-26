@@ -12,6 +12,7 @@
 
 #nprocs -1 as building rtlib will use one CPU as well
 : ${CPUS:=1}
+: ${DEBUG:=0}
 
 RTLIBFLAGS="-O2 -g0 -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
 RTLIB_PATH="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
@@ -35,6 +36,13 @@ mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_PATH
 
 #build the pass
 echo "Build LLVM pass"
+if [[ ${DEBUG} ]]; then
+    echo "With debug statements"
+    sed "s/\#define DEBUG_CATO_PASS 0/\#define DEBUG_CATO_PASS 1/" src/cato/debug.h
+else
+    echo "Without debug statements"
+    sed "s/\#define DEBUG_CATO_PASS 1/\#define DEBUG_CATO_PASS 0/" src/cato/debug.h
+fi
 # cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug ..
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 make -j$CPU

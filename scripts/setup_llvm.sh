@@ -33,9 +33,6 @@ echo "Press <enter> to continue... "
 read
 cd $REPO_PATH
 
-: ${CC:=gcc}
-: ${CXX:=g++}
-
 if [ -d  ${REPO_PATH} ]; then
     echo -e "${GREEN}Found llvm-project directory${REPO_PATH}${NC}"
 else

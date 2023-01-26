@@ -23,6 +23,9 @@ spack load mpich
 if [[ ${DEBUG} ]]; then
   echo "Load llvm with large debug scope"
   spack load llvm@14.0.6 build_type=Debug
+elif [[ ${BACKUP} ]]; then
+  echo "Load llvm without large debug scope"
+  spack load llvm@14.0.x build_type=RelWithDebInfo
 elif [[ -z ${DEBUG} ]]; then
   echo "Load llvm without large debug scope"
   spack load llvm@14.0.6 build_type=RelWithDebInfo

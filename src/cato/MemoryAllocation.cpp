@@ -36,8 +36,11 @@ MemoryAllocation::MemoryAllocation(CallInst *call_inst)
     }
     else
     {
+
         _allocation_type = call_inst->getType();
     }
+    Debug(errs() << "Kontroll-Punkt" << "\n";);
+    Debug(errs() << "Allocation type: " << _allocation_type << "\n";);
     Debug(_allocation_type->dump(););
 }
 
