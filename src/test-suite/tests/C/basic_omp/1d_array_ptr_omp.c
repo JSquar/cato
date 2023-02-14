@@ -2,6 +2,7 @@
 // RUN: diff <(mpirun -np 2 %t) %s.reference_output
 #include <stdlib.h>
 #include <omp.h>
+#include <stdio.h>
 
 int main()
 {
