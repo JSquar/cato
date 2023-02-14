@@ -71,7 +71,7 @@ mkdir -p build
 cd build
 
 # https://bugs.llvm.org/show_bug.cgi?id=42446 sagt, dass -DLLVM_USE_LINKER=lld nicht funktioniert
-CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -G "Unix Makefiles" ../llvm
+CC=${CC} CXX=${CXX} cmake -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld;lldb;openmp" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DLLVM_ENABLE_DOXYGEN=On -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -G "Unix Makefiles" ../llvm
 
 echo -e "${GREEN}Start installation with ${NPROCS} thread(s)${NC}"
 # attempt three full parallel builds to get as far as possible, start afterwards the "finally"-build with a single process
@@ -98,6 +98,9 @@ make -j 1) ) &&\
 (echo -e "\n\n${GREEN}Install LLVM into ${PREFIX}${NC} (Took ${COUNTER} attempt(s))\n\n"; \
 sleep 1s; \
 make install)
+
+# build doxygen pages, because I need them and llvm host does only provides most recent ones
+make doxygen-llvm
 
 echo -e "${GREEN}Installed LLVM (Took ${COUNTER} attempt(s))${NC}"
 
