@@ -1848,7 +1848,7 @@ struct CatoPass : public ModulePass
 
                         if (integer_type)
                         {
-                            auto *add = builder.CreateAtomicRMW(bin_op, reduction_target, load,
+                            auto *add = builder.CreateAtomicRMW(bin_op, reduction_target, load, MaybeAlign(), 
                                                                 AtomicOrdering::Monotonic);
                         }
                         // For floating point types we need to add more specific IR code
@@ -1857,7 +1857,7 @@ struct CatoPass : public ModulePass
                             if (bin_op == AtomicRMWInst::BinOp::Add)
                             {
                                 auto *add = builder.CreateAtomicRMW(AtomicRMWInst::BinOp::FAdd,
-                                                                    reduction_target, load,
+                                                                    reduction_target, load, MaybeAlign(),
                                                                     AtomicOrdering::Monotonic);
                             }
                             // TODO see if shared_value load/store calls are necessary here

@@ -1,12 +1,12 @@
 // PASS: *
-// RUN: ${CATO_ROOT}/src/scripts/cexecute_pass.py %s -o %t
+// RUN: ${CATO_ROOT}/scripts/cexecute_pass.py %s -o %t
 // RUN: diff <(mpirun -np 4 %t) %s.reference_output
 #include <stdlib.h>
 
 int main()
 {
-    int* data = malloc( sizeof(int) * 4);
-    int** arr = malloc(sizeof(int*)*2);
+    int *data = malloc(sizeof(int) * 4);
+    int **arr = malloc(sizeof(int *) * 2);
 
     arr[0] = data;
     arr[1] = data + 2;
@@ -16,7 +16,7 @@ int main()
     arr[1][0] = 2;
     arr[1][1] = 3;
 
-    printf("[%d, %d],\n[%d, %d]\n",arr[0][0], arr[0][1], arr[1][0], arr[1][1]);
+    printf("[%d, %d],\n[%d, %d]\n", arr[0][0], arr[0][1], arr[1][0], arr[1][1]);
 
     free(data);
     free(arr);
@@ -57,11 +57,9 @@ entry.split:                                      ; preds = %entry
   %11 = load i32, i32* %10, align 4, !tbaa !6
   %arrayidx18 = getelementptr inbounds i32, i32* %10, i64 1
   %12 = load i32, i32* %arrayidx18, align 4, !tbaa !6
-  %call19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([20 x i8], [20 x i8]* @.str, i32 0, i32 0), i32 %8, i32 %9, i32 %11, i32 %12)
-  call void @free(i8* %call) #3
-  call void @free(i8* %call1) #3
-  store i32 0, i32* %0
-  br label %cato_finalize
+  %call19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([20 x i8], [20 x i8]*
+@.str, i32 0, i32 0), i32 %8, i32 %9, i32 %11, i32 %12) call void @free(i8* %call) #3 call void
+@free(i8* %call1) #3 store i32 0, i32* %0 br label %cato_finalize
 
 cato_finalize:                                    ; preds = %entry.split
   call void @_Z13cato_finalizev()

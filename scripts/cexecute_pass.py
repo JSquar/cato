@@ -1,8 +1,9 @@
 #!/usr/bin/python
-import os
-import subprocess
 import argparse
+import os
 import shlex
+import subprocess
+
 
 def run_command(command):
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
@@ -30,7 +31,7 @@ if(arguments.logging):
     LOGGING = "-mllvm --cato-logging"
 
 compile_cmd = "mpicc -cc=clang " + CXXFLAGS + " -o " + arguments.output + ".o " + \
-        "-Xclang -load -Xclang " + PASS_PATH + " " + LOGGING + " -c " + arguments.infile
+        "-Xclang -load -Xclang " + PASS_PATH + " " + LOGGING + " -c " + arguments.infile + " -flegacy-pass-manager"
 
 link_cmd = "mpicc -cc=clang " + CXXFLAGS + " -o " + arguments.output + " " + \
         arguments.output + ".o " + RTLIB_DIR + "/libCatoRuntime.so " + "-Wl,-rpath," + RTLIB_DIR

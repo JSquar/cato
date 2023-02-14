@@ -34,3 +34,4 @@
 # user defined stuff
 **/.vscode
 **/build
+src/test-suite/.lit_test_times.txt
