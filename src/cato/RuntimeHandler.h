@@ -1,3 +1,16 @@
+/*
+ * File: RuntimeHandler.h
+ * -----
+ *
+ * -----
+ * Last Modified: Wednesday, 15th February 2023 6:23:05 pm
+ * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * -----
+ * Copyright (c) 2020 Michael Blesel
+ * Copyright (c) 2019 Tim Jammer
+ * Copyright (c) 2023 Jannek Squar
+ *
+ */
 #ifndef CATO_RUNTIME_HANDLER_H
 #define CATO_RUNTIME_HANDLER_H
 
@@ -20,7 +33,7 @@
  **/
 struct external_functions
 {
-    // rtlib functions
+    // MPI library functions
     llvm::Function *print_hello;
     llvm::Function *test_func;
     llvm::Function *cato_initialize;
@@ -47,7 +60,14 @@ struct external_functions
     llvm::Function *critical_section_finalize;
     llvm::Function *reduce_local_vars;
 
-    // MPI library functions
+    // netCDF library functions
+    llvm::Function *nc_open;
+    llvm::Function *nc_open_par;
+    llvm::Function *nc_var_par_access;
+    llvm::Function *nc_inq_varid;
+    llvm::Function *nc_get_var_int;
+    llvm::Function *nc_get_vara_int;
+    llvm::Function *nc_close;
 };
 
 /**
@@ -75,7 +95,7 @@ class RuntimeHandler
     /**
      * Load the rtlib.bc file in the build directory
      **/
-    bool load_rtlib();
+    bool load_rtlibs();
 
     /**
      * Searches for a function with the given name in rtlib and

@@ -25,4 +25,12 @@
 #define Debug(x)
 #endif
 
+void check_error_code(int err, char *location)
+{
+    if (err)
+    {
+        errs() << "Error in " << location << " with error code: " << err << "\n";
+    }
+}
+
 #endif

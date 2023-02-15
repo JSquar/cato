@@ -21,9 +21,9 @@ RuntimeHandler::RuntimeHandler(Module &M)
     _entry_block = nullptr;
     _finalize_block = nullptr;
 
-    if (load_rtlib() == false)
+    if (load_rtlibs() == false)
     {
-        errs() << "ERROR: Could not load rtlib.\n";
+        errs() << "ERROR: Could not load rtlibs.\n";
     }
 
     if (load_external_functions() == false)
@@ -32,9 +32,12 @@ RuntimeHandler::RuntimeHandler(Module &M)
     }
 }
 
-bool RuntimeHandler::load_rtlib()
+bool RuntimeHandler::load_rtlibs()
 {
     std::string cato_root = std::getenv("CATO_ROOT");
+    std::string rtlib_modules[2] =
+    { "/src/build/rtlib.bc",
+      "/src/build/rtlib_io.bc" }
 
     if (cato_root.empty())
     {
@@ -44,16 +47,19 @@ bool RuntimeHandler::load_rtlib()
 
     SMDiagnostic rtlib_error;
 
-    // Open the rtlib.bc file as a LLVM Module Object
-    _rtlib_module = getLazyIRFileModule(cato_root + "/src/build/rtlib.bc", rtlib_error,
-                                        _M->getContext());
-
-    if (_rtlib_module == nullptr)
+    for (std::string rtlib : rtlib_modules)
     {
-        errs() << "ERROR: Could not load the rtlib module.\n";
-        return false;
-    }
+        errs() << "Load rtlib " << rtlib << "\n";
 
+        // Open the rtlib.bc file as a LLVM Module Object
+        _rtlib_module = getLazyIRFileModule(cato_root + rtlib, rtlib_error, _M->getContext());
+
+        if (_rtlib_module == nullptr)
+        {
+            errs() << "ERROR: Could not load the rtlib module.\n";
+            return false;
+        }
+    }
     return true;
 }
 
@@ -77,7 +83,7 @@ void RuntimeHandler::match_function(llvm::Function **function_declaration,
 
 bool RuntimeHandler::load_external_functions()
 {
-    // rtlib functions
+    // MPI library functions
     match_function(&functions.print_hello, "_Z11print_hellov");
     match_function(&functions.test_func, "_Z9test_funciz");
     match_function(&functions.cato_initialize, "_Z15cato_initializeb");
@@ -109,7 +115,16 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.critical_section_leave, "_Z22critical_section_leavePv");
     match_function(&functions.critical_section_finalize, "_Z25critical_section_finalizePv");
 
-    // MPI library functions
+    // netCDF library functions
+
+    match_function(&functions.io_open, "_Z7io_openPKciPi");
+    // match_function(&functions.io_open_par, "_Z11io_open_parPKciiiPi");
+    match_function(&functions.io_open_par, "_Z11io_open_parPKciPi");
+    match_function(&functions.io_var_par_access, "_Z17io_var_par_accessiii");
+    match_function(&functions.io_inq_varid, "_Z12io_inq_varidiPKcPi");
+    match_function(&functions.io_get_var_int, "_Z14io_get_var_intiiPi");
+    match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiiPKmS0_Pv");
+    match_function(&functions.io_close, "_Z8io_closei");
 
     return true;
 }
@@ -169,9 +184,12 @@ bool RuntimeHandler::insert_cato_init_and_fin(llvm::Function *func, bool logging
     }
     else
     {
-        // Todo createLoad with single argument has been deprecated and removed in llvm 14, see https://github.com/llvm/llvm-project/blob/75e33f71c2dae584b13a7d1186ae0a038ba98838/llvm/include/llvm/IR/IRBuilder.h#L1678
+        // Todo createLoad with single argument has been deprecated and removed in llvm 14, see
+        // https://github.com/llvm/llvm-project/blob/75e33f71c2dae584b13a7d1186ae0a038ba98838/llvm/include/llvm/IR/IRBuilder.h#L1678
         // Value *return_value = builder.CreateLoad(return_value_buffer);
-        Value *return_value = builder.CreateLoad(return_value_buffer->getType()->getPointerElementType(), return_value_buffer, "CATO: Added Return Function");
+        Value *return_value =
+            builder.CreateLoad(return_value_buffer->getType()->getPointerElementType(),
+                               return_value_buffer, "CATO: Added Return Function");
         builder.CreateRet(return_value);
     }
 
