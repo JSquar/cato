@@ -1,3 +1,15 @@
+/*
+ * File: helper.h
+ * -----
+ * 
+ * -----
+ * Last Modified: Thursday, 16th February 2023 5:32:16 pm
+ * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * -----
+ * Copyright (c) 2019 Tim Jammer
+ * Copyright (c) 2020 Michael Blesel
+ * Copyright (c) 2023 Jannek Squar
+ */
 #ifndef CATO_HELPER_H
 #define CATO_HELPER_H
 

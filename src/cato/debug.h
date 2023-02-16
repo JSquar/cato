@@ -1,3 +1,18 @@
+/*
+ * File: debug.h
+ * Created: Thursday, 16th February 2023 9:34:07 am
+ * Author: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * -----
+ *
+ * -----
+ * Last Modified: Thursday, 16th February 2023 6:11:53 pm
+ * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * -----
+ * Copyright (c) 2019 Tim Jammer
+ * Copyright (c) 2020 Michael Blesel
+ * Copyright (c) 2023 Jannek Squar
+ *
+ */
 /**
  * Include this if you want to use the Debug macro
  * All errs() and dump() statements that are not explicit Error or Warning messages
@@ -14,10 +29,13 @@
  *  Debug(value->dump());
  */
 
+#include <llvm/Support/raw_ostream.h>
+#include <string>
+
 #ifndef CATO_DEBUG_H
 #define CATO_DEBUG_H
 
-#define DEBUG_CATO_PASS 1
+#define DEBUG_CATO_PASS 0
 
 #if DEBUG_CATO_PASS == 1
 #define Debug(x) x
@@ -25,12 +43,6 @@
 #define Debug(x)
 #endif
 
-void check_error_code(int err, char *location)
-{
-    if (err)
-    {
-        errs() << "Error in " << location << " with error code: " << err << "\n";
-    }
-}
+void check_error_code(int, const std::string &);
 
 #endif

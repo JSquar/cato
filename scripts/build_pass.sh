@@ -2,10 +2,11 @@
 ###
 # Author: Michael Blesel
 # -----
-# Last Modified: Wednesday, 29th June 2022 1:11:37 pm
-# Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+#Last Modified: Thursday, 16th February 2023 6:16:44 pm
+#Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
 # -----
 # Copyright (c) 2020 Michael Blesel
+# Copyright (c) 2023 Jannek Squar
 # 
 ###
 #!/bin/bash
@@ -14,8 +15,10 @@
 : ${CPUS:=1}
 
 RTLIBFLAGS="-O2 -g0 -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
-RTLIB_PATH="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
+RTLIB_SRC="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
+RTLIB_IO_SRC="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
 RTLIB_OUT="${CATO_ROOT}/src/build/rtlib.bc"
+RTLIB_IO_OUT="${CATO_ROOT}/src/build/rtlib_io.bc"
 
 SRC_PATH="${CATO_ROOT}/src"
 
@@ -30,7 +33,8 @@ cd ${SRC_PATH}/build
 
 # (mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_PATH)& pid=$!
 echo "Build collection of external C++ functions"
-mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_PATH
+mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_SRC
+mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_IO_OUT $RTLIB_IO_SRC
 
 #build the pass
 echo "Build LLVM pass"

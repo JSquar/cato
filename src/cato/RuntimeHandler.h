@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Wednesday, 15th February 2023 6:23:05 pm
+ * Last Modified: Thursday, 16th February 2023 6:28:37 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2020 Michael Blesel
@@ -61,13 +61,13 @@ struct external_functions
     llvm::Function *reduce_local_vars;
 
     // netCDF library functions
-    llvm::Function *nc_open;
-    llvm::Function *nc_open_par;
-    llvm::Function *nc_var_par_access;
-    llvm::Function *nc_inq_varid;
-    llvm::Function *nc_get_var_int;
-    llvm::Function *nc_get_vara_int;
-    llvm::Function *nc_close;
+    llvm::Function *io_open;
+    llvm::Function *io_open_par;
+    llvm::Function *io_var_par_access;
+    llvm::Function *io_inq_varid;
+    llvm::Function *io_get_var_int;
+    llvm::Function *io_get_vara_int;
+    llvm::Function *io_close;
 };
 
 /**
@@ -91,6 +91,7 @@ class RuntimeHandler
     // The rtlib module which is loaded by this class to declare
     // the external functions used by the pass
     std::unique_ptr<llvm::Module> _rtlib_module;
+    std::unique_ptr<llvm::Module> _rtlib_io_module;
 
     /**
      * Load the rtlib.bc file in the build directory
@@ -128,6 +129,8 @@ class RuntimeHandler
      * the main function of the Module
      **/
     bool insert_cato_init_and_fin(llvm::Function *func = nullptr, bool logging = false);
+
+    void adjust_netcdf_regions();
 
     /**
      * Replace OpenMP function calls in the Code

@@ -34,7 +34,7 @@ compile_cmd = "mpicc -cc=clang " + CXXFLAGS + " -o " + arguments.output + ".o " 
         "-Xclang -load -Xclang " + PASS_PATH + " " + LOGGING + " -c " + arguments.infile + " -flegacy-pass-manager"
 
 link_cmd = "mpicc -cc=clang " + CXXFLAGS + " -o " + arguments.output + " " + \
-        arguments.output + ".o " + RTLIB_DIR + "/libCatoRuntime.so " + "-Wl,-rpath," + RTLIB_DIR
+        arguments.output + ".o " + RTLIB_DIR + "/libCatoRuntime.so " + RTLIB_DIR + "/libCatoRuntime_IO.so " + "-Wl,-rpath," + RTLIB_DIR
 
 rm_cmd = "rm " + arguments.output + ".o"
 

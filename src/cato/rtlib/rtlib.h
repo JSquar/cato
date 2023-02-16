@@ -1,3 +1,18 @@
+/*
+ * File: rtlib.h
+ * Created: Thursday, 16th February 2023 5:25:06 pm
+ * Author: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * -----
+ * 
+ * -----
+ * Last Modified: Thursday, 16th February 2023 5:32:11 pm
+ * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * -----
+ * Copyright (c) 2019 Tim Jammer
+ * Copyright (c) 2020 Michael Blesel
+ * Copyright (c) 2023 Jannek Squar
+ * 
+ */
 #ifndef CATO_RTLIB_RTLIB_H
 #define CATO_RTLIB_RTLIB_H
 
@@ -56,11 +71,11 @@ enum BinOp
  **/
 
 // Global Variables
-int MPI_RANK = 0;
-int MPI_SIZE = 0;
+inline int MPI_RANK = 0;
+inline int MPI_SIZE = 0;
 
 // One global instance of the MemoryAbstractionHandler class to manage shared memory objects
-std::unique_ptr<MemoryAbstractionHandler> _memory_handler;
+inline std::unique_ptr<MemoryAbstractionHandler> _memory_handler;
 
 /**
  * Dummy function for testing

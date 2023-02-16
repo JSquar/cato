@@ -1,11 +1,16 @@
 add_library(CatoRuntime_IO MODULE
     rtlib_io.h
     rtlib_io.cpp
-    IOAbstractionHandler.h
-    IOAbstractionHandler.cpp
+    netCDFHandler.h
+    netCDFHandler.cpp
+    NetCDFRegion.h
+    NetCDFRegion.cpp
+    ../rtlib/rtlib.h
+    ../rtlib/rtlib.cpp
 )
 
-find_package(NetCDF REQUIRED)
+# find_package(NetCDF REQUIRED)
+find_file(CMAKE_PREFIX_PATH netCDFConfig.make)
 
 # include_directories(${MPI_INCLUDE_PATH})
 

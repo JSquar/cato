@@ -1,9 +1,11 @@
 #add_subdirectory(pragmaHandler)
 add_subdirectory(rtlib)
+add_subdirectory(rtlib_io)
 
 add_library(CatoPass MODULE
 	#List your source files here.
     cato.cpp
+    debug.cpp    
     debug.h    
     helper.cpp
     helper.h

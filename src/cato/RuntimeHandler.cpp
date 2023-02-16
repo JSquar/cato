@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "rtlib_io/netCDFHandler.h"
 #include "helper.h"
 
 using namespace llvm;
@@ -35,9 +36,8 @@ RuntimeHandler::RuntimeHandler(Module &M)
 bool RuntimeHandler::load_rtlibs()
 {
     std::string cato_root = std::getenv("CATO_ROOT");
-    std::string rtlib_modules[2] =
-    { "/src/build/rtlib.bc",
-      "/src/build/rtlib_io.bc" }
+    std::string rtlib_module = "/src/build/rtlib.bc";
+    std::string rtlib_io_module = "/src/build/rtlib_io.bc";
 
     if (cato_root.empty())
     {
@@ -47,35 +47,47 @@ bool RuntimeHandler::load_rtlibs()
 
     SMDiagnostic rtlib_error;
 
-    for (std::string rtlib : rtlib_modules)
+
+    // Load main rtlib, open the rtlib*.bc file as a LLVM Module Object
+    errs() << "Load rtlib " << rtlib_module << "\n";
+    _rtlib_module = getLazyIRFileModule(cato_root + rtlib_module, rtlib_error, _M->getContext());
+    if (_rtlib_module == nullptr)
     {
-        errs() << "Load rtlib " << rtlib << "\n";
-
-        // Open the rtlib.bc file as a LLVM Module Object
-        _rtlib_module = getLazyIRFileModule(cato_root + rtlib, rtlib_error, _M->getContext());
-
-        if (_rtlib_module == nullptr)
-        {
-            errs() << "ERROR: Could not load the rtlib module.\n";
-            return false;
-        }
+        errs() << "ERROR: Could not load the rtlib module.\n";
+        return false;
     }
-    return true;
+
+    // Load IO rtlib, open the rtlib*.bc file as a LLVM Module Object
+    errs() << "Load rtlib " << rtlib_io_module << "\n";
+    _rtlib_io_module = getLazyIRFileModule(cato_root + rtlib_io_module, rtlib_error, _M->getContext());
+    if (_rtlib_io_module == nullptr)
+    {
+        errs() << "ERROR: Could not load the IO rtlib module.\n";
+        return false;
+    }
+
+    return true;    
 }
 
 void RuntimeHandler::match_function(llvm::Function **function_declaration,
                                     llvm::StringRef name)
 {
     Function *func = _rtlib_module->getFunction(name);
+    Function *func_io = _rtlib_io_module->getFunction(name);
 
     if (func != nullptr)
     {
         *function_declaration = cast<Function>(
             _M->getOrInsertFunction(func->getName(), func->getFunctionType()).getCallee());
     }
+    else if (func_io != nullptr)
+    {
+        *function_declaration = cast<Function>(
+            _M->getOrInsertFunction(func_io->getName(), func_io->getFunctionType()).getCallee());
+    }    
     else
     {
-        errs() << "WARNING: Function with the name " << func->getName()
+        errs() << "WARNING: Function with the name " << name
                << " was not found in rtlib\n";
         *function_declaration = nullptr;
     }
@@ -194,6 +206,12 @@ bool RuntimeHandler::insert_cato_init_and_fin(llvm::Function *func, bool logging
     }
 
     return true;
+}
+
+void RuntimeHandler::adjust_netcdf_regions()
+{
+    errs() << "Function: adjust_netcdf_regions\n";
+    replace_sequential_netCDF(*_M);
 }
 
 void RuntimeHandler::replace_omp_functions()

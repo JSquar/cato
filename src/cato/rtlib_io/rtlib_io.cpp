@@ -5,7 +5,7 @@
  * -----
  *
  * -----
- * Last Modified: Wednesday, 15th February 2023 7:45:10 pm
+ * Last Modified: Thursday, 16th February 2023 10:55:56 am
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -13,11 +13,14 @@
  */
 
 #include "../debug.h"
-#include "rtlib/rtlib.h"
+#include "../rtlib/rtlib.h"
 #include <memory>
 #include <mpi.h>
 #include <netcdf.h>
 #include <netcdf_par.h>
+
+using namespace llvm;
+
 
 /**
  * omode:
@@ -37,6 +40,7 @@ int io_open(const char *path, int omode, int *ncidp)
         err = 1;
     }
 
+    check_error_code(43, "Hallo");
     Debug(check_error_code(err, "io_open (netCDF backend)"););
     return err;
 }
@@ -47,7 +51,8 @@ int io_open_par(const char *path, int omode, int *ncidp)
     int err;
     if (omode == 0)
     {
-        err = nc_open_par(path, NC_NOWWRITE, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp)
+        
+        err = nc_open_par(path, NC_NOWRITE, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
     }
     else
     {
@@ -83,7 +88,7 @@ int io_inq_varid(int ncid, char *name, int *varidp)
 {
 
     int err;
-    err = nc_inq_varid(ncvid, name, varidp);
+    err = nc_inq_varid(ncid, name, varidp);
     Debug(check_error_code(err, "io_inq_varid (netCDF backend)"););
     return err;
 }
@@ -118,19 +123,21 @@ int io_get_vara_int(int ncid, int varid, int num_elements, int *buffer)
         start += num_elements % size;
     }
 
-    Debug(errs() << "Rang%d: Load distribution from \t %ld\t with\t %ld\t entries\n", rank,
-          start, count);
+    Debug(errs() << "Rang "<< rank << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n";);
 
-    err = nc_get_vara_int(ncid, varid, &start, &count, data_in);
+    err = nc_get_vara_int(ncid, varid, &start, &count, buffer);
     Debug(check_error_code(err, "io_get_vara_int (netCDF backend)"););
 
     return err;
 }
 
-int io_close(int)
+int io_close(int ncid)
 {
 
     int err;
 
+    err = nc_close(ncid);
     Debug(check_error_code(err, "io_close (netCDF backend)"););
+
+    return err;
 }

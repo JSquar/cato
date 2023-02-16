@@ -1,3 +1,16 @@
+/*
+ * File: cato.cpp
+ * -----
+ *
+ * -----
+ * Last Modified: Thursday, 16th February 2023 6:23:50 pm
+ * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * -----
+ * Copyright (c) 2019 Tim Jammer
+ * Copyright (c) 2020 Michael Blesel
+ * Copyright (c) 2023 Jannek Squar
+ *
+ */
 #include <llvm/Pass.h>
 
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
@@ -265,7 +278,7 @@ struct CatoPass : public ModulePass
                 {
                     errs() << "Error: Unknown IR Pattern for evaluation of accessing index "
                               "for 1d array.\n";
-                    gep2->dump();
+                    Debug(gep2->dump(););
                 }
 
                 Value *index = gep->getOperand(1);
@@ -525,7 +538,7 @@ struct CatoPass : public ModulePass
                             {
                                 errs() << "FOUND STORE INTO STRUCT:\n";
                                 errs() << "    ";
-                                gep->getPointerOperand()->dump();
+                                Debug(gep->getPointerOperand()->dump(););
 
                                 for (auto *user : gep->getPointerOperand()->users())
                                 {
@@ -548,7 +561,7 @@ struct CatoPass : public ModulePass
                                                         errs() << "STRUCT PATH:\n";
                                                         for (auto *e : p)
                                                         {
-                                                            e->dump();
+                                                            Debug(e->dump(););
                                                         }
                                                     }
                                                 }
@@ -958,7 +971,7 @@ struct CatoPass : public ModulePass
                     if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                     {
                         errs() << "   CallInst: ";
-                        call_inst->dump();
+                        Debug(call_inst->dump(););
 
                         // Identify the argument argument of the current function that is
                         // the shared memory object
@@ -1035,7 +1048,7 @@ struct CatoPass : public ModulePass
                     if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                     {
                         errs() << "   CallInst: ";
-                        call_inst->dump();
+                        Debug(call_inst->dump(););
 
                         // Identify the argument argument of the current function that is
                         // the shared memory object
@@ -1310,7 +1323,7 @@ struct CatoPass : public ModulePass
                         if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                         {
                             errs() << "   CallInst: ";
-                            call_inst->dump();
+                            Debug(call_inst->dump(););
 
                             // Identify the argument argument of the current function that is
                             // the shared memory object
@@ -1389,7 +1402,7 @@ struct CatoPass : public ModulePass
                         if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                         {
                             errs() << "   CallInst: ";
-                            call_inst->dump();
+                            Debug(call_inst->dump(););
 
                             // Identify the argument argument of the current function that is
                             // the shared memory object
@@ -2069,7 +2082,7 @@ struct CatoPass : public ModulePass
 
         replace_memory_deallocations(M, runtime);
 
-        replace_sequential_netcdf(M, runtime);
+        runtime.adjust_netcdf_regions();
 
         // insert_test_func(M, runtime);
 
