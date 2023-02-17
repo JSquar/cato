@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "mpi_mutex.h"
+#include <sys/stat.h>
 // #include <fstream>
 // #include <llvm/Support/raw_ostream.h>
 
@@ -34,6 +35,7 @@ void cato_initialize(bool logging)
     MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     _memory_handler = std::make_unique<MemoryAbstractionHandler>(MPI_RANK, MPI_SIZE);
+    // TODO: IO Handler hier initialisieren?
 
     if (logging)
     {
@@ -235,11 +237,22 @@ int io_open(const char *path, int omode, int *ncidp)
 // TODO: add MPI_Comm comm, MPI_Info info, to parameters
 int io_open_par(const char *path, int omode, int *ncidp)
 {
-    int err;
+    int err, test;
     if (omode == 0)
     {
-        
+        // std::cerr << "Pfad: " << path << "\n";   
+        // std::cerr << "Omode: " << omode << "\n";   
+        // std::cerr << "ncidp: " << ncidp << "\n";   
+        // std::cerr << "MPI_COMM_WORLD: " << MPI_COMM_WORLD << "\n";   
+        // std::cerr << "MPI_INFO_NULL: " << MPI_INFO_NULL << "\n";   
+        struct stat buffer;   
+        if (!stat (path, &buffer) == 0) {
+            std::cerr << "Could not find file " << path << "\n";
+        }
         err = nc_open_par(path, NC_NOWRITE, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
+        // err = nc_open(path, NC_NOWRITE, &test);
+
+        // std::cerr << "Error value: " << err << "\n";
     }
     else
     {
@@ -259,12 +272,12 @@ int io_var_par_access(int ncid, int varid, int par_access)
     if (par_access == 0)
     {
         mode = NC_COLLECTIVE;
-        Debug(errs() << "Use collective io mode for netCDF\n";);
+        Debug(llvm::errs() << "Use collective io mode for netCDF\n";);
     }
     else
     {
         mode = NC_INDEPENDENT;
-        Debug(errs() << "Use independent io mode for netCDF\n";);
+        Debug(llvm::errs() << "Use independent io mode for netCDF\n";);
     }
 
     err = nc_var_par_access(ncid, varid, par_access);
@@ -297,7 +310,7 @@ int io_get_vara_int(int ncid, int varid, int num_elements, int *buffer)
     int err;
     int rank = MPI_RANK;
     int size = MPI_SIZE;
-    Debug(errs() << "Hello from rank " << rank << " (" << size << " total)\n";);
+    Debug(llvm::errs() << "Hello from rank " << rank << " (" << size << " total)\n";);
 
     size_t start, count;
     count = num_elements / size;
@@ -311,7 +324,7 @@ int io_get_vara_int(int ncid, int varid, int num_elements, int *buffer)
         start += num_elements % size;
     }
 
-    Debug(errs() << "Rang "<< rank << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n";);
+    Debug(llvm::errs() << "Rang "<< rank << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n";);
 
     err = nc_get_vara_int(ncid, varid, &start, &count, buffer);
     Debug(check_error_code(err, "io_get_vara_int (netCDF backend)"););
