@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Thursday, 16th February 2023 5:32:11 pm
+ * Last Modified: Thursday, 16th February 2023 7:24:47 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -71,11 +71,16 @@ enum BinOp
  **/
 
 // Global Variables
-inline int MPI_RANK = 0;
-inline int MPI_SIZE = 0;
+int MPI_RANK = 0;
+int MPI_SIZE = 0;
+
+// Global Variables
+// TODO: ncid and varid should not be global variables
+int ncid;
+int varid;
 
 // One global instance of the MemoryAbstractionHandler class to manage shared memory objects
-inline std::unique_ptr<MemoryAbstractionHandler> _memory_handler;
+std::unique_ptr<MemoryAbstractionHandler> _memory_handler;
 
 /**
  * Dummy function for testing
@@ -258,5 +263,20 @@ void critical_section_finalize(void *mpi_mutex);
  * the shared variable that is reduced
  **/
 void reduce_local_vars(void *local_var, int bin_op, MPI_Datatype type);
+
+int io_open(const char *, int, int *);
+
+int io_open_par(const char *, int, MPI_Comm, MPI_Info, int *);
+
+int io_var_par_access(int, int, int);
+
+int io_inq_varid(int, char *, int *);
+
+int io_get_var_int(int, int, int *);
+
+int io_get_vara_int(int, int, const size_t *, const size_t *, int *);
+
+int io_close(int);
+
 
 #endif

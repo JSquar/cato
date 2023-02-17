@@ -11,8 +11,8 @@
 #include <cstdlib>
 #include <string>
 
-#include "rtlib_io/netCDFHandler.h"
 #include "helper.h"
+#include "NetCDFRegion.h"
 
 using namespace llvm;
 
@@ -37,7 +37,6 @@ bool RuntimeHandler::load_rtlibs()
 {
     std::string cato_root = std::getenv("CATO_ROOT");
     std::string rtlib_module = "/src/build/rtlib.bc";
-    std::string rtlib_io_module = "/src/build/rtlib_io.bc";
 
     if (cato_root.empty())
     {
@@ -57,15 +56,6 @@ bool RuntimeHandler::load_rtlibs()
         return false;
     }
 
-    // Load IO rtlib, open the rtlib*.bc file as a LLVM Module Object
-    errs() << "Load rtlib " << rtlib_io_module << "\n";
-    _rtlib_io_module = getLazyIRFileModule(cato_root + rtlib_io_module, rtlib_error, _M->getContext());
-    if (_rtlib_io_module == nullptr)
-    {
-        errs() << "ERROR: Could not load the IO rtlib module.\n";
-        return false;
-    }
-
     return true;    
 }
 
@@ -73,18 +63,12 @@ void RuntimeHandler::match_function(llvm::Function **function_declaration,
                                     llvm::StringRef name)
 {
     Function *func = _rtlib_module->getFunction(name);
-    Function *func_io = _rtlib_io_module->getFunction(name);
 
     if (func != nullptr)
     {
         *function_declaration = cast<Function>(
             _M->getOrInsertFunction(func->getName(), func->getFunctionType()).getCallee());
     }
-    else if (func_io != nullptr)
-    {
-        *function_declaration = cast<Function>(
-            _M->getOrInsertFunction(func_io->getName(), func_io->getFunctionType()).getCallee());
-    }    
     else
     {
         errs() << "WARNING: Function with the name " << name
@@ -133,9 +117,9 @@ bool RuntimeHandler::load_external_functions()
     // match_function(&functions.io_open_par, "_Z11io_open_parPKciiiPi");
     match_function(&functions.io_open_par, "_Z11io_open_parPKciPi");
     match_function(&functions.io_var_par_access, "_Z17io_var_par_accessiii");
-    match_function(&functions.io_inq_varid, "_Z12io_inq_varidiPKcPi");
+    match_function(&functions.io_inq_varid, "_Z12io_inq_varidiPcPi");
     match_function(&functions.io_get_var_int, "_Z14io_get_var_intiiPi");
-    match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiiPKmS0_Pv");
+    match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiiiPi");
     match_function(&functions.io_close, "_Z8io_closei");
 
     return true;
@@ -211,8 +195,28 @@ bool RuntimeHandler::insert_cato_init_and_fin(llvm::Function *func, bool logging
 void RuntimeHandler::adjust_netcdf_regions()
 {
     errs() << "Function: adjust_netcdf_regions\n";
-    replace_sequential_netCDF(*_M);
+    std::vector<std::unique_ptr<NetCDFRegion>> netcdf_regions;
+
+    std::vector<llvm::User *>  open_users = get_function_users(*_M, "nc_open");
+    Debug(llvm::errs() << "Found " << open_users.size() << " many open calls\n";);
+
+    for (auto &user : open_users)
+    {
+        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+        {        
+            std::unique_ptr<NetCDFRegion> netcdf_region = std::make_unique<NetCDFRegion>(NetCDFRegion(call));
+            netcdf_regions.push_back(std::move(netcdf_region));
+
+            //replace with nc_open_par
+            call->setCalledFunction(functions.io_open_par);
+        }
+    }
+    errs() << "Found " << netcdf_regions.size() << " many netcdf regions\n";
+
+
+    
 }
+
 
 void RuntimeHandler::replace_omp_functions()
 {

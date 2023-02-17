@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thursday, 16th February 2023 6:28:37 pm
+ * Last Modified: Thursday, 16th February 2023 7:32:21 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2020 Michael Blesel
@@ -91,7 +91,6 @@ class RuntimeHandler
     // The rtlib module which is loaded by this class to declare
     // the external functions used by the pass
     std::unique_ptr<llvm::Module> _rtlib_module;
-    std::unique_ptr<llvm::Module> _rtlib_io_module;
 
     /**
      * Load the rtlib.bc file in the build directory

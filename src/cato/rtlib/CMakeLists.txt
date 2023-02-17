@@ -17,11 +17,21 @@ add_library(CatoRuntime MODULE
     CatoRuntimeLogger.cpp
 )
 
+find_package(LLVM REQUIRED CONFIG)
 find_package(MPI REQUIRED)
+# find_package(NetCDF REQUIRED)
+find_file(CMAKE_PREFIX_PATH netCDFConfig.make)
 
 include_directories(${MPI_INCLUDE_PATH})
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
 
 target_link_libraries(CatoRuntime ${MPI_LIBRARIES})
+target_link_libraries(CatoRuntime ${NETCDF_LIBRARIES})
+# Find the libraries that correspond to the LLVM components
+# that we wish to use
+llvm_map_components_to_libnames(llvm_libs support core irreader)
+target_link_libraries(CatoRuntime ${llvm_libs})
 
 if(MPI_COMPILE_FLAGS)
   set_target_properties(CatoRuntime PROPERTIES
@@ -31,6 +41,16 @@ endif()
 if(MPI_LINK_FLAGS)
   set_target_properties(CatoRuntime PROPERTIES
     LINK_FLAGS "${MPI_LINK_FLAGS}")
+endif()
+
+if(NETCDF_COMPILE_FLAGS)
+  set_target_properties(CatoRuntime PROPERTIES
+    COMPILE_FLAGS "${NETCDF_COMPILE_FLAGS}")
+endif()
+
+if(NETCDF_LINK_FLAGS)
+  set_target_properties(CatoRuntime PROPERTIES
+    LINK_FLAGS "${NETCDF_LINK_FLAGS}")
 endif()
 
 target_compile_features(CatoRuntime PRIVATE cxx_range_for cxx_auto_type cxx_std_17)

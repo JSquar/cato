@@ -1,6 +1,5 @@
 #add_subdirectory(pragmaHandler)
 add_subdirectory(rtlib)
-add_subdirectory(rtlib_io)
 
 add_library(CatoPass MODULE
 	#List your source files here.
@@ -9,6 +8,8 @@ add_library(CatoPass MODULE
     debug.h    
     helper.cpp
     helper.h
+    NetCDFRegion.cpp
+    NetCDFRegion.h
     MemoryAllocation.cpp
     MemoryAllocation.h
     Microtask.cpp

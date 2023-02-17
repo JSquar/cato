@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Thursday, 16th February 2023 5:20:55 pm
+ * Last Modified: Thursday, 16th February 2023 7:34:05 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -15,7 +15,7 @@
 #define NET_CDFREGION
 
 #include <llvm/IR/Instructions.h>
-#include "../debug.h"
+#include "debug.h"
 /**
  * Each instance of this class represents the scope of an interaction with a netCDF file
  **/

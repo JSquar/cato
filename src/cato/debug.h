@@ -5,7 +5,7 @@
  * -----
  *
  * -----
- * Last Modified: Thursday, 16th February 2023 6:11:53 pm
+ * Last Modified: Friday, 17th February 2023 12:20:58 am
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -43,6 +43,6 @@
 #define Debug(x)
 #endif
 
-void check_error_code(int, const std::string &);
+// void check_error_code(int, const std::string &);
 
 #endif
