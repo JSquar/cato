@@ -42,7 +42,7 @@ target_compile_features(CatoPass PRIVATE cxx_range_for cxx_auto_type cxx_std_17)
 #ENDIF()
 
 set_target_properties(CatoPass PROPERTIES
-	COMPILE_FLAGS "-O3 -fno-rtti -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable"
+	COMPILE_FLAGS "-Og -g -fno-rtti -Wall -Wextra -Wno-deprecated-declarations -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable"
 )
 #TODO: -Wno-deprecated-declarations wieder entfernen
 

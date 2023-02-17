@@ -34,7 +34,7 @@ void *MemoryAbstractionHandler::create_memory(long size, MPI_Datatype type, int 
     }
     else
     {
-        std::cerr << "Error: Replacement of > 3D-Arrays not supported yet\n";
+        std::cerr << "Error: Replacement of > 3D-Arrays not supported yet\n"; //TODO Niclas
         exit(1);
     }
 

@@ -18,8 +18,8 @@ spack unload --all
 spack load --first netcdf-c +mpi ~parallel-netcdf
 #spack unload openmpi # macht z.Zt nur Ärger, weil andere Flags und neues Interface
 spack load --first mpich@4.0.2
-#spack load llvm@13.0.0 build_type=RelWithDebInfo_V-MB
-spack load llvm@13.0.0 build_type=Debug_V-MB
+spack load llvm@13.0.0 build_type=RelWithDebInfo_V-MB
+#spack load llvm@13.0.0 build_type=Debug_V-MB
 spack load --first cmake
 spack load gcc@12.1.0 # something goes wront with _ZSt28__throw_bad_array_new_lengthv otherwise
 

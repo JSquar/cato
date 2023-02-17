@@ -1,5 +1,6 @@
 #include "rtlib.h"
 
+#include <cstdlib>
 #include <mpi.h>
 #include <netcdf.h>
 #include <netcdf_par.h>
@@ -246,7 +247,7 @@ int io_open_par(const char *path, int omode, int *ncidp)
         // std::cerr << "MPI_COMM_WORLD: " << MPI_COMM_WORLD << "\n";   
         // std::cerr << "MPI_INFO_NULL: " << MPI_INFO_NULL << "\n";   
         struct stat buffer;   
-        if (!stat (path, &buffer) == 0) {
+        if (!(stat(path, &buffer) == 0)) {
             std::cerr << "Could not find file " << path << "\n";
         }
         err = nc_open_par(path, NC_NOWRITE, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
@@ -266,6 +267,9 @@ int io_open_par(const char *path, int omode, int *ncidp)
     return err;
 }
 
+/**
+ * Currently unused, since this logic has been inserted into io_inq_varid function
+ */
 int io_var_par_access(int ncid, int varid, int par_access)
 {
     int err, mode;
@@ -285,12 +289,38 @@ int io_var_par_access(int ncid, int varid, int par_access)
     return err;
 }
 
+/**
+ * Set collective or independent mode
+ */
 int io_inq_varid(int ncid, char *name, int *varidp)
 {
 
-    int err;
+    int err, nc_par_mode=NC_COLLECTIVE;
+    
     err = nc_inq_varid(ncid, name, varidp);
-    Debug(check_error_code(err, "io_inq_varid (netCDF backend)"););
+    check_error_code(err, "io_inq_varid: inq varid (netCDF backend)"); //TODO
+
+    if(const char* env_mode = std::getenv("CATO_PAR_MODE")) {
+        std::cerr << "Use " << env_mode << " mode\n";
+        if(strcmp(env_mode, "COLLECTIVE") == 0) {
+            nc_par_mode=NC_COLLECTIVE;
+        }
+        else if (strcmp(env_mode, "INDEPENDENT") == 0)
+        {
+            nc_par_mode=NC_INDEPENDENT;
+        }
+        else {
+            std::cerr << "Could not recognise mode " << env_mode << ", make fallback on collective mode\n";
+        }
+    }
+    else
+    {
+        std::cerr << "No par mode has been passed via CATO_PAR_MODE. CATO will use collective mode by default, you can choose between INDEPENDENT and COLLECTIVE\n";
+    }
+        
+    err = nc_var_par_access(ncid, varid, nc_par_mode);
+    check_error_code(err, "io_inq_varid: set par access mode (netCDF backend)"); //TODO
+
     return err;
 }
 
@@ -303,31 +333,46 @@ int io_get_var_int(int ncid, int varid, int *buffer)
     return err;
 }
 
+int io_get_vara_int2()
+{
+    return 0;
+}
+
+int io_get_vara_int1a(int eingabe)
+{
+    llvm::errs() << eingabe << "\n";
+    return eingabe;
+}
+
+int io_get_vara_int1b(int *eingabe)
+{
+    llvm::errs() << eingabe << "\n";
+    return *eingabe;
+}
+
 // int io_get_vara_int(int ncid, int varid, const size_t *startp, const size_t *countp,
 //                     int *buffer)
-int io_get_vara_int(int ncid, int varid, int num_elements, int *buffer)
+int io_get_vara_int(int ncid, int varid, long int num_elements, int *buffer)
 {
     int err;
-    int rank = MPI_RANK;
-    int size = MPI_SIZE;
-    Debug(llvm::errs() << "Hello from rank " << rank << " (" << size << " total)\n";);
+    Debug(llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n";); //TODO
 
     size_t start, count;
-    count = num_elements / size;
-    if (rank < num_elements % size)
+    count = num_elements / MPI_SIZE;
+    if (MPI_RANK < num_elements % MPI_SIZE)
     {
         count += 1;
     }
-    start = count * rank;
-    if (rank >= num_elements % size)
+    start = count * MPI_RANK;
+    if (MPI_RANK >= num_elements % MPI_SIZE)
     {
-        start += num_elements % size;
+        start += num_elements % MPI_SIZE;
     }
 
-    Debug(llvm::errs() << "Rang "<< rank << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n";);
+    Debug(llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n";); //TODO
 
     err = nc_get_vara_int(ncid, varid, &start, &count, buffer);
-    Debug(check_error_code(err, "io_get_vara_int (netCDF backend)"););
+    Debug(check_error_code(err, "io_get_vara_int (netCDF backend)");); //TODO
 
     return err;
 }
