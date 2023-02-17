@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Thursday, 16th February 2023 7:24:47 pm
+ * Last Modified: Friday, 17th February 2023 9:21:35 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -274,7 +274,8 @@ int io_inq_varid(int, char *, int *);
 
 int io_get_var_int(int, int, int *);
 
-int io_get_vara_int(int, int, const size_t *, const size_t *, int *);
+int io_get_vara_int(int, int, long int, int *);
+// int io_get_vara_int(int, int, const size_t *, const size_t *, int *);
 
 int io_close(int);
 

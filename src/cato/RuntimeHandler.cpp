@@ -122,9 +122,9 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.io_get_var_int, "_Z14io_get_var_intiiPi");
     // match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiiiPi");
     match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiilPi");
-    match_function(&functions.io_get_vara_int2, "_Z16io_get_vara_int2v");
-    match_function(&functions.io_get_vara_int1a, "_Z17io_get_vara_int1ai");
-    match_function(&functions.io_get_vara_int1b, "_Z17io_get_vara_int1bPi");
+    // match_function(&functions.io_get_vara_int2, "_Z16io_get_vara_int2v");
+    // match_function(&functions.io_get_vara_int1a, "_Z17io_get_vara_int1ai");
+    // match_function(&functions.io_get_vara_int1b, "_Z17io_get_vara_int1bPi");
     match_function(&functions.io_close, "_Z8io_closei");
 
     return true;
