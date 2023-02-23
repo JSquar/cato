@@ -2,15 +2,12 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: "CATO"
+title: CATO
 message: >-
   If you are referencing CATO in a publication, please cite
   the following paper:
-repository-code: 'https://github.com/JSquar/cato'
-license: Apache-2.0
-preferred-citation:
-  type: conference-paper
-  authors:
+type: software
+authors:
   - given-names: Jannek
     family-names: Squar
     email: jannek.squar@uni-hamburg.de
@@ -33,15 +30,41 @@ preferred-citation:
     family-names: Ludwig
     email: ludwig@dkrz.de
     affiliation: DKRZ
-  title: "Compiler Assisted Source Transformation of OpenMP Kernels"
-  doi: "10.1109/ISPDC51135.2020.00016"
-  collection-title: "2020 19th International Symposium on Parallel and Distributed Computing (ISPDC)"
+repository-code: 'https://github.com/JSquar/cato'
+license: Apache-2.0
+preferred-citation:
+  type: conference-paper
+  authors:
+    - given-names: Jannek
+      family-names: Squar
+      email: jannek.squar@uni-hamburg.de
+      affiliation: Universität Hamburg
+      orcid: 'https://orcid.org/0000-0001-6894-9210'
+    - given-names: Tim
+      family-names: Jammer
+      email: tim.jammer@sc.tu-darmstadt.de
+      affiliation: Technische Universität Darmstadt
+    - given-names: Michael
+      family-names: Blesel
+      email: michael.blesel@ovgu.de
+      affiliation: Otto von Guericke University Magdeburg
+    - given-names: Michael
+      family-names: Kuhn
+      email: michael.kuhn@ovgu.de
+      affiliation: Otto von Guericke University Magdeburg
+      orcid: 'https://orcid.org/0000-0001-8167-8574'
+    - given-names: Thomas
+      family-names: Ludwig
+      email: ludwig@dkrz.de
+      affiliation: DKRZ
+  title: Compiler Assisted Source Transformation of OpenMP Kernels
+  doi: 10.1109/ISPDC51135.2020.00016
+  collection-title: >-
+    2020 19th International Symposium on Parallel and Distributed Computing
+    (ISPDC)
   conference:
-    name: "ISPDC 2020"
-    city: "	Warsaw"
+    name: ISPDC 2020
+    city: "\tWarsaw"
     country: PL
-    date-start: "2020-06-05"
-    date-end: "2020-06-08"
-
-
-
+    date-start: '2020-06-05'
+    date-end: '2020-06-08'
