@@ -2,12 +2,15 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: CATO
+title: "CATO"
 message: >-
   If you are referencing CATO in a publication, please cite
   the following paper:
-type: software
-authors:
+repository-code: 'https://github.com/JSquar/cato'
+license: Apache-2.0
+preferred-citation:
+  type: conference-paper
+  authors:
   - given-names: Jannek
     family-names: Squar
     email: jannek.squar@uni-hamburg.de
@@ -30,40 +33,15 @@ authors:
     family-names: Ludwig
     email: ludwig@dkrz.de
     affiliation: DKRZ
-identifiers:
-  - type: doi
-    value: 10.1109/ISPDC51135.2020.00016
-repository-code: 'https://github.com/JSquar/cato'
-abstract: >-
-  Many scientific applications use OpenMP as a relatively
-  easy and fast approach to utilise symmetric multiprocessor
-  systems at their full capacity. However, scalability on
-  shared memory systems is limited and thus distributed
-  parallel computing is inevitable if the full potential
-  through horizontal scaling shall be achieved. Additional
-  software layers like MPI must be used, which require
-  further knowledge on the scientific developers' side. This
-  paper presents CATO, a tool prototype using LLVM and
-  Clang, to transform existing OpenMP code to MPI; this
-  enables distributed code execution while keeping OpenMP's
-  relatively low barrier of entry. The main focus lies on
-  increasing the maximum problem size, which a scientific
-  application can work on; converting an intra-node problem
-  into an inter-node problem makes it possible to overcome
-  the limitation of memory of a single node. Our tool does
-  not focus on improving the absolute runtime, even though
-  it might improve it by e.g. introducing concurrency during
-  the I/O phase; but we rather focus on increasing the
-  maximal problem size and our benchmark of a stencil code
-  shows promising results: The transformation preserves the
-  speedup trend of the code to some extent. Another example
-  demonstrates the capability to increase the maximum
-  problem size while using additional compute nodes.
-keywords:
-  - memory management
-  - openmp
-  - mpi
-  - llvm
-  - code transformation
-  - parallel computing
-license: Apache-2.0
+  title: "Compiler Assisted Source Transformation of OpenMP Kernels"
+  doi: "10.1109/ISPDC51135.2020.00016"
+  collection-title: "2020 19th International Symposium on Parallel and Distributed Computing (ISPDC)"
+  conference:
+    name: "ISPDC 2020"
+    city: "	Warsaw"
+    country: PL
+    date-start: "2020-06-05"
+    date-end: "2020-06-08"
+
+
+
