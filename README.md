@@ -57,6 +57,6 @@ You need to adjust the path to `libCatoPass.so` and `libCatoRuntime.so`. The gen
 # Citing CATO
 If you are referencing CATO in a publication, please cite the following paper:
 
-```
+
 J. Squar, T. Jammer, M. Blesel, M. Kuhn and T. Ludwig, "Compiler Assisted Source Transformation of OpenMP Kernels," 2020 19th International Symposium on Parallel and Distributed Computing (ISPDC), Warsaw, Poland, 2020, pp. 44-51, doi: 10.1109/ISPDC51135.2020.00016.
-```
+
