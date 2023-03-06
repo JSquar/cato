@@ -12,7 +12,7 @@ CATO (Compiler Assisted Source Transformation of OpenMP Kernels) uses LLVM and C
 |  0.1 | 12.0.0 | 3.3.1 |     x    |
 |  0.2 | 13.0.0 | 3.3.1 |   4.8.1  |
 
-It is important to pay attention to a right match of CATO and LLVM. Major LLVM releases tend to induce ABI breaking changes.
+It is important to pay attention to a right match of CATO and LLVM. Major LLVM releases tend to induce ABI breaking changes. Currently dependencies are installed from source using [spack](https://github.com/spack/spack); the packages are then loaded, if `initialise_environment.sh` is being sourced. But using globally installations of the dependencies should also work fine. Please pay attention, dass LLVM `dump` calls are only available if the debug build from LLVM is used. Otherwise #define DEBUG_CATO_PASS 1` must be set to #define DEBUG_CATO_PASS 0` in `src/cato/debug.h` before building. An improved build script to automatise this process more is still under development.
 
 ### Building the LLVM Pass
 CATO is an LLVM pass, which is applied during the optimisation phase.
