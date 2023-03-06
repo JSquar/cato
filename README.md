@@ -23,13 +23,15 @@ $ scripts/build_pass.sh
 
 To make sure to remove old existing files, add `--rebuild` flag to `build_pass.sh` to delete old build directory (important if you switch LLVM versions).
 
-### Using the LLVM Pass
+### Create modified binary
 
 ```
 $ scripts/cexecute_pass.py inputfile.c -o inputfile_modified.x
 ```
 
-The pass can also be applied manually, which makes it easier to follow single steps. Those steps could be shortened but the long version is used here to get more intermediate results (useful for debugging).
+Most simple way is to use the auxiliary script `cexecute_pass.py`. As an alternative the generation of the transformed code can also be done manually. This makes it easier to follow single steps. Those steps could be shortened but the long version is used here to get more intermediate results (useful for debugging).You need to pay attention, if your LLVM installation does use the new or legacy pass manager by default. At the moment CATO is still being refactored to use use the new pass manager together with LLVM 14. Therefore CATO needs to be used with the legacy pass manager.
+
+#### Using the new LLVM Pass
 
 1. Create IR code from `inputfile.c`
 ```shell
@@ -53,6 +55,29 @@ mpicc -cc=clang -o inputfile_modified_binary.x inputfile_modified.ll libCatoRunt
 
 You need to adjust the path to `libCatoPass.so` and `libCatoRuntime.so`. The generated binary file can now be executed with `mpiexec`.
 
+#### Using the legacy LLVM Pass
+
+1. Create IR code from `inputfile.c`
+```shell
+$ clang emit-llvm -S inputfile.c
+```
+
+2. Apply CATO LLVM pass to get modified IR
+```shell
+$ opt -enable-new-pm=0 -load libCatoPass.so -Cato inputfile.ll -S -o inputfile_modified.ll
+```
+
+3. Create modified LLVM bytecode from IR code
+```shell
+$ llvm-as inputfile_modified.ll -o inputfile_modified.bc
+```
+
+4. Create final binary from modified LLVM bytecode
+```shell
+mpicc -cc=clang -o inputfile_modified_binary.x inputfile_modified.ll libCatoRuntime.so
+```
+
+You need to adjust the path to `libCatoPass.so` and `libCatoRuntime.so`. The generated binary file can now be executed with `mpiexec`.
 
 # Citing CATO
 If you are referencing CATO in a publication, please cite the following paper:
