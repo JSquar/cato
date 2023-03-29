@@ -67,6 +67,7 @@ struct external_functions
     llvm::Function *io_inq_varid;
     llvm::Function *io_get_var_int;
     llvm::Function *io_get_vara_int;
+    llvm::Function *io_get_vara_double;
     // llvm::Function *io_get_vara_int2;
     // llvm::Function *io_get_vara_int1a;
     // llvm::Function *io_get_vara_int1b;

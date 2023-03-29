@@ -122,6 +122,7 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.io_get_var_int, "_Z14io_get_var_intiiPi");
     // match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiiiPi");
     match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiilPi");
+    match_function(&functions.io_get_vara_double, "_Z18io_get_vara_doubleiilPd");
     // match_function(&functions.io_get_vara_int2, "_Z16io_get_vara_int2v");
     // match_function(&functions.io_get_vara_int1a, "_Z17io_get_vara_int1ai");
     // match_function(&functions.io_get_vara_int1b, "_Z17io_get_vara_int1bPi");
@@ -231,40 +232,44 @@ void RuntimeHandler::adjust_netcdf_regions()
     }
 
     /* ----------- parallel access via netCDF partial access functions ---------- */
-    std::vector<llvm::User *>  get_var_int_users = get_function_users(*_M, "nc_get_var_int");
-    std::vector<llvm::User *>  shared_memory_users = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
-    llvm::errs() << "Found " << get_var_int_users.size() << " many nc_get_var_int calls\n"; //TODO
-    llvm::errs() << "Found " << shared_memory_users.size() << " shared memory calls\n"; //TODO
-
-    IRBuilder<> builder(_M->getContext());
-    LLVMContext &Ctx = _M->getContext();
-
-    llvm::User *memory_call_user = shared_memory_users.at(0);
-    llvm::CallInst *memory_call = llvm::dyn_cast<llvm::CallInst>(memory_call_user);
-    llvm::Value *num_bytes = memory_call->getArgOperand(0);
-
-    for (auto &user : get_var_int_users)
+    std::vector< std::pair<std::string,llvm::Function*> > func_calls = {std::pair {"nc_get_var_int", functions.io_get_vara_int},
+                                                                        std::pair {"nc_get_var_double", functions.io_get_vara_double}
+                                                                        };
+    
+    for (auto func : func_calls)
     {
+        std::vector<llvm::User *>  get_var_users = get_function_users(*_M, func.first);
+        std::vector<llvm::User *>  shared_memory_users = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
+        llvm::errs() << "Found " << get_var_users.size() << " many " << func.first << " calls\n"; //TODO
+        llvm::errs() << "Found " << shared_memory_users.size() << " shared memory calls\n"; //TODO
 
-        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-        {   
+        IRBuilder<> builder(_M->getContext());
+        LLVMContext &Ctx = _M->getContext();
 
+        llvm::User *memory_call_user = shared_memory_users.at(0);
+        llvm::CallInst *memory_call = llvm::dyn_cast<llvm::CallInst>(memory_call_user);
+        llvm::Value *num_bytes = memory_call->getArgOperand(0);
 
-            llvm::Value *ncid = call->getArgOperand(0);
-            llvm::Value *varid = call->getArgOperand(1);
-            llvm::Value *buffer = call->getArgOperand(2);
+        for (auto &user : get_var_users)
+        {
+            if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+            {   
+                llvm::Value *ncid = call->getArgOperand(0);
+                llvm::Value *varid = call->getArgOperand(1);
+                llvm::Value *buffer = call->getArgOperand(2);
 
-            SmallVector<Value *> args;//,args2,args3,args4;
-            args.push_back(ncid);
-            args.push_back(varid);
-            args.push_back(num_bytes);
-            args.push_back(buffer);
+                SmallVector<Value *> args;//,args2,args3,args4;
+                args.push_back(ncid);
+                args.push_back(varid);
+                args.push_back(num_bytes);
+                args.push_back(buffer);
 
-            builder.SetInsertPoint(call);
-            llvm::CallInst *new_call = builder.CreateCall(functions.io_get_vara_int, args);
-            call->replaceAllUsesWith(new_call);
-            call->eraseFromParent();
+                builder.SetInsertPoint(call);
+                llvm::CallInst *new_call = builder.CreateCall(func.second, args);
+                call->replaceAllUsesWith(new_call);
+                call->eraseFromParent();
 
+            }
         }
     }
 }
