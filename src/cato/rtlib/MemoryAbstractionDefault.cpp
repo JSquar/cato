@@ -274,7 +274,7 @@ void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int
     if (_mpi_size > _global_num_elements)
     {
         // TODO Handle this case
-        std::cerr << "Error: There are more MPI processes than array elements\n";
+        std::cerr << "Error: There are more MPI processes ( "<< _mpi_size << ")  than array elements (" << _global_num_elements << ")\n";
     }
 
     _array_ranges.reserve(_mpi_size);
