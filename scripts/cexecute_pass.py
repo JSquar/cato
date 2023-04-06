@@ -12,7 +12,7 @@ def run_command(command, verbose=False):
     result = ""
     while True:
         output = process.stdout.readline().decode()
-        if output == '' and process.poll() is not None:
+        if output == "" and process.poll() is not None:
             break
         if output:
             print(output.strip())
@@ -21,10 +21,16 @@ def run_command(command, verbose=False):
     # Todo das muss überarbeitet werden, das ist nur quick and dirty
     return rc, result
 
+
 parser = argparse.ArgumentParser(description="Compile the given program with CATO")
 parser.add_argument("infile", type=str, help="input file")
 parser.add_argument("-o", "--output", default="translated", help="Name of output file")
-parser.add_argument("-l", "--logging", action="store_true", help="Enables logging for the produced binary")
+parser.add_argument(
+    "-l",
+    "--logging",
+    action="store_true",
+    help="Enables logging for the produced binary",
+)
 
 arguments = parser.parse_args()
 
@@ -42,19 +48,60 @@ LIBS = ""
 # LIBS = run_command("llvm-config --libs")[1]
 LIBS += " " + run_command("nc-config --libs")[1]
 
-if(arguments.logging):
+if arguments.logging:
     LOGGING = "-mllvm --cato-logging"
 
-compile_cmd = "mpicc -cc=clang " + CXXFLAGS + " -o " + arguments.output + ".o " + \
-        "-Xclang -load -Xclang " + PASS_PATH + " " + LOGGING + " -c " + arguments.infile + " -flegacy-pass-manager"
+compile_cmd = (
+    "mpicc -cc=clang "
+    + CXXFLAGS
+    + " -o "
+    + arguments.output
+    + ".o "
+    + "-Xclang -load -Xclang "
+    + PASS_PATH
+    + " "
+    + LOGGING
+    + " -c "
+    + arguments.infile
+    + " -flegacy-pass-manager"
+)
 
-unmodified_ir_cmd = "mpicc -cc=clang " + CXXFLAGS + "  " + arguments.infile + " -flegacy-pass-manager -S -emit-llvm"
+unmodified_ir_cmd = (
+    "mpicc -cc=clang "
+    + CXXFLAGS
+    + "  "
+    + arguments.infile
+    + " -flegacy-pass-manager -S -emit-llvm"
+)
 
-modified_ir_cmd = "opt -enable-new-pm=0" + " -o " + arguments.output + "_modified.ll" + \
-        " -load " + PASS_PATH + " -Cato " + " "  +  arguments.infile.split(".")[0]+".ll" + " -S"
+modified_ir_cmd = (
+    "opt -enable-new-pm=0"
+    + " -o "
+    + arguments.output
+    + "_modified.ll"
+    + " -load "
+    + PASS_PATH
+    + " -Cato "
+    + " "
+    + arguments.infile.split(".")[0]
+    + ".ll"
+    + " -S"
+)
 
-link_cmd = "mpicc -cc=clang -v " + CXXFLAGS + " -o " + arguments.output + "_modified.x " + \
-        arguments.output + ".o " + RTLIB_DIR + "/libCatoRuntime.so " + "-Wl,-rpath," + RTLIB_DIR + LIBS 
+link_cmd = (
+    "mpicc -cc=clang -v "
+    + CXXFLAGS
+    + " -o "
+    + arguments.output
+    + "_modified.x "
+    + arguments.output
+    + ".o "
+    + RTLIB_DIR
+    + "/libCatoRuntime.so "
+    + "-Wl,-rpath,"
+    + RTLIB_DIR
+    + LIBS
+)
 
 rm_cmd = "rm " + arguments.output + ".o"
 
@@ -68,6 +115,3 @@ run_command(unmodified_ir_cmd, False)
 run_command(modified_ir_cmd, False)
 run_command(link_cmd, False)
 run_command(rm_cmd)
-
-
-
