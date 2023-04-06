@@ -208,7 +208,7 @@ void RuntimeHandler::adjust_netcdf_regions()
     if (open_users.size() == 0)
     {
         llvm::errs() << "Did not find any netCDF output file. Will skip therefore netCDF part\n";
-        return
+        return;
     }
 
     for (auto &user : open_users)
