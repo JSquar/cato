@@ -356,7 +356,7 @@ int io_get_var_int(int ncid, int varid, int *buffer)
 int io_get_vara_int(int ncid, int varid, long int num_elements, int *buffer)
 {
     int err;
-    llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n"; //TODO
+    Debug(llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n";); //TODO
 
     size_t start, count;
     count = num_elements / MPI_SIZE / 4;

@@ -205,6 +205,11 @@ void RuntimeHandler::adjust_netcdf_regions()
     /* ----------------------------- Replace nc_open ---------------------------- */
     std::vector<llvm::User *>  open_users = get_function_users(*_M, "nc_open");
     llvm::errs() << "Found " << open_users.size() << " many open calls\n"; //TODO
+    if (open_users.size() == 0)
+    {
+        llvm::errs() << "Did not find any netCDF output file. Will skip therefore netCDF part\n";
+        return
+    }
 
     for (auto &user : open_users)
     {
