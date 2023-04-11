@@ -356,7 +356,6 @@ int io_get_var_int(int ncid, int varid, int *buffer)
 
 static void io_set_hyperslab_params(long int num_bytes, nc_type type, size_t& start, size_t& count)
 {
-    //size_t start, count;
     count = num_bytes / MPI_SIZE / nctypelen(type);
     if (MPI_RANK < num_bytes % MPI_SIZE)
     {
@@ -370,48 +369,33 @@ static void io_set_hyperslab_params(long int num_bytes, nc_type type, size_t& st
     }
 }
 
-int io_get_vara_int(int ncid, int varid, long int num_bytes, int *buffer)
+int io_get_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctype)
 {
-    int err;
+    int err = 0;
     llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n"; //TODO
 
     size_t start, count;
-    io_set_hyperslab_params(num_bytes, NC_INT, start, count);
+    io_set_hyperslab_params(num_bytes, nctype, start, count);
 
     llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
-    // int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
 
-    // llvm::errs() << "Rang "<< MPI_RANK << ": ncid " << ncid << "\n";
-    // llvm::errs() << "Rang "<< MPI_RANK << ": varid " << varid << "\n";
-    // llvm::errs() << "Rang "<< MPI_RANK << ": start " << start << "\n";
-    // llvm::errs() << "Rang "<< MPI_RANK << ": count " << count << "\n";
-    // llvm::errs() << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
+    switch (nctype)
+    {
+    case NC_INT:
+        err = nc_get_vara_int(ncid, varid, &start, &count, (int*) buffer);
+        break;
+    
+    case NC_DOUBLE:
+        err = nc_get_vara_double(ncid, varid, &start, &count, (double*) buffer);
+        break;
 
-    err = nc_get_vara_int(ncid, varid, &start, &count, buffer);
-    check_error_code(err, "io_get_vara_int (netCDF backend)"); //TODO
-
-    return err;
-}
-
-int io_get_vara_double(int ncid, int varid, long int num_bytes, double *buffer)
-{
-    int err;
-    llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n"; //TODO
-
-    size_t start, count;
-    io_set_hyperslab_params(num_bytes, NC_DOUBLE, start, count);
-
-    llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
-    // int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
-
-    // llvm::errs() << "Rang "<< MPI_RANK << ": ncid " << ncid << "\n";
-    // llvm::errs() << "Rang "<< MPI_RANK << ": varid " << varid << "\n";
-    // llvm::errs() << "Rang "<< MPI_RANK << ": start " << start << "\n";
-    // llvm::errs() << "Rang "<< MPI_RANK << ": count " << count << "\n";
-    // llvm::errs() << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
-
-    err = nc_get_vara_double(ncid, varid, &start, &count, buffer);
-    check_error_code(err, "io_get_vara_double (netCDF backend)"); //TODO
+    default:
+        llvm::errs() << "ERROR: DID NOT FIND NC ACCESS FUNCTION\n";
+        break;
+    }
+    
+    std::string location = "io_get_vara (netCDF backend) with nctype: " + std::to_string(nctype);
+    check_error_code(err, location); //TODO
 
     return err;
 }

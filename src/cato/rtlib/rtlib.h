@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <mpi.h>
+#include <netcdf.h>
 
 #include "CatoRuntimeLogger.h"
 #include "MemoryAbstractionHandler.h"
@@ -274,10 +275,7 @@ int io_inq_varid(int, char *, int *);
 
 int io_get_var_int(int, int, int *);
 
-int io_get_vara_int(int, int, long int, int *);
-
-int io_get_vara_double(int, int, long int, double *);
-// int io_get_vara_int(int, int, const size_t *, const size_t *, int *);
+int io_get_vara(int, int, long int, void *, int);//header
 
 int io_close(int);
 
