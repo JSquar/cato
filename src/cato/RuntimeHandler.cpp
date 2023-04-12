@@ -59,7 +59,7 @@ bool RuntimeHandler::load_rtlibs()
         return false;
     }
 
-    return true;    
+    return true;
 }
 
 void RuntimeHandler::match_function(llvm::Function **function_declaration,
@@ -211,14 +211,14 @@ void RuntimeHandler::adjust_netcdf_regions()
     for (auto &user : open_users)
     {
         if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-        {        
+        {
             std::unique_ptr<NetCDFRegion> netcdf_region = std::make_unique<NetCDFRegion>(NetCDFRegion(call));
             netcdf_regions.push_back(std::move(netcdf_region));
 
             //replace with nc_open_par
             call->setCalledFunction(functions.io_open_par);
         }
-    }    
+    }
 
     /* ---------------------- inq varid and set par access ---------------------- */
     std::vector<llvm::User *>  inq_varid_users = get_function_users(*_M, "nc_inq_varid");
@@ -226,7 +226,7 @@ void RuntimeHandler::adjust_netcdf_regions()
     for (auto &user : inq_varid_users)
     {
         if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-        {   
+        {
             //replace with CATO inq_varid
             call->setCalledFunction(functions.io_inq_varid);
         }
@@ -234,15 +234,30 @@ void RuntimeHandler::adjust_netcdf_regions()
 
     /* ----------- parallel access via netCDF partial access functions ---------- */
     std::vector< std::pair<std::string, nc_type> > func_calls = {   std::pair {"nc_get_var_int", NC_INT},
-                                                                    std::pair {"nc_get_var_double", NC_DOUBLE}
+                                                                    std::pair {"nc_get_var_double", NC_DOUBLE},
+                                                                    std::pair {"nc_get_var_float", NC_FLOAT},
+                                                                    std::pair {"nc_get_var_long", NC_LONG},
+                                                                    std::pair {"nc_get_var_longlong", NC_INT64},
+                                                                    std::pair {"nc_get_var_schar", NC_BYTE},
+                                                                    std::pair {"nc_get_var_short", NC_SHORT},
+                                                                    std::pair {"nc_get_var_string", NC_STRING},
+                                                                    std::pair {"nc_get_var_text", NC_CHAR},
+                                                                    std::pair {"nc_get_var_ubyte", NC_UBYTE},
+                                                                    std::pair {"nc_get_var_uchar", NC_UBYTE},
+                                                                    std::pair {"nc_get_var_uint", NC_UINT},
+                                                                    std::pair {"nc_get_var_ulonglong", NC_UINT64},
+                                                                    std::pair {"nc_get_var_ushort", NC_USHORT}
                                                                 };
-    
+
     for (auto func : func_calls)
     {
         std::vector<llvm::User *>  get_var_users = get_function_users(*_M, func.first);
         std::vector<llvm::User *>  shared_memory_users = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
-        llvm::errs() << "Found " << get_var_users.size() << " many " << func.first << " calls\n"; //TODO
-        llvm::errs() << "Found " << shared_memory_users.size() << " shared memory calls\n"; //TODO
+        if (get_var_users.size() > 0)
+        {
+            llvm::errs() << "Found " << get_var_users.size() << " many " << func.first << " calls\n"; //TODO
+            llvm::errs() << "Found " << shared_memory_users.size() << " shared memory calls\n"; //TODO
+        }
 
         IRBuilder<> builder(_M->getContext());
         LLVMContext &Ctx = _M->getContext();
@@ -254,7 +269,7 @@ void RuntimeHandler::adjust_netcdf_regions()
         for (auto &user : get_var_users)
         {
             if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-            {   
+            {
                 llvm::Value *ncid = call->getArgOperand(0);
                 llvm::Value *varid = call->getArgOperand(1);
                 llvm::Value *buffer = call->getArgOperand(2);
