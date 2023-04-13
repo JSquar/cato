@@ -1,6 +1,6 @@
 // PASS: *
 // RUN: ${CATO_ROOT}/scripts/cexecute_pass.py %s -o %t
-// RUN: diff <(mpirun -np 4 %t) %s.reference_output
+// RUN: diff <(mpirun -np 4 %t_modified.x) %s.reference_output
 #include <stdlib.h>
 
 int main()

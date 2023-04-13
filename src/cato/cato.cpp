@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thursday, 16th February 2023 6:23:50 pm
+ * Last Modified: Monday, 6th April 2023 11:40:06 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -1195,7 +1195,7 @@ struct CatoPass : public ModulePass
                     Value *void_ptr = nullptr;
                     // If this is a GEP that means we are working with a struct
                     // and the base pointer to the single value shared var has to
-                    // be declared at declared at the beginning of the function
+                    // be declared at the beginning of the function
                     // for the mpi window to be created
                     if (auto *gep = dyn_cast<GetElementPtrInst>(single_value_var))
                     {
