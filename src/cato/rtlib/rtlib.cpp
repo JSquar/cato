@@ -302,7 +302,7 @@ int io_inq_varid(int ncid, char *name, int *varidp)
     check_error_code(err, "io_inq_varid: inq varid (netCDF backend)"); //TODO
 
     if(const char* env_mode = std::getenv("CATO_PAR_MODE")) {
-        std::cerr << "Use " << env_mode << " mode\n";
+        //std::cerr << "Use " << env_mode << " mode\n";
         if(strcmp(env_mode, "COLLECTIVE") == 0) {
             nc_par_mode=NC_COLLECTIVE;
         }
@@ -314,10 +314,10 @@ int io_inq_varid(int ncid, char *name, int *varidp)
             std::cerr << "Could not recognise mode " << env_mode << ", make fallback on collective mode\n";
         }
     }
-    else
+    /*else
     {
         std::cerr << "No par mode has been passed via CATO_PAR_MODE. CATO will use collective mode by default, you can choose between INDEPENDENT and COLLECTIVE\n";
-    }
+    }*/
 
     err = nc_var_par_access(ncid, varid, nc_par_mode);
     check_error_code(err, "io_inq_varid: set par access mode (netCDF backend)"); //TODO
@@ -356,16 +356,21 @@ int io_get_var_int(int ncid, int varid, int *buffer)
 
 static void io_set_hyperslab_params(long int num_bytes, nc_type type, size_t& start, size_t& count)
 {
-    count = num_bytes / MPI_SIZE / nctypelen(type);
-    if (MPI_RANK < num_bytes % MPI_SIZE)
+    long int elements = num_bytes / nctypelen(type);
+    long int rest = elements % MPI_SIZE;
+    count = elements / MPI_SIZE ;
+    if (MPI_RANK < rest)
     {
         count += 1;
     }
 
-    start = count * MPI_RANK;
-    if (MPI_RANK >= num_bytes % MPI_SIZE)
+    if (MPI_RANK < rest)
     {
-        start += num_bytes % MPI_SIZE;
+        start = count * MPI_RANK;
+    }
+    else
+    {
+        start = (count + 1) * rest + (MPI_RANK - rest) * count;
     }
 }
 
