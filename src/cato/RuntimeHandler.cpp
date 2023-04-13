@@ -258,40 +258,40 @@ void RuntimeHandler::adjust_netcdf_regions()
     {
         std::vector<llvm::User *>  get_var_users = get_function_users(*_M, func.first);
         std::vector<llvm::User *>  shared_memory_users = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
-        if (get_var_users.size() > 0)
+        if (get_var_users.size() > 0 && shared_memory_users.size() > 0)
         {
             llvm::errs() << "Found " << get_var_users.size() << " many " << func.first << " calls\n"; //TODO
             llvm::errs() << "Found " << shared_memory_users.size() << " shared memory calls\n"; //TODO
-        }
 
-        IRBuilder<> builder(_M->getContext());
-        LLVMContext &Ctx = _M->getContext();
+            IRBuilder<> builder(_M->getContext());
+            LLVMContext &Ctx = _M->getContext();
 
-        llvm::User *memory_call_user = shared_memory_users.at(0);
-        llvm::CallInst *memory_call = llvm::dyn_cast<llvm::CallInst>(memory_call_user);
-        llvm::Value *num_bytes = memory_call->getArgOperand(0);
+            llvm::User *memory_call_user = shared_memory_users.at(0);
+            llvm::CallInst *memory_call = llvm::dyn_cast<llvm::CallInst>(memory_call_user);
+            llvm::Value *num_bytes = memory_call->getArgOperand(0);
 
-        for (auto &user : get_var_users)
-        {
-            if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+            for (auto &user : get_var_users)
             {
-                llvm::Value *ncid = call->getArgOperand(0);
-                llvm::Value *varid = call->getArgOperand(1);
-                llvm::Value *buffer = call->getArgOperand(2);
-                llvm::Value *nctype = builder.getInt32(func.second);
-                llvm::Value *void_buffer = CastInst::Create(CastInst::BitCast, buffer, builder.getInt8PtrTy(), "void_buf", call);
+                if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+                {
+                    llvm::Value *ncid = call->getArgOperand(0);
+                    llvm::Value *varid = call->getArgOperand(1);
+                    llvm::Value *buffer = call->getArgOperand(2);
+                    llvm::Value *nctype = builder.getInt32(func.second);
+                    llvm::Value *void_buffer = CastInst::Create(CastInst::BitCast, buffer, builder.getInt8PtrTy(), "void_buf", call);
 
-                SmallVector<Value *> args;
-                args.push_back(ncid);
-                args.push_back(varid);
-                args.push_back(num_bytes);
-                args.push_back(void_buffer);
-                args.push_back(nctype);
+                    SmallVector<Value *> args;
+                    args.push_back(ncid);
+                    args.push_back(varid);
+                    args.push_back(num_bytes);
+                    args.push_back(void_buffer);
+                    args.push_back(nctype);
 
-                builder.SetInsertPoint(call);
-                llvm::CallInst *new_call = builder.CreateCall(functions.io_get_vara, args);
-                call->replaceAllUsesWith(new_call);
-                call->eraseFromParent();
+                    builder.SetInsertPoint(call);
+                    llvm::CallInst *new_call = builder.CreateCall(functions.io_get_vara, args);
+                    call->replaceAllUsesWith(new_call);
+                    call->eraseFromParent();
+                }
             }
         }
     }
