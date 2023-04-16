@@ -354,40 +354,110 @@ int io_get_var_int(int ncid, int varid, int *buffer)
 // int io_get_vara_int(int ncid, int varid, const size_t *startp, const size_t *countp,
 //                     int *buffer)
 
-static void io_set_hyperslab_params(long int num_bytes, nc_type type, size_t& start, size_t& count)
+/*static void io_set_hyperslab_params(int ncid, int varid, long int num_bytes, nc_type type, size_t* start, size_t* count)
 {
+    int err;
+
+    int num_dims;
+    err = nc_inq_varndims(ncid, varid, &num_dims);
+    check_error_code(err, "nc_inq_varndims (netCDF backend)");
+
+    int dimids[num_dims];
+    err = nc_inq_vardimid(ncid, varid, dimids);
+    check_error_code(err, "nc_inq_vardimid (netCDF backend)");
+
+    count = (size_t* ) malloc(sizeof(size_t) * num_dims);
+    start = (size_t* ) malloc(sizeof(size_t) * num_dims);
+    for(int i = 0; i < num_dims; i++)
+    {
+        err = nc_inq_dimlen(ncid, dimids[i], &count[i]);
+        check_error_code(err, "nc_inq_dimlen (netCDF backend)");
+        start[i] = 0;
+    }
+
     long int elements = num_bytes / nctypelen(type);
     long int rest = elements % MPI_SIZE;
-    count = elements / MPI_SIZE ;
+    count[0] = elements / MPI_SIZE ;
     if (MPI_RANK < rest)
     {
-        count += 1;
+        count[0] += 1;
     }
 
     if (MPI_RANK < rest)
     {
-        start = count * MPI_RANK;
+        start[0] = count[0] * MPI_RANK;
     }
     else
     {
-        start = (count + 1) * rest + (MPI_RANK - rest) * count;
+        start[0] = (count[0] + 1) * rest + (MPI_RANK - rest) * count[0];
     }
-}
+}*/
 
 int io_get_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctype)
 {
     int err;
     //llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n"; //TODO
 
-    size_t start, count;
-    io_set_hyperslab_params(num_bytes, nctype, start, count);
+    size_t* start = nullptr;
+    size_t* count = nullptr;
+    //io_set_hyperslab_params(ncid, varid, num_bytes, nctype, start, count);
+
+    int num_dims;
+    err = nc_inq_varndims(ncid, varid, &num_dims);
+    check_error_code(err, "nc_inq_varndims (netCDF backend)");
+
+    int dimids[num_dims];
+    err = nc_inq_vardimid(ncid, varid, dimids);
+    check_error_code(err, "nc_inq_vardimid (netCDF backend)");
+
+    count = (size_t* ) malloc(sizeof(size_t) * num_dims);
+    start = (size_t* ) malloc(sizeof(size_t) * num_dims);
+    for(int i = 0; i < num_dims; i++)
+    {
+        err = nc_inq_dimlen(ncid, dimids[i], &count[i]);
+        check_error_code(err, "nc_inq_dimlen (netCDF backend)");
+        start[i] = 0;
+    }
+
+    long int rest = count[0] % MPI_SIZE;
+    count[0] /= MPI_SIZE ;
+    if (MPI_RANK < rest)
+    {
+        count[0] += 1;
+    }
+
+    if (MPI_RANK < rest)
+    {
+        start[0] = count[0] * MPI_RANK;
+    }
+    else
+    {
+        start[0] = (count[0] + 1) * rest + (MPI_RANK - rest) * count[0];
+    }
 
     //llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
 
-    err = nc_get_vara(ncid, varid, &start, &count, buffer);
+    /*for (int i = 0; i < num_dims; i++)
+    {
+        llvm::errs() << "RANK " << MPI_RANK << ": start[" << i << "]: " << start[i] << "\n";
+        llvm::errs() << "RANK " << MPI_RANK << ": count[" << i << "]: " << count[i] << "\n";
+    }
+    MPI_Barrier(MPI_COMM_WORLD);*/
+
+    err = nc_get_vara(ncid, varid, start, count, buffer);
+
+    /*unsigned int* buf = (unsigned int*) buffer;
+    if (MPI_RANK == 1)
+    {
+        for (int i = 0 ; i < 6; i++)
+        llvm::errs() << i << ": " << buf[i] << "\n";
+    }*/
 
     std::string location = "io_get_vara (netCDF backend) with nctype: " + std::to_string(nctype);
     check_error_code(err, location); //TODO
+
+    free(start);
+    free(count);
 
     return err;
 }
