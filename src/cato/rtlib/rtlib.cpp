@@ -354,53 +354,10 @@ int io_get_var_int(int ncid, int varid, int *buffer)
 // int io_get_vara_int(int ncid, int varid, const size_t *startp, const size_t *countp,
 //                     int *buffer)
 
-/*static void io_set_hyperslab_params(int ncid, int varid, long int num_bytes, nc_type type, size_t* start, size_t* count)
-{
-    int err;
-
-    int num_dims;
-    err = nc_inq_varndims(ncid, varid, &num_dims);
-    check_error_code(err, "nc_inq_varndims (netCDF backend)");
-
-    int dimids[num_dims];
-    err = nc_inq_vardimid(ncid, varid, dimids);
-    check_error_code(err, "nc_inq_vardimid (netCDF backend)");
-
-    count = (size_t* ) malloc(sizeof(size_t) * num_dims);
-    start = (size_t* ) malloc(sizeof(size_t) * num_dims);
-    for(int i = 0; i < num_dims; i++)
-    {
-        err = nc_inq_dimlen(ncid, dimids[i], &count[i]);
-        check_error_code(err, "nc_inq_dimlen (netCDF backend)");
-        start[i] = 0;
-    }
-
-    long int elements = num_bytes / nctypelen(type);
-    long int rest = elements % MPI_SIZE;
-    count[0] = elements / MPI_SIZE ;
-    if (MPI_RANK < rest)
-    {
-        count[0] += 1;
-    }
-
-    if (MPI_RANK < rest)
-    {
-        start[0] = count[0] * MPI_RANK;
-    }
-    else
-    {
-        start[0] = (count[0] + 1) * rest + (MPI_RANK - rest) * count[0];
-    }
-}*/
 
 int io_get_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctype)
 {
     int err;
-    //llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n"; //TODO
-
-    size_t* start = nullptr;
-    size_t* count = nullptr;
-    //io_set_hyperslab_params(ncid, varid, num_bytes, nctype, start, count);
 
     int num_dims;
     err = nc_inq_varndims(ncid, varid, &num_dims);
@@ -410,55 +367,95 @@ int io_get_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctyp
     err = nc_inq_vardimid(ncid, varid, dimids);
     check_error_code(err, "nc_inq_vardimid (netCDF backend)");
 
-    count = (size_t* ) malloc(sizeof(size_t) * num_dims);
-    start = (size_t* ) malloc(sizeof(size_t) * num_dims);
+    size_t count[num_dims];
     for(int i = 0; i < num_dims; i++)
     {
         err = nc_inq_dimlen(ncid, dimids[i], &count[i]);
         check_error_code(err, "nc_inq_dimlen (netCDF backend)");
-        start[i] = 0;
     }
 
-    long int rest = count[0] % MPI_SIZE;
-    count[0] /= MPI_SIZE ;
-    if (MPI_RANK < rest)
-    {
-        count[0] += 1;
-    }
+    //TODO mainly copy-pasted from MemoryAbstractionDefault
+    size_t element_size = nctypelen(nctype);
+    size_t global_num_elements = num_bytes / element_size;
 
-    if (MPI_RANK < rest)
+    size_t div = global_num_elements / MPI_SIZE;
+    size_t rest = global_num_elements % MPI_SIZE;
+
+    size_t local_num_elements, local_from, local_to;
+
+    if ((size_t)MPI_RANK < rest)
     {
-        start[0] = count[0] * MPI_RANK;
+        local_num_elements = div + 1;
+        local_from = MPI_RANK * local_num_elements;
+        local_to = local_from + local_num_elements - 1;
     }
     else
     {
-        start[0] = (count[0] + 1) * rest + (MPI_RANK - rest) * count[0];
+        local_num_elements = div;
+        local_from = MPI_RANK * local_num_elements + rest;
+        local_to = local_from + local_num_elements - 1;
     }
 
-    //llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
+    //Turn the local start into an n-dimensional index representing the first elem
+    //of this process in the nc file
+    size_t start_indexes[num_dims], div_results[num_dims];
+    start_indexes[num_dims - 1] = local_from % count[num_dims-1];
+    div_results[num_dims - 1] = local_from / count[num_dims - 1];
 
-    /*for (int i = 0; i < num_dims; i++)
+    for (int i = num_dims - 2; i >= 0; i--)
     {
-        llvm::errs() << "RANK " << MPI_RANK << ": start[" << i << "]: " << start[i] << "\n";
-        llvm::errs() << "RANK " << MPI_RANK << ": count[" << i << "]: " << count[i] << "\n";
+        start_indexes[i] = div_results[i+1] % count[i];
+        div_results[i] = div_results[i+1] / count[i];
     }
-    MPI_Barrier(MPI_COMM_WORLD);*/
 
-    err = nc_get_vara(ncid, varid, start, count, buffer);
+    //Do the same for the local end
+    size_t end_indexes[num_dims];
+    end_indexes[num_dims - 1] = local_to % count[num_dims-1];
+    div_results[num_dims - 1] = local_to / count[num_dims - 1];
 
-    /*unsigned int* buf = (unsigned int*) buffer;
-    if (MPI_RANK == 1)
+    for (int i = num_dims - 2; i >= 0; i--)
     {
-        for (int i = 0 ; i < 6; i++)
-        llvm::errs() << i << ": " << buf[i] << "\n";
-    }*/
+        end_indexes[i] = div_results[i+1] % count[i];
+        div_results[i] = div_results[i+1] / count[i];
+    }
 
+    //In case that the reads per process do not align to rectangular hyperslabs,
+    //we read slightly more than necessary to create these hyperslabs.
+    //After that read, the correct number of elements is copied into the actual buffer.
+    size_t read_indexes[num_dims];
+    size_t read_counts[num_dims];
+
+    read_indexes[0] = start_indexes[0];
+    read_counts[0] = end_indexes[0] - start_indexes[0] + 1;
+    size_t read_size = read_counts[0];
+
+    for (int i = 1; i < num_dims; i++)
+    {
+        read_counts[i] = count[i];
+        read_size *= count[i];
+        read_indexes[i] = 0;
+    }
+
+    void* read_buf = malloc(element_size * read_size);
+
+    //Read with modified boundaries, possibly more than necessary
+    err = nc_get_vara(ncid, varid, read_indexes, read_counts, read_buf);
     std::string location = "io_get_vara (netCDF backend) with nctype: " + std::to_string(nctype);
     check_error_code(err, location); //TODO
 
-    free(start);
-    free(count);
+    //Calculate the number of elements at the start that are too many
+    size_t read_index_1d = 1;
+    for (int i = 1; i < num_dims; i++)
+    {
+        read_index_1d *= count[i];
+    }
+    read_index_1d *= read_indexes[0];
+    size_t offset_elements = local_from - read_index_1d;
 
+    //Copy into the actual target
+    memcpy(buffer, ((char*) read_buf) + offset_elements * element_size, local_num_elements * element_size);
+
+    free(read_buf);
     return err;
 }
 
