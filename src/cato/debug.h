@@ -5,7 +5,7 @@
  * -----
  *
  * -----
- * Last Modified: Friday, 17th February 2023 12:03:06 pm
+ * Last Modified: Wednesday, 26th April 2023 9:52:58 am
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -35,7 +35,7 @@
 #ifndef CATO_DEBUG_H
 #define CATO_DEBUG_H
 
-#define DEBUG_CATO_PASS 0
+#define DEBUG_CATO_PASS 1
 
 #if DEBUG_CATO_PASS == 1
 #define Debug(x) x

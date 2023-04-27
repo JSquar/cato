@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Monday, 6th April 2023 11:40:06 pm
+ * Last Modified: Wednesday, 26th April 2023 4:26:59 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -35,6 +35,7 @@
 #include "UserTree.h"
 #include "debug.h"
 #include "helper.h"
+#include "feedback.h"
 
 using namespace llvm;
 
@@ -2042,10 +2043,16 @@ struct CatoPass : public ModulePass
     virtual bool runOnModule(Module &M)
     {
 
-        Debug(errs() << "*----------------------------------*\n";);
-        Debug(errs() << "|      IR CODE BEFORE THE PASS:    |\n";);
-        Debug(errs() << "*----------------------------------*\n";);
-        Debug(M.dump(););
+        if(const char* env_mode = std::getenv("CATO_HELP")) {
+            print_usage();
+            return false;
+        }
+
+
+        // Debug(errs() << "*----------------------------------*\n";);
+        // Debug(errs() << "|      IR CODE BEFORE THE PASS:    |\n";);
+        // Debug(errs() << "*----------------------------------*\n";);
+        // Debug(M.dump(););
 
         Debug(errs() << "*----------------------------------*\n";);
         Debug(errs() << "|            DEBUG OUTPUT:         |\n";);

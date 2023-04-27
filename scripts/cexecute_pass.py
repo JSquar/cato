@@ -39,8 +39,8 @@ CXXFLAGS = " "
 CXXFLAGS += " -O2 -g0 -fopenmp -Wunknown-pragmas "
 # CXXFLAGS += " " + run_command("llvm-config --cflags")[1]
 CXXFLAGS += " " + run_command("nc-config --cflags")[1]
-PASS_PATH = os.environ["CATO_ROOT"] + "/src/build/cato/libCatoPass.so"
-RTLIB_DIR = os.environ["CATO_ROOT"] + "/src/build/cato/rtlib"
+PASS_PATH = os.environ["CATO_ROOT"] + "/build/src/cato/libCatoPass.so"
+RTLIB_DIR = os.environ["CATO_ROOT"] + "/build/src/cato/rtlib"
 LOGGING = ""
 
 # flags aus nc-config --libs und llvm-config --libs

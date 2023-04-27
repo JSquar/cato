@@ -2,7 +2,7 @@
 ###
 # Author: Michael Blesel
 # -----
-#Last Modified: Friday, 17th February 2023 7:05:41 pm
+#Last Modified: Wednesday, 26th April 2023 5:51:45 pm
 #Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
 # -----
 # Copyright (c) 2020 Michael Blesel
@@ -16,9 +16,10 @@
 
 RTLIBFLAGS=" -O2 -g -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
 RTLIB_SRC="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
-RTLIB_OUT="${CATO_ROOT}/src/build/rtlib.bc"
+RTLIB_OUT="${CATO_ROOT}/build/rtlib.bc"
 
-SRC_PATH="${CATO_ROOT}/src"
+# SRC_PATH="${CATO_ROOT}/src"
+SRC_PATH="${CATO_ROOT}"
 
 if [ -n "$1" ] && [ $1 = "--rebuild" ]; then
     rm -rf ${SRC_PATH}/build 
@@ -34,8 +35,9 @@ echo "Build collection of external C++ functions"
 mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_SRC
 
 #build the pass
-echo "Build LLVM pass"
+echo "Build LLVM pass and tests"
 # cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug ..
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 make -j$CPU
 # wait $pid
+ctest

@@ -6,14 +6,18 @@ add_library(CatoPass MODULE
     cato.cpp
     debug.cpp    
     debug.h    
+    environment_interaction.cpp
+    environment_interaction.h
+    feedback.cpp
+    feedback.h
     helper.cpp
     helper.h
-    NetCDFRegion.cpp
-    NetCDFRegion.h
     MemoryAllocation.cpp
     MemoryAllocation.h
     Microtask.cpp
     Microtask.h
+    NetCDFRegion.cpp
+    NetCDFRegion.h
     RuntimeHandler.cpp
     RuntimeHandler.h
     SharedPointer.cpp
@@ -26,9 +30,18 @@ add_library(CatoPass MODULE
     UserTree.h
 )
 
-target_include_directories(CatoPass PRIVATE ${MPI_CXX_INCLUDE_PATH})
-target_compile_options(CatoPass PRIVATE ${MPI_CXX_COMPILE_FLAGS})
-target_link_libraries(CatoPass PRIVATE ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+# add LLVM dependencies
+find_package(LLVM REQUIRED CONFIG)
+# add_definitions(${LLVM_DEFINITIONS})
+# include_directories(${LLVM_INCLUDE_DIRS})
+# link_directories(${LLVM_LIBRARY_DIRS})
+
+# add MPI dependencies
+find_package(MPI REQUIRED)
+
+# target_include_directories(CatoPass PRIVATE ${MPI_CXX_INCLUDE_PATH})
+# target_compile_options(CatoPass PRIVATE ${MPI_CXX_COMPILE_FLAGS})
+# target_link_libraries(CatoPass PRIVATE ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
 
 #target_compile_features(omp2mpiPass PRIVATE cxx_range_for cxx_auto_type)
 #need c++ 17 now

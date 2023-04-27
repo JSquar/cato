@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Friday, 17th February 2023 9:21:35 pm
+ * Last Modified: Tuesday, 25th April 2023 6:32:12 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -266,7 +266,9 @@ void reduce_local_vars(void *local_var, int bin_op, MPI_Datatype type);
 
 int io_open(const char *, int, int *);
 
-int io_open_par(const char *, int, MPI_Comm, MPI_Info, int *);
+int io_open_par(const char *, int, int *);
+
+int io_create_par(const char *, int, int *);
 
 int io_var_par_access(int, int, int);
 
@@ -279,5 +281,6 @@ int io_get_vara_int(int, int, long int, int *);
 
 int io_close(int);
 
+int io_put_vara_int(int, int, long int, int *);
 
 #endif

@@ -37,7 +37,7 @@ RuntimeHandler::RuntimeHandler(Module &M)
 bool RuntimeHandler::load_rtlibs()
 {
     std::string cato_root = std::getenv("CATO_ROOT");
-    std::string rtlib_module = "/src/build/rtlib.bc";
+    std::string rtlib_module = "/build/rtlib.bc";
 
     if (cato_root.empty())
     {
@@ -117,6 +117,7 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.io_open, "_Z7io_openPKciPi");
     // match_function(&functions.io_open_par, "_Z11io_open_parPKciiiPi");
     match_function(&functions.io_open_par, "_Z11io_open_parPKciPi");
+    match_function(&functions.io_create_par, "_Z13io_create_parPKciPi");
     match_function(&functions.io_var_par_access, "_Z17io_var_par_accessiii");
     match_function(&functions.io_inq_varid, "_Z12io_inq_varidiPcPi");
     match_function(&functions.io_get_var_int, "_Z14io_get_var_intiiPi");
@@ -126,6 +127,8 @@ bool RuntimeHandler::load_external_functions()
     // match_function(&functions.io_get_vara_int1a, "_Z17io_get_vara_int1ai");
     // match_function(&functions.io_get_vara_int1b, "_Z17io_get_vara_int1bPi");
     match_function(&functions.io_close, "_Z8io_closei");
+    match_function(&functions.io_put_vara_int, "_Z15io_put_vara_intiilPi");
+    match_function(&functions.io_def_var, "_Z10io_def_variPKciiPKiPi");
 
     return true;
 }
@@ -203,15 +206,17 @@ void RuntimeHandler::adjust_netcdf_regions()
     std::vector<std::unique_ptr<NetCDFRegion>> netcdf_regions;
 
     /* ----------------------------- Replace nc_open ---------------------------- */
-    std::vector<llvm::User *>  open_users = get_function_users(*_M, "nc_open");
-    llvm::errs() << "Found " << open_users.size() << " many open calls\n"; //TODO
-    if (open_users.size() == 0)
+    std::vector<llvm::User *>  users_nc_open = get_function_users(*_M, "nc_open");
+    std::vector<llvm::User *>  users_nc_create = get_function_users(*_M, "nc_create");
+    llvm::errs() << "Found " << users_nc_open.size() << " many nc_open calls\n"; //TODO
+    llvm::errs() << "Found " << users_nc_create.size() << " many nc_create calls\n"; //TODO
+    if (users_nc_open.size() == 0)
     {
         llvm::errs() << "Did not find any netCDF output file. Will skip therefore netCDF part\n";
         return;
     }
 
-    for (auto &user : open_users)
+    for (auto &user : users_nc_open)
     {
         if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
         {        
@@ -220,6 +225,18 @@ void RuntimeHandler::adjust_netcdf_regions()
 
             //replace with nc_open_par
             call->setCalledFunction(functions.io_open_par);
+        }
+    }    
+
+    for (auto &user : users_nc_create)
+    {
+        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+        {        
+            std::unique_ptr<NetCDFRegion> netcdf_region = std::make_unique<NetCDFRegion>(NetCDFRegion(call));
+            netcdf_regions.push_back(std::move(netcdf_region));
+
+            //replace with nc_create_par
+            call->setCalledFunction(functions.io_create_par);
         }
     }    
 
@@ -236,19 +253,23 @@ void RuntimeHandler::adjust_netcdf_regions()
     }
 
     /* ----------- parallel access via netCDF partial access functions ---------- */
-    std::vector<llvm::User *>  get_var_int_users = get_function_users(*_M, "nc_get_var_int");
-    std::vector<llvm::User *>  shared_memory_users = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
-    llvm::errs() << "Found " << get_var_int_users.size() << " many nc_get_var_int calls\n"; //TODO
-    llvm::errs() << "Found " << shared_memory_users.size() << " shared memory calls\n"; //TODO
+    std::vector<llvm::User *>  users_get_var_int = get_function_users(*_M, "nc_get_var_int");
+    std::vector<llvm::User *>  users_put_var_int = get_function_users(*_M, "nc_put_var_int");
+    std::vector<llvm::User *>  users_def_var = get_function_users(*_M, "nc_def_var");
+    std::vector<llvm::User *>  users_shared_memory = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
+    llvm::errs() << "Found " << users_get_var_int.size() << " many nc_get_var_int calls\n"; //TODO
+    llvm::errs() << "Found " << users_shared_memory.size() << " shared memory calls\n"; //TODO
+    llvm::errs() << "Found " << users_def_var.size() << " nc_def_var calls\n"; //TODO
 
     IRBuilder<> builder(_M->getContext());
     LLVMContext &Ctx = _M->getContext();
 
-    llvm::User *memory_call_user = shared_memory_users.at(0);
+    llvm::User *memory_call_user = users_shared_memory.at(0);
     llvm::CallInst *memory_call = llvm::dyn_cast<llvm::CallInst>(memory_call_user);
     llvm::Value *num_bytes = memory_call->getArgOperand(0);
 
-    for (auto &user : get_var_int_users)
+    // Replace nc_get_var_int
+    for (auto &user : users_get_var_int)
     {
 
         if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
@@ -270,6 +291,43 @@ void RuntimeHandler::adjust_netcdf_regions()
             call->replaceAllUsesWith(new_call);
             call->eraseFromParent();
 
+        }
+    }
+
+    // Replace nc_put_var_int
+    for (auto &user : users_put_var_int)
+    {
+
+        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+        {   
+
+
+            llvm::Value *ncid = call->getArgOperand(0);
+            llvm::Value *varid = call->getArgOperand(1);
+            llvm::Value *buffer = call->getArgOperand(2);
+
+            SmallVector<Value *> args;//,args2,args3,args4;
+            args.push_back(ncid);
+            args.push_back(varid);
+            args.push_back(num_bytes);
+            args.push_back(buffer);
+
+            builder.SetInsertPoint(call);
+            llvm::CallInst *new_call = builder.CreateCall(functions.io_put_vara_int, args);
+            call->replaceAllUsesWith(new_call);
+            call->eraseFromParent();
+
+        }
+    }
+
+    // Replace nc_def_var
+    for (auto &user : users_def_var)
+    {
+
+        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+        {   
+            //replace with CATO io_def_var
+            call->setCalledFunction(functions.io_def_var);
         }
     }
 }

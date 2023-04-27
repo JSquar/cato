@@ -1,3 +1,15 @@
+/*
+ * File: rtlib.cpp
+ * 
+ * -----
+ * Last Modified: Thursday, 27th April 2023 9:15:43 am
+ * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * -----
+ * Copyright (c) 2019 Tim Jammer
+ * Copyright (c) 2020 Michael Blesel
+ * Copyright (c) 2023 Jannek Squar
+ * 
+ */
 #include "rtlib.h"
 
 #include <cstdlib>
@@ -239,7 +251,7 @@ int io_open(const char *path, int omode, int *ncidp)
 // TODO: add MPI_Comm comm, MPI_Info info, to parameters
 int io_open_par(const char *path, int omode, int *ncidp)
 {
-    int err, test;
+    int err;
     if (omode == 0)
     {
         // std::cerr << "Pfad: " << path << "\n";   
@@ -268,6 +280,13 @@ int io_open_par(const char *path, int omode, int *ncidp)
     return err;
 }
 
+int io_create_par(const char *path, int cmode, int *ncidp) {
+    int err;
+    err = nc_create_par(path, cmode, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
+    Debug(check_error_code(err, "io_create_par (netCDF backend)"););
+    return err;
+}
+
 /**
  * Currently unused, since this logic has been inserted into io_inq_varid function
  */
@@ -285,7 +304,7 @@ int io_var_par_access(int ncid, int varid, int par_access)
         Debug(llvm::errs() << "Use independent io mode for netCDF\n";);
     }
 
-    err = nc_var_par_access(ncid, varid, par_access);
+    err = nc_var_par_access(ncid, varid, mode);
     Debug(check_error_code(err, "io_var_par_access (netCDF backend)"););
     return err;
 }
@@ -301,7 +320,7 @@ int io_inq_varid(int ncid, char *name, int *varidp)
     err = nc_inq_varid(ncid, name, varidp);
     check_error_code(err, "io_inq_varid: inq varid (netCDF backend)"); //TODO
 
-    if(const char* env_mode = std::getenv("CATO_PAR_MODE")) {
+    if(const char* env_mode = std::getenv("CATO_NC_PAR_MODE")) {
         std::cerr << "Use " << env_mode << " mode\n";
         if(strcmp(env_mode, "COLLECTIVE") == 0) {
             nc_par_mode=NC_COLLECTIVE;
@@ -381,7 +400,7 @@ int io_get_vara_int(int ncid, int varid, long int num_elements, int *buffer)
     // llvm::errs() << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
 
     err = nc_get_vara_int(ncid, varid, &start, &count, buffer);
-    check_error_code(err, "io_get_vara_int (netCDF backend)"); //TODO
+    check_error_code(err, "io_get_vara_int (netCDF backend)");
 
     return err;
 }
@@ -394,5 +413,38 @@ int io_close(int ncid)
     err = nc_close(ncid);
     Debug(check_error_code(err, "io_close (netCDF backend)"););
 
+    return err;
+}
+
+//  	int ncid, int varid, const size_t *startp, const size_t *countp, const int *op 
+int io_put_vara_int(int ncid, int varid, long int num_elements, int *buffer) {
+    int err;
+    size_t start, count;
+
+    count = num_elements / MPI_SIZE / 4;
+    if (MPI_RANK < num_elements % MPI_SIZE)
+    {
+        count += 1;
+    }
+    // count = 10;
+    start = count * MPI_RANK;
+    if (MPI_RANK >= num_elements % MPI_SIZE)
+    {
+        start += num_elements % MPI_SIZE;
+    }
+
+    err = nc_put_vara_int(ncid, varid, &start, &count, buffer);
+    check_error_code(err, "io_put_vara_int (netCDF backend)"); 
+
+    return err;
+
+}
+
+int io_def_var(int ncid, const char *name, int xtype, int ndims, const int *dimidsp, int *varidp ) {
+    int err;
+
+    err = nc_def_var(ncid, name, xtype, ndims, dimidsp, varidp);
+
+    check_error_code(err, "io_def_var (netCDF backend)"); 
     return err;
 }
