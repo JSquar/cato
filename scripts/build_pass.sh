@@ -2,7 +2,7 @@
 ###
 # Author: Michael Blesel
 # -----
-#Last Modified: Wednesday, 26th April 2023 5:51:45 pm
+#Last Modified: Sunday, 30th April 2023 2:45:58 pm
 #Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
 # -----
 # Copyright (c) 2020 Michael Blesel
@@ -14,7 +14,7 @@
 #nprocs -1 as building rtlib will use one CPU as well
 : ${CPUS:=1}
 
-RTLIBFLAGS=" -O2 -g -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
+RTLIBFLAGS=" -O2 -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
 RTLIB_SRC="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
 RTLIB_OUT="${CATO_ROOT}/build/rtlib.bc"
 

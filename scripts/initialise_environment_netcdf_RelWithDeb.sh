@@ -16,7 +16,7 @@
 
 #source ~/tmp/test_spack_llvm/share/spack/setup-env.sh
 spack unload --all
-spack load --first netcdf-c +mpi ~parallel-netcdf
+spack load --first netcdf-c@4.9: +mpi ~parallel-netcdf 
 #spack unload openmpi # macht z.Zt nur Ärger, weil andere Flags und neues Interface
 spack load --first mpich@4:
 spack load llvm@13.0.0 build_type=RelWithDebInfo_V-MB

@@ -36,7 +36,7 @@ arguments = parser.parse_args()
 
 # flags von nc-config --cflags und llvm-config-cxxflags
 CXXFLAGS = " "
-CXXFLAGS += " -O2 -g0 -fopenmp -Wunknown-pragmas "
+CXXFLAGS += " -O2 -pg -fopenmp -Wunknown-pragmas "
 # CXXFLAGS += " " + run_command("llvm-config --cflags")[1]
 CXXFLAGS += " " + run_command("nc-config --cflags")[1]
 PASS_PATH = os.environ["CATO_ROOT"] + "/build/src/cato/libCatoPass.so"
