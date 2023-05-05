@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Wednesday, 26th April 2023 4:26:59 pm
+ * Last Modified: Friday, 5th May 2023 1:52:09 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -2043,8 +2043,9 @@ struct CatoPass : public ModulePass
     virtual bool runOnModule(Module &M)
     {
 
-        if(const char* env_mode = std::getenv("CATO_HELP")) {
-            print_usage();
+        bool help_requested = check_usage_requests();
+        if(help_requested) {
+            // Help message has been printed, CATO pass will therefore not be applied            
             return false;
         }
 
