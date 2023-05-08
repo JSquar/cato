@@ -30,6 +30,8 @@ void UserTree::generate_tree(UserTreeNode *curr_node)
             new_node->value = user;
             new_node->parent = curr_node;
             curr_node->neighbours.push_back(new_node);
+            Debug(errs() << "Current user, for which a new tree node is constructed:\n";);
+            Debug(user->dump(););
             generate_tree(new_node);
         }
     }

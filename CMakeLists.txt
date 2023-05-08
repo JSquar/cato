@@ -8,8 +8,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add tests
 enable_testing()
 
-# Add Google Test as a subdirectory
-add_subdirectory(regression_tests)
+# Add test subdirectory if GoogleTest is available
+find_package(GTest)
+if(GTest_FOUND)
+    message("GoogleTest found, building tests.")
+    add_subdirectory(regression_tests)
+else()
+    message("GoogleTest not found, skipping tests.")
+endif()
+
 
 # Add CATO sources
 add_subdirectory(src)

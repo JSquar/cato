@@ -35,7 +35,7 @@
 #ifndef CATO_DEBUG_H
 #define CATO_DEBUG_H
 
-#define DEBUG_CATO_PASS 1
+#define DEBUG_CATO_PASS 0
 
 #if DEBUG_CATO_PASS == 1
 #define Debug(x) x

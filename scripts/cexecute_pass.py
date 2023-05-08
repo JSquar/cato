@@ -36,7 +36,7 @@ arguments = parser.parse_args()
 
 # flags von nc-config --cflags und llvm-config-cxxflags
 CXXFLAGS = " "
-CXXFLAGS += " -O2 -pg -fopenmp -Wunknown-pragmas "
+CXXFLAGS += " -ggdb -Og -fopenmp -Wunknown-pragmas "
 # CXXFLAGS += " " + run_command("llvm-config --cflags")[1]
 CXXFLAGS += " " + run_command("nc-config --cflags")[1]
 PASS_PATH = os.environ["CATO_ROOT"] + "/build/src/cato/libCatoPass.so"
@@ -44,7 +44,7 @@ RTLIB_DIR = os.environ["CATO_ROOT"] + "/build/src/cato/rtlib"
 LOGGING = ""
 
 # flags aus nc-config --libs und llvm-config --libs
-LIBS = ""
+LIBS = "-lm"
 # LIBS = run_command("llvm-config --libs")[1]
 LIBS += " " + run_command("nc-config --libs")[1]
 
@@ -100,6 +100,7 @@ link_cmd = (
     + "/libCatoRuntime.so "
     + "-Wl,-rpath,"
     + RTLIB_DIR
+    + " "
     + LIBS
 )
 
