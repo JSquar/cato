@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Friday, 5th May 2023 7:09:54 pm
+ * Last Modified: Tuesday, 9th May 2023 4:49:29 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -62,15 +62,23 @@ void print_general_usage() {
 }
 
 void print_usage_netcdf() {
-  llvm::errs() << "Environment variables to enable optional netCDF features"
-  llvm::errs() << "\n################################\n\n";
-  llvm::errs() << "\tCATO_NC_PAR_MODE";
+  llvm::errs() << "Environment variables to enable optional netCDF features\n"
+  llvm::errs() << "################################\n\n";
+  llvm::errs() << "IO mode:\n"
+  llvm::errs() << "\tCATO_NC_PAR_MODE\n";
   llvm::errs() << "\tChoose collective mode for parallel netCDF4. Available options are:\n";
-  llvm::errs() << "\t\tCOLLECTIVE\tIO is performed collectively by all processes (potential better I/O performance)\n";
+  llvm::errs() << "\t\tCOLLECTIVE\tIO is performed collectively by all processes, which potentially offers better I/O performance (default)\n";
   llvm::errs() << "\t\tINDEPENDENT\tEach process can independently perform I/O (not recommend, currently no use case in replacement code)\n";
   llvm::errs() << "\n################################\n\n";
-  llvm::errs() << "Compression"
+  llvm::errs() << "Compression:\n"
   llvm::errs() << "\tCATO_NC_DEFLATE TODO";
+  llvm::errs() << "\n################################\n\n";
+  llvm::errs() << "Sanitizer:\n"
+  llvm::errs() << "\tCATO_SANITIZER_NC_ERROR";
+  llvm::errs() << "\tSet how additional error checks shall be performed. Available options are:\n";
+  llvm::errs() << "\t\tWARN\tIf the error value of a netCDF function is not 0, a warning is printed (default)\n";
+  llvm::errs() << "\t\tERROR\tIf the error value of a netCDF function is not 0, the application is terminated\n";
+  llvm::errs() << "\t\tOFF\tNo additional error checking is performed\n";
 }
 
 void print_hints_lustre() {
@@ -85,8 +93,14 @@ void print_hints_netcdf() {
   llvm::errs() << "Tipps bzgl. alignment, lossy und lossless compression\n";
   llvm::errs() << "Tipps aus Compression 101 (https://www.unidata.ucar.edu/blogs/developer/entry/netcdf_compression)\n";
   llvm::errs() << "Auszug mit den wichtigsten Punkten aus Compression 101\n";
+  llvm::errs() << "Verweis auf interessante Kompressoren sowie zugehörige Links\n";
 }
 
+void print_usage_decompilation() {
+  llvm::errs() << "Übersicht Tools: retdec, llvm-cbe, llvm2c";
+  llvm::errs() << "Links zu Tools, kurze Tipps zur Verwendung";
+
+}
 // Genereller Hint-Aufbau:
 // 1. Generelle Beschreibung
 // 2. Verweis auf offizielle Doku
