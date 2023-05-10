@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Tuesday, 9th May 2023 4:49:29 pm
+ * Last Modified: Wednesday, 10th May 2023 4:10:32 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -59,6 +59,7 @@ void print_general_usage() {
   llvm::errs() << "netCDF:\t (Set CATO_HINT_NETCDF environment variable)\n";
   llvm::errs() << "Lustre:\t (Set CATO_HINT_LUSTRE environment variable)\n";
   llvm::errs() << "\n################################\n\n";
+  llvm::errs() << "\nTODO: Verweis darauf, dass Asuführung sich ändert! Ist wichtig und sollte ganz oben stehen\n\n";
 }
 
 void print_usage_netcdf() {
@@ -87,6 +88,7 @@ void print_hints_lustre() {
 
 void print_hints_mpi() {
   llvm::errs() << "TODO: Verweis auf MPI-3.1 one-sided operations sowie Beispiel-Repos\n";
+  llvm::errs() << "TODO: Hinweis auf optimale Verwendung von Prozess-Zahl\n";
 }
 
 void print_hints_netcdf() {
