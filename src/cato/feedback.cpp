@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Wednesday, 10th May 2023 4:10:32 pm
+ * Last Modified: Wednesday, 10th May 2023 6:12:16 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -79,7 +79,8 @@ void print_usage_netcdf() {
   llvm::errs() << "\tSet how additional error checks shall be performed. Available options are:\n";
   llvm::errs() << "\t\tWARN\tIf the error value of a netCDF function is not 0, a warning is printed (default)\n";
   llvm::errs() << "\t\tERROR\tIf the error value of a netCDF function is not 0, the application is terminated\n";
-  llvm::errs() << "\t\tOFF\tNo additional error checking is performed\n";
+  llvm::errs() << "\t\tOFF\tResults of erreor checking are ignored\n";
+  llvm::errs() << "\t\tDISABLE\tNo error checking functionality is added (needs to be set before the compilation!)\n";
 }
 
 void print_hints_lustre() {

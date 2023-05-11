@@ -25,6 +25,7 @@ def run_command(command, verbose=False):
 # ---------------------------------------------------------------------------- #
 #                                  PARSE ARGS                                  #
 # ---------------------------------------------------------------------------- #
+
 parser = argparse.ArgumentParser(description="Compile the given program with CATO")
 parser.add_argument("infile", type=str, help="input file")
 parser.add_argument("-o", "--output", default="translated", help="Name of output file")
@@ -39,15 +40,19 @@ arguments = parser.parse_args()
 if arguments.logging:
     arg_logging = "-mllvm --cato-logging"
 
-# --------------------------------- CXXFLAGS --------------------------------- #
+# ------------------------------ CFLAGS/CXXFLAGS ----------------------------- #
+
 if "CXXFLAGS" in os.environ:
     arg_cxxflags = os.environ["CXXFLAGS"]
 else:
     arg_cxxflags = ""
+if "CFLAGS" in os.environ:
+    arg_cxxflags += os.environ["CFLAGS"]
 arg_cxxflags += " -ggdb -Og -fopenmp -Wunknown-pragmas "
 arg_cxxflags += " " + run_command("nc-config --cflags")[1]
 
 # --------------------------------- LIBRARIES -------------------------------- #
+
 if "LIBS" in os.environ:
     arg_libs = os.environ["LIBS"]
 else:
@@ -126,6 +131,7 @@ rm_cmd = "rm " + arguments.output + ".o"
 # ---------------------------------------------------------------------------- #
 #                                RUN COMPILATION                               #
 # ---------------------------------------------------------------------------- #
+
 run_command(compile_cmd)
 run_command(unmodified_ir_cmd, False)
 run_command(modified_ir_cmd, False)
