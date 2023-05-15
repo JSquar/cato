@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Friday, 5th May 2023 7:09:54 pm
+ * Last Modified: Monday, 15th May 2023 5:15:48 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -42,7 +42,7 @@ bool check_usage_requests() {
     print_hints_lustre();
   }  
 
-  if(env_cato_help | env_cato_use_netcdf | env_cato_hint_netcdf | env_cato_hint_mpi | env_cato_hint_lustre) {
+  if(env_cato_help || env_cato_use_netcdf || env_cato_hint_netcdf || env_cato_hint_mpi || env_cato_hint_lustre) {
     help_requested = true;
   }
   return help_requested;
@@ -50,7 +50,7 @@ bool check_usage_requests() {
 
 void print_general_usage() {
   llvm::errs() << "################################\n";
-  llvm::errs() << "CATO offers optional behaviour, which can be enabled by the user, because it depends on the use case if it is useful.\n"
+  llvm::errs() << "CATO offers optional behaviour, which can be enabled by the user, because it depends on the use case if it is useful.\n";
   llvm::errs() << "There are instructions available for the following topics:\n\n";  
   llvm::errs() << "netCDF:\t (Set CATO_USE_NETCDF environment variable)\n";
   llvm::errs() << "\n################################\n\n";
@@ -62,14 +62,14 @@ void print_general_usage() {
 }
 
 void print_usage_netcdf() {
-  llvm::errs() << "Environment variables to enable optional netCDF features"
-  llvm::errs() << "\n################################\n\n";
+  llvm::errs() << "Environment variables to enable optional netCDF features\n";
+  llvm::errs() << "################################\n\n";
   llvm::errs() << "\tCATO_NC_PAR_MODE";
   llvm::errs() << "\tChoose collective mode for parallel netCDF4. Available options are:\n";
   llvm::errs() << "\t\tCOLLECTIVE\tIO is performed collectively by all processes (potential better I/O performance)\n";
   llvm::errs() << "\t\tINDEPENDENT\tEach process can independently perform I/O (not recommend, currently no use case in replacement code)\n";
   llvm::errs() << "\n################################\n\n";
-  llvm::errs() << "Compression"
+  llvm::errs() << "Compression\n";
   llvm::errs() << "\tCATO_NC_DEFLATE TODO";
 }
 
