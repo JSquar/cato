@@ -18,9 +18,13 @@ def run_command(command, verbose=False):
             print(output.strip())
             result += output.strip()
     rc = process.poll()
-    # Todo das muss überarbeitet werden, das ist nur quick and dirty
+    # Todo das muss überarbeitet werden, das ist nur quicky and dirty
     return rc, result
 
+
+# ---------------------------------------------------------------------------- #
+#                                  PARSE ARGS                                  #
+# ---------------------------------------------------------------------------- #
 
 parser = argparse.ArgumentParser(description="Compile the given program with CATO")
 parser.add_argument("infile", type=str, help="input file")
@@ -33,34 +37,47 @@ parser.add_argument(
 )
 
 arguments = parser.parse_args()
-
-# flags von nc-config --cflags und llvm-config-cxxflags
-CXXFLAGS = " "
-CXXFLAGS += " -ggdb -Og -fopenmp -Wunknown-pragmas "
-# CXXFLAGS += " " + run_command("llvm-config --cflags")[1]
-CXXFLAGS += " " + run_command("nc-config --cflags")[1]
-PASS_PATH = os.environ["CATO_ROOT"] + "/build/src/cato/libCatoPass.so"
-RTLIB_DIR = os.environ["CATO_ROOT"] + "/build/src/cato/rtlib"
-LOGGING = ""
-
-# flags aus nc-config --libs und llvm-config --libs
-LIBS = "-lm"
-# LIBS = run_command("llvm-config --libs")[1]
-LIBS += " " + run_command("nc-config --libs")[1]
-
 if arguments.logging:
-    LOGGING = "-mllvm --cato-logging"
+    arg_logging = "-mllvm --cato-logging"
+
+# ------------------------------ CFLAGS/CXXFLAGS ----------------------------- #
+
+if "CXXFLAGS" in os.environ:
+    arg_cxxflags = os.environ["CXXFLAGS"]
+else:
+    arg_cxxflags = ""
+if "CFLAGS" in os.environ:
+    arg_cxxflags += os.environ["CFLAGS"]
+arg_cxxflags += " -ggdb -Og -fopenmp -Wunknown-pragmas "
+arg_cxxflags += " " + run_command("nc-config --cflags")[1]
+
+# --------------------------------- LIBRARIES -------------------------------- #
+
+if "LIBS" in os.environ:
+    arg_libs = os.environ["LIBS"]
+else:
+    arg_libs = ""
+arg_libs += " " + run_command("nc-config --libs")[1]
+
+# ----------------------------------- PATHS ---------------------------------- #
+arg_pass_dir = os.environ["CATO_ROOT"] + "/build/src/cato/libCatoPass.so"
+arg_rtlib_dir = os.environ["CATO_ROOT"] + "/build/src/cato/rtlib"
+
+
+# ---------------------------------------------------------------------------- #
+#                          DEFINE COMPILATION COMMANDS                         #
+# ---------------------------------------------------------------------------- #
 
 compile_cmd = (
     "mpicc -cc=clang "
-    + CXXFLAGS
+    + arg_cxxflags
     + " -o "
     + arguments.output
     + ".o "
     + "-Xclang -load -Xclang "
-    + PASS_PATH
+    + arg_pass_dir
     + " "
-    + LOGGING
+    + arg_logging
     + " -c "
     + arguments.infile
     + " -flegacy-pass-manager"
@@ -68,7 +85,7 @@ compile_cmd = (
 
 unmodified_ir_cmd = (
     "mpicc -cc=clang "
-    + CXXFLAGS
+    + arg_cxxflags
     + "  "
     + arguments.infile
     + " -flegacy-pass-manager -S -emit-llvm"
@@ -80,7 +97,7 @@ modified_ir_cmd = (
     + arguments.output
     + "_modified.ll"
     + " -load "
-    + PASS_PATH
+    + arg_pass_dir
     + " -Cato "
     + " "
     + arguments.infile.split(".")[0]
@@ -90,26 +107,30 @@ modified_ir_cmd = (
 
 link_cmd = (
     "mpicc -cc=clang -v "
-    + CXXFLAGS
+    + arg_cxxflags
     + " -o "
     + arguments.output
     + "_modified.x "
     + arguments.output
     + ".o "
-    + RTLIB_DIR
+    + arg_rtlib_dir
     + "/libCatoRuntime.so "
     + "-Wl,-rpath,"
-    + RTLIB_DIR
+    + arg_rtlib_dir
     + " "
-    + LIBS
+    + arg_libs
 )
 
 rm_cmd = "rm " + arguments.output + ".o"
 
-# cmd_create_ir = f"mpicc -cc=clang -S -emit-llvm {CXXFLAGS} {arguments.infile} -flegacy-pass-manager"
-# cmd_create_modified_ir = f"opt -load-pass-plugin={RTLIB_DIR + '/libCatoRuntime.so'} -passes=Cato {file_ir} -S -o {file_ir_modified}"
+# cmd_create_ir = f"mpicc -cc=clang -S -emit-llvm {arg_cxxflags} {arguments.infile} -flegacy-pass-manager"
+# cmd_create_modified_ir = f"opt -load-pass-plugin={arg_rtlib_dir + '/libCatoRuntime.so'} -passes=Cato {file_ir} -S -o {file_ir_modified}"
 # cmd_create_modified_bc = f"llvm-as {file_ir_modified} -o {file_bc}"
 # cmd_link = f"mpicc -cc=clang -o {file_output} {file_bc} {rtlib_location}"
+
+# ---------------------------------------------------------------------------- #
+#                                RUN COMPILATION                               #
+# ---------------------------------------------------------------------------- #
 
 run_command(compile_cmd)
 run_command(unmodified_ir_cmd, False)
