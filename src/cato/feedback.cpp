@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Monday, 15th May 2023 5:39:32 pm
+ * Last Modified: Monday, 15th May 2023 5:40:41 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -65,7 +65,7 @@ void print_general_usage() {
 void print_usage_netcdf() {
   llvm::errs() << "Environment variables to enable optional netCDF features\n";
   llvm::errs() << "################################\n\n";
-  llvm::errs() << "IO mode:\n"
+  llvm::errs() << "IO mode:\n";
   llvm::errs() << "\tCATO_NC_PAR_MODE\n";
   llvm::errs() << "\tChoose collective mode for parallel netCDF4. Available options are:\n";
   llvm::errs() << "\t\tCOLLECTIVE\tIO is performed collectively by all processes, which potentially offers better I/O performance (default)\n";
@@ -74,7 +74,7 @@ void print_usage_netcdf() {
   llvm::errs() << "Compression\n";
   llvm::errs() << "\tCATO_NC_DEFLATE TODO";
   llvm::errs() << "\n################################\n\n";
-  llvm::errs() << "Sanitizer:\n"
+  llvm::errs() << "Sanitizer:\n";
   llvm::errs() << "\tCATO_SANITIZER_NC_ERROR";
   llvm::errs() << "\tSet how additional error checks shall be performed. Available options are:\n";
   llvm::errs() << "\t\tWARN\tIf the error value of a netCDF function is not 0, a warning is printed (default)\n";

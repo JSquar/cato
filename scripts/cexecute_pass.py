@@ -39,6 +39,8 @@ parser.add_argument(
 arguments = parser.parse_args()
 if arguments.logging:
     arg_logging = "-mllvm --cato-logging"
+else:
+    arg_logging = ""
 
 # ------------------------------ CFLAGS/CXXFLAGS ----------------------------- #
 
