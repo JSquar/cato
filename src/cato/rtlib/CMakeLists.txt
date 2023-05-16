@@ -31,7 +31,7 @@ target_link_libraries(CatoRuntime ${NETCDF_LIBRARIES})
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
 llvm_map_components_to_libnames(llvm_libs support core irreader)
-#target_link_libraries(CatoRuntime ${llvm_libs})
+target_link_libraries(CatoRuntime ${llvm_libs})
 
 if(MPI_COMPILE_FLAGS)
   set_target_properties(CatoRuntime PROPERTIES
