@@ -50,7 +50,7 @@ else:
     arg_cxxflags = ""
 if "CFLAGS" in os.environ:
     arg_cxxflags += os.environ["CFLAGS"]
-arg_cxxflags += " -ggdb -Og -fopenmp -Wunknown-pragmas "
+arg_cxxflags += " -O2 -fopenmp -Wunknown-pragmas "
 arg_cxxflags += " " + run_command("nc-config --cflags")[1]
 
 # --------------------------------- LIBRARIES -------------------------------- #
