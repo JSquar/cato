@@ -2,7 +2,7 @@
 ###
 # Author: Michael Blesel
 # -----
-#Last Modified: Sunday, 30th April 2023 2:45:58 pm
+#Last Modified: Wednesday, 17th May 2023 9:38:27 am
 #Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
 # -----
 # Copyright (c) 2020 Michael Blesel
@@ -17,6 +17,8 @@
 RTLIBFLAGS=" -O2 -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
 RTLIB_SRC="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
 RTLIB_OUT="${CATO_ROOT}/build/rtlib.bc"
+export CC=clang
+export CXX=clang++
 
 # SRC_PATH="${CATO_ROOT}/src"
 SRC_PATH="${CATO_ROOT}"

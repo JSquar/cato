@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Monday, 15th May 2023 5:40:41 pm
+ * Last Modified: Wednesday, 17th May 2023 3:49:29 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -97,6 +97,9 @@ void print_hints_netcdf() {
   llvm::errs() << "Tipps aus Compression 101 (https://www.unidata.ucar.edu/blogs/developer/entry/netcdf_compression)\n";
   llvm::errs() << "Auszug mit den wichtigsten Punkten aus Compression 101\n";
   llvm::errs() << "Verweis auf interessante Kompressoren sowie zugehörige Links\n";
+  llvm::errs() << "Chunking:\n";
+  llvm::errs() << "\tBedeutung:\thttps://www.unidata.ucar.edu/blogs/developer/entry/chunking_data_why_it_matters\n";
+  llvm::errs() << "\tChunk Shape:\thttps://www.unidata.ucar.edu/blogs/developer/en/entry/chunking_data_choosing_shapes\n";
 }
 
 void print_usage_decompilation() {
