@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Wednesday, 26th April 2023 2:06:01 pm
+ * Last Modified: Thursday, 18th May 2023 10:55:52 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -29,5 +29,8 @@ std::vector<std::string>::size_type
 // the second environment variable at the same position
 std::optional<std::string> get_paired_value(std::string, std::string,
                                             std::string);
+
+// Check if env var is set and try to parse it into int
+std::optional<size_t> parse_env_size_t(const std::string &);
 
 #endif /* ENVIRONMENT_INTERACTION */

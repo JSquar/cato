@@ -2,7 +2,7 @@
  * File: rtlib.cpp
  * 
  * -----
- * Last Modified: Thursday, 27th April 2023 9:15:43 am
+ * Last Modified: Thursday, 18th May 2023 11:34:53 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -21,9 +21,10 @@
 
 #include <cstdarg>
 #include <iostream>
-
+#include <optional>
 #include "mpi_mutex.h"
 #include <sys/stat.h>
+#include "../environment_interaction.h"
 // #include <fstream>
 // #include <llvm/Support/raw_ostream.h>
 
@@ -441,10 +442,29 @@ int io_put_vara_int(int ncid, int varid, long int num_elements, int *buffer) {
 }
 
 int io_def_var(int ncid, const char *name, int xtype, int ndims, const int *dimidsp, int *varidp ) {
-    int err;
+    int err = 0;
 
     err = nc_def_var(ncid, name, xtype, ndims, dimidsp, varidp);
+    std::optional<size_t> chunking_value = parse_env_size_t("CATO_NC_CHUNKING");
+    if (chunking_value.has_value())
+    {
+        std::cout<<"Set user-defined chunking\n";
+        err += io_def_var_chunking(ncid, *varidp, NC_CHUNKED, xtype, chunking_value.value());
+    }
+    else {
+        std::cout<<"Set automatic chunking to 4GiB\n";        
+        err += io_def_var_chunking(ncid, *varidp, NC_CHUNKED, xtype, 4*1024*1024*1024L);
+    }
+    
 
     check_error_code(err, "io_def_var (netCDF backend)"); 
     return err;
+}
+
+int io_def_var_chunking(int ncid, int varid, int storage, int datatype, size_t bytes) {
+    int err = 0;
+    size_t chunksize[1] = {bytes}; //TODO allow multiple dimensions
+    std::cout << "Set chunksize to " << chunksize[0] << "\n";
+    err = nc_def_var_chunking(ncid, varid, storage, chunksize);
+    return err;   
 }

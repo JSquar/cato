@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Wednesday, 17th May 2023 3:49:29 pm
+ * Last Modified: Thursday, 18th May 2023 8:45:05 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -73,6 +73,10 @@ void print_usage_netcdf() {
   llvm::errs() << "\n################################\n\n";
   llvm::errs() << "Compression\n";
   llvm::errs() << "\tCATO_NC_DEFLATE TODO";
+  llvm::errs() << "\n################################\n\n";
+  llvm::errs() << "Chunking\n";
+  llvm::errs() << "\tCATO_NC_CHUNKING\n";
+  llvm::errs() << "\tAdd chunking calls to variables (Value is interepreted as chunk size, 0 enables automatic determination of chunk size)\n";
   llvm::errs() << "\n################################\n\n";
   llvm::errs() << "Sanitizer:\n";
   llvm::errs() << "\tCATO_SANITIZER_NC_ERROR";

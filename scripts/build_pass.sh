@@ -2,7 +2,7 @@
 ###
 # Author: Michael Blesel
 # -----
-#Last Modified: Wednesday, 17th May 2023 9:38:27 am
+#Last Modified: Thursday, 18th May 2023 11:04:58 pm
 #Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
 # -----
 # Copyright (c) 2020 Michael Blesel
@@ -34,7 +34,7 @@ cd ${SRC_PATH}/build
 
 # (mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_PATH)& pid=$!
 echo "Build collection of external C++ functions"
-mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -o $RTLIB_OUT $RTLIB_SRC
+mpicxx -cxx=clang++ $RTLIBFLAGS -emit-llvm -c -O2 -std=c++17 -o $RTLIB_OUT $RTLIB_SRC
 
 #build the pass
 echo "Build LLVM pass and tests"

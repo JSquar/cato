@@ -35,3 +35,4 @@
 **/.vscode
 **/build
 src/test-suite/.lit_test_times.txt
+microtests/

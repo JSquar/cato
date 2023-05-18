@@ -15,6 +15,8 @@ add_library(CatoRuntime MODULE
     mpi_mutex.cpp
     CatoRuntimeLogger.h
     CatoRuntimeLogger.cpp
+    ../environment_interaction.h
+    ../environment_interaction.cpp
 )
 
 find_package(LLVM REQUIRED CONFIG)
@@ -56,6 +58,6 @@ endif()
 target_compile_features(CatoRuntime PRIVATE cxx_range_for cxx_auto_type cxx_std_17)
 
 set_target_properties(CatoRuntime PROPERTIES
-	COMPILE_FLAGS "-O0 -fno-rtti -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable"
+	COMPILE_FLAGS "-O2 -fno-rtti -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable"
 )
 

@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Tuesday, 25th April 2023 6:32:12 pm
+ * Last Modified: Thursday, 18th May 2023 9:43:08 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -282,5 +282,9 @@ int io_get_vara_int(int, int, long int, int *);
 int io_close(int);
 
 int io_put_vara_int(int, int, long int, int *);
+
+int io_def_var(int, const char *, int, int, const int *, int *);
+
+int io_def_var_chunking(int, int, int, int, size_t);
 
 #endif

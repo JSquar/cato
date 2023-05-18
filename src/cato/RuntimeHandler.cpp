@@ -210,7 +210,7 @@ void RuntimeHandler::adjust_netcdf_regions()
     std::vector<llvm::User *>  users_nc_create = get_function_users(*_M, "nc_create");
     llvm::errs() << "Found " << users_nc_open.size() << " many nc_open calls\n"; //TODO
     llvm::errs() << "Found " << users_nc_create.size() << " many nc_create calls\n"; //TODO
-    if (users_nc_open.size() == 0)
+    if (users_nc_open.size() == 0 && users_nc_create.size() == 0)
     {
         llvm::errs() << "Did not find any netCDF output file. Will skip therefore netCDF part\n";
         return;
