@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Friday, 19th May 2023 6:38:34 pm
+ * Last Modified: Friday, 19th May 2023 9:05:14 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -73,7 +73,13 @@ void print_usage_netcdf() {
   llvm::errs() << "\n################################\n\n";
   llvm::errs() << "Compression\n";
   llvm::errs() << "\tCATO_NC_CMPR_DEFLATE\tdeflate_level[:shuffle]";
-  llvm::errs() << "\tCATO_NC_CMPR_QUANTIZE TODO";
+  llvm::errs() << "\tCATO_NC_CMPR_QUANTIZE\tnsd:mode\n";
+  llvm::errs() << "\t\tnsd:\tNumber of significant digits (at least 1)\n";
+  llvm::errs() << "\t\tmode:\tQuantization mode\n";
+  llvm::errs() << "\t\t\t0:\tNC_NOQUANTIZE\n";
+  llvm::errs() << "\t\t\t1:\tNC_QUANTIZE_BITGROOM\n";
+  llvm::errs() << "\t\t\t2:\tNC_QUANTIZE_GRANULARBR\n";
+  llvm::errs() << "\t\t\t3:\tNC_QUANTIZE_BITROUND\n";
   llvm::errs() << "\n################################\n\n";
   llvm::errs() << "Chunking\n";
   llvm::errs() << "\tCATO_NC_CHUNKING\n";

@@ -2,7 +2,7 @@
  * File: rtlib.cpp
  * 
  * -----
- * Last Modified: Friday, 19th May 2023 7:00:44 pm
+ * Last Modified: Friday, 19th May 2023 9:14:26 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -521,6 +521,54 @@ int io_set_compression(int ncid, int varid) {
     int err = 0;
 
     // Check which compressor shall be used    
+    
+    /* -------------------------------- QUANTIZE -------------------------------- */
+    if (std::getenv("CATO_NC_CMPR_QUANTIZE"))
+    {
+        llvm::errs() << "Apply lossy compression preprocessing on data\n";
+        std::vector<std::string> quantize_values = parse_env_list("CATO_NC_CMPR_QUANTIZE");
+        if(quantize_values.size() != 2) {
+            llvm::errs() << "CATO_NC_CMPR_QUANTIZE should have two parameters. Skip compression step!\n";
+            return 1;
+        }
+        int quantize_mode = std::stoi(quantize_values.at(0));
+        int quantize_nsd = std::stoi(quantize_values.at(1));
+
+        if(quantize_mode == 0) {
+            quantize_mode = NC_NOQUANTIZE;
+            llvm::errs() << "Do not apply quantization preprocessing\n";            
+        }
+        else {
+            if(quantize_mode == 1) {
+                quantize_mode = NC_QUANTIZE_BITGROOM;
+            }
+            else if (quantize_mode == 2)
+            {
+                quantize_mode = NC_QUANTIZE_GRANULARBR;
+            }
+            else if (quantize_mode == 3)
+            {
+                quantize_mode = NC_QUANTIZE_BITROUND;
+            }
+            else {
+                llvm::errs() << "Unknown quantize mode: " << quantize_mode << "\n";
+                return 1;
+            }
+
+            if(quantize_nsd < 1 ) {
+                llvm::errs() << "Invalid number of significant digits ("<< quantize_nsd << ")for quantize\n";
+                return 1;
+            }
+
+            err = nc_def_var_quantize(ncid, varid, quantize_mode, quantize_nsd);
+            if (err != NC_NOERR) {
+                fprintf(stderr, "Error setting lossy quantize preprocessing: %s\n", nc_strerror(err));
+                return err;
+            }
+        }
+    }
+
+    /* --------------------------------- DEFLATE -------------------------------- */
     if (std::getenv("CATO_NC_CMPR_DEFLATE"))
     {
         llvm::errs() << "Apply deflate compression on data\n";
