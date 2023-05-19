@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Thursday, 18th May 2023 10:55:52 pm
+ * Last Modified: Friday, 19th May 2023 3:52:38 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -31,6 +31,6 @@ std::optional<std::string> get_paired_value(std::string, std::string,
                                             std::string);
 
 // Check if env var is set and try to parse it into int
-std::optional<size_t> parse_env_size_t(const std::string &);
+std::optional<std::size_t> parse_env_size_t(const std::string &);
 
 #endif /* ENVIRONMENT_INTERACTION */

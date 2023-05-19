@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Thursday, 18th May 2023 8:45:05 pm
+ * Last Modified: Friday, 19th May 2023 6:38:34 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -72,11 +72,15 @@ void print_usage_netcdf() {
   llvm::errs() << "\t\tINDEPENDENT\tEach process can independently perform I/O (not recommend, currently no use case in replacement code)\n";
   llvm::errs() << "\n################################\n\n";
   llvm::errs() << "Compression\n";
-  llvm::errs() << "\tCATO_NC_DEFLATE TODO";
+  llvm::errs() << "\tCATO_NC_CMPR_DEFLATE\tdeflate_level[:shuffle]";
+  llvm::errs() << "\tCATO_NC_CMPR_QUANTIZE TODO";
   llvm::errs() << "\n################################\n\n";
   llvm::errs() << "Chunking\n";
   llvm::errs() << "\tCATO_NC_CHUNKING\n";
   llvm::errs() << "\tAdd chunking calls to variables (Value is interepreted as chunk size, 0 enables automatic determination of chunk size)\n";
+  llvm::errs() << "Alignment\n";
+  llvm::errs() << "\tCATO_NC_ALIGNMENT\n";
+  llvm::errs() << "\tData is aligned on an address, which is a multiple of this specific block size and should match the system disk block size or a multiple of it (default: 4096)\n";
   llvm::errs() << "\n################################\n\n";
   llvm::errs() << "Sanitizer:\n";
   llvm::errs() << "\tCATO_SANITIZER_NC_ERROR";

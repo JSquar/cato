@@ -120,15 +120,16 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.io_create_par, "_Z13io_create_parPKciPi");
     match_function(&functions.io_var_par_access, "_Z17io_var_par_accessiii");
     match_function(&functions.io_inq_varid, "_Z12io_inq_varidiPcPi");
-    match_function(&functions.io_get_var_int, "_Z14io_get_var_intiiPi");
-    // match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiiiPi");
+    // match_function(&functions.io_get_var_int, "_Z14io_get_var_intiiPi");
+    // match_function(&functions.io_get_var_float, "_Z16io_get_var_floatiiPi");
     match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiilPi");
-    // match_function(&functions.io_get_vara_int2, "_Z16io_get_vara_int2v");
-    // match_function(&functions.io_get_vara_int1a, "_Z17io_get_vara_int1ai");
-    // match_function(&functions.io_get_vara_int1b, "_Z17io_get_vara_int1bPi");
+    match_function(&functions.io_get_vara_float, "_Z17io_get_vara_floatiilPi");
     match_function(&functions.io_close, "_Z8io_closei");
     match_function(&functions.io_put_vara_int, "_Z15io_put_vara_intiilPi");
+    match_function(&functions.io_put_vara_float, "_Z17io_put_vara_floatiilPf");
     match_function(&functions.io_def_var, "_Z10io_def_variPKciiPKiPi");
+
+    
 
     return true;
 }
@@ -254,10 +255,18 @@ void RuntimeHandler::adjust_netcdf_regions()
 
     /* ----------- parallel access via netCDF partial access functions ---------- */
     std::vector<llvm::User *>  users_get_var_int = get_function_users(*_M, "nc_get_var_int");
+    std::vector<llvm::User *>  users_get_var_float = get_function_users(*_M, "nc_get_var_float");
+
     std::vector<llvm::User *>  users_put_var_int = get_function_users(*_M, "nc_put_var_int");
+    std::vector<llvm::User *>  users_put_var_float = get_function_users(*_M, "nc_put_var_float");
+    
     std::vector<llvm::User *>  users_def_var = get_function_users(*_M, "nc_def_var");
     std::vector<llvm::User *>  users_shared_memory = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
+    
     llvm::errs() << "Found " << users_get_var_int.size() << " many nc_get_var_int calls\n"; //TODO
+    llvm::errs() << "Found " << users_get_var_float.size() << " many nc_get_var_float calls\n"; //TODO
+    llvm::errs() << "Found " << users_put_var_int.size() << " many nc_put_var_int calls\n"; //TODO
+    llvm::errs() << "Found " << users_put_var_float.size() << " many nc_put_var_float calls\n"; //TODO
     llvm::errs() << "Found " << users_shared_memory.size() << " shared memory calls\n"; //TODO
     llvm::errs() << "Found " << users_def_var.size() << " nc_def_var calls\n"; //TODO
 
@@ -314,6 +323,58 @@ void RuntimeHandler::adjust_netcdf_regions()
 
             builder.SetInsertPoint(call);
             llvm::CallInst *new_call = builder.CreateCall(functions.io_put_vara_int, args);
+            call->replaceAllUsesWith(new_call);
+            call->eraseFromParent();
+
+        }
+    }
+
+    // Replace nc_get_var_int
+    for (auto &user : users_get_var_float)
+    {
+
+        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+        {   
+
+
+            llvm::Value *ncid = call->getArgOperand(0);
+            llvm::Value *varid = call->getArgOperand(1);
+            llvm::Value *buffer = call->getArgOperand(2);
+
+            SmallVector<Value *> args;//,args2,args3,args4;
+            args.push_back(ncid);
+            args.push_back(varid);
+            args.push_back(num_bytes);
+            args.push_back(buffer);
+
+            builder.SetInsertPoint(call);
+            llvm::CallInst *new_call = builder.CreateCall(functions.io_get_vara_float, args);
+            call->replaceAllUsesWith(new_call);
+            call->eraseFromParent();
+
+        }
+    }
+
+    // Replace nc_put_var_int
+    for (auto &user : users_put_var_float)
+    {
+
+        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+        {   
+
+
+            llvm::Value *ncid = call->getArgOperand(0);
+            llvm::Value *varid = call->getArgOperand(1);
+            llvm::Value *buffer = call->getArgOperand(2);
+
+            SmallVector<Value *> args;//,args2,args3,args4;
+            args.push_back(ncid);
+            args.push_back(varid);
+            args.push_back(num_bytes);
+            args.push_back(buffer);
+
+            builder.SetInsertPoint(call);
+            llvm::CallInst *new_call = builder.CreateCall(functions.io_put_vara_float, args);
             call->replaceAllUsesWith(new_call);
             call->eraseFromParent();
 

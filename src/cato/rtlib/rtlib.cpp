@@ -2,7 +2,7 @@
  * File: rtlib.cpp
  * 
  * -----
- * Last Modified: Thursday, 18th May 2023 11:34:53 pm
+ * Last Modified: Friday, 19th May 2023 6:43:20 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -253,6 +253,10 @@ int io_open(const char *path, int omode, int *ncidp)
 int io_open_par(const char *path, int omode, int *ncidp)
 {
     int err;
+
+    // determine alignment
+    std::size_t alignment = 4096;
+    // if()
     if (omode == 0)
     {
         // std::cerr << "Pfad: " << path << "\n";   
@@ -345,34 +349,6 @@ int io_inq_varid(int ncid, char *name, int *varidp)
     return err;
 }
 
-int io_get_var_int(int ncid, int varid, int *buffer)
-{
-    int err;
-
-    err = nc_get_var_int(ncid, varid, buffer);
-    Debug(check_error_code(err, "io_get_var_int (netCDF backend)"););
-    return err;
-}
-
-// int io_get_vara_int2()
-// {
-//     return 0;
-// }
-
-// int io_get_vara_int1a(int eingabe)
-// {
-//     llvm::errs() << eingabe << "\n";
-//     return eingabe;
-// }
-
-// int io_get_vara_int1b(int *eingabe)
-// {
-//     llvm::errs() << eingabe << "\n";
-//     return *eingabe;
-// }
-
-// int io_get_vara_int(int ncid, int varid, const size_t *startp, const size_t *countp,
-//                     int *buffer)
 int io_get_vara_int(int ncid, int varid, long int num_elements, int *buffer)
 {
     int err;
@@ -406,6 +382,30 @@ int io_get_vara_int(int ncid, int varid, long int num_elements, int *buffer)
     return err;
 }
 
+int io_get_vara_float(int ncid, int varid, long int num_elements, float *buffer)
+{
+    int err;
+    Debug(llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n";); //TODO
+
+    size_t start, count;
+    count = num_elements / MPI_SIZE / 4;
+    if (MPI_RANK < num_elements % MPI_SIZE)
+    {
+        count += 1;
+    }
+    // count = 10;
+    start = count * MPI_RANK;
+    if (MPI_RANK >= num_elements % MPI_SIZE)
+    {
+        start += num_elements % MPI_SIZE;
+    }
+
+    err = nc_get_vara_float(ncid, varid, &start, &count, buffer);
+    check_error_code(err, "io_get_vara_float (netCDF backend)");
+
+    return err;
+}
+
 int io_close(int ncid)
 {
 
@@ -417,7 +417,6 @@ int io_close(int ncid)
     return err;
 }
 
-//  	int ncid, int varid, const size_t *startp, const size_t *countp, const int *op 
 int io_put_vara_int(int ncid, int varid, long int num_elements, int *buffer) {
     int err;
     size_t start, count;
@@ -438,22 +437,49 @@ int io_put_vara_int(int ncid, int varid, long int num_elements, int *buffer) {
     check_error_code(err, "io_put_vara_int (netCDF backend)"); 
 
     return err;
-
 }
+
+int io_put_vara_float(int ncid, int varid, long int num_elements, float *buffer) {
+    int err;
+    size_t start, count;
+
+    count = num_elements / MPI_SIZE / 4;
+    if (MPI_RANK < num_elements % MPI_SIZE)
+    {
+        count += 1;
+    }
+    // count = 10;
+    start = count * MPI_RANK;
+    if (MPI_RANK >= num_elements % MPI_SIZE)
+    {
+        start += num_elements % MPI_SIZE;
+    }
+
+    err = nc_put_vara_float(ncid, varid, &start, &count, buffer);
+    check_error_code(err, "io_put_vara_int (netCDF backend)"); 
+
+    llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
+    int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
+
+    llvm::errs() << "Rang "<< MPI_RANK << ": ncid " << ncid << "\n" << "Rang "<< MPI_RANK << ": varid " << varid << "\n" << "Rang "<< MPI_RANK << ": start " << start << "\n" << "Rang "<< MPI_RANK << ": count " << count << "\n" << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
+
+    return err;
+}
+
 
 int io_def_var(int ncid, const char *name, int xtype, int ndims, const int *dimidsp, int *varidp ) {
     int err = 0;
 
     err = nc_def_var(ncid, name, xtype, ndims, dimidsp, varidp);
-    std::optional<size_t> chunking_value = parse_env_size_t("CATO_NC_CHUNKING");
+    std::optional<std::size_t> chunking_value = parse_env_size_t("CATO_NC_CHUNKING");
     if (chunking_value.has_value())
     {
         std::cout<<"Set user-defined chunking\n";
         err += io_def_var_chunking(ncid, *varidp, NC_CHUNKED, xtype, chunking_value.value());
+        err += io_set_compression(ncid, varid);
     }
     else {
-        std::cout<<"Set automatic chunking to 4GiB\n";        
-        err += io_def_var_chunking(ncid, *varidp, NC_CHUNKED, xtype, 4*1024*1024*1024L);
+        std::cout<<"Set no chunking\n";        
     }
     
 
@@ -464,7 +490,46 @@ int io_def_var(int ncid, const char *name, int xtype, int ndims, const int *dimi
 int io_def_var_chunking(int ncid, int varid, int storage, int datatype, size_t bytes) {
     int err = 0;
     size_t chunksize[1] = {bytes}; //TODO allow multiple dimensions
-    std::cout << "Set chunksize to " << chunksize[0] << "\n";
+    if(chunksize[0] > 4*1024*1024*1024L) {
+        llvm::errs() << "Chunksize of " << chunksize[0] << " is too big, set chunk size to max value 4GiB\n";
+        chunksize[0] = 4*1024*1024*1024L;
+    }
+    std::cout << "Use chunksize " << chunksize[0] << "\n";
     err = nc_def_var_chunking(ncid, varid, storage, chunksize);
     return err;   
+}
+
+int io_set_compression(int ncid, int varid) {
+    int err = 0;
+
+    // Check which compressor shall be used    
+    if (std::getenv("CATO_NC_CMPR_DEFLATE"))
+    {
+        llvm::errs() << "Apply deflate compression on data\n";
+        std::vector<std::string> deflate_values = parse_env_list("CATO_NC_CMPR_DEFLATE");
+        if(deflate_values.size() > 2) {
+            llvm::errs() << "CATO_NC_CMPR_DEFLATE should have at least one and at max two parameters. Skip compression step!\n";
+            return 1;
+        }
+        else {
+            int deflate_level = std::stoi(deflate_values.at(0));
+            if(deflate_level < 0 || deflate_level > 9) {
+                llvm::errs() << "Invalid deflate compression level " << deflate_level << "\n";
+                return 1;
+            }
+            else {
+                int shuffle = 0;
+                if(deflate_values.size() == 2) {
+                    shuffle = std::stoi(deflate_values.at(1));
+                }
+
+                    err = nc_def_var_deflate(ncid, varid, shuffle, 1, deflate_level);
+                    if (err != NC_NOERR) {
+                        fprintf(stderr, "Error setting compression filter deflate: %s\n", nc_strerror(err));
+                        return err;
+                    }
+            }
+        }
+    }
+    return err;
 }

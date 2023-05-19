@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Wednesday, 26th April 2023 9:42:17 am
+ * Last Modified: Friday, 19th May 2023 2:51:48 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2020 Michael Blesel
@@ -66,13 +66,12 @@ struct external_functions
     llvm::Function *io_create_par;
     llvm::Function *io_var_par_access;
     llvm::Function *io_inq_varid;
-    llvm::Function *io_get_var_int;
+    // llvm::Function *io_get_var_int;
     llvm::Function *io_get_vara_int;
-    // llvm::Function *io_get_vara_int2;
-    // llvm::Function *io_get_vara_int1a;
-    // llvm::Function *io_get_vara_int1b;
+    llvm::Function *io_get_vara_float;
     llvm::Function *io_close;
     llvm::Function *io_put_vara_int;
+    llvm::Function *io_put_vara_float;
     llvm::Function *io_def_var;
 };
 

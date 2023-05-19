@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Thursday, 18th May 2023 9:30:51 pm
+ * Last Modified: Friday, 19th May 2023 4:04:54 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -15,12 +15,17 @@
 #include <iterator>
 #include "environment_interaction.h"
 #include <iostream>
+#include <sstream>
 
-std::optional<size_t> parse_env_size_t(const std::string &env_var_name) {
+std::optional<std::size_t> parse_env_size_t(const std::string &env_var_name) {
+  
   const char *env_var = std::getenv(env_var_name.c_str());
   if(env_var) {
     try {
-      size_t result = std::stoi(env_var);
+      std::size_t result;
+      std::stringstream stream(env_var);
+      // size_t result = std::stoi(env_var);
+      stream >> result;
       return result;
     }
     catch (...){

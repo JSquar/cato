@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Thursday, 18th May 2023 9:43:08 pm
+ * Last Modified: Friday, 19th May 2023 2:54:51 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -274,17 +274,20 @@ int io_var_par_access(int, int, int);
 
 int io_inq_varid(int, char *, int *);
 
-int io_get_var_int(int, int, int *);
-
 int io_get_vara_int(int, int, long int, int *);
-// int io_get_vara_int(int, int, const size_t *, const size_t *, int *);
+
+int io_get_vara_float(int, int, long int, float *);
 
 int io_close(int);
 
 int io_put_vara_int(int, int, long int, int *);
 
+int io_put_vara_float(int, int, long int, float *);
+
 int io_def_var(int, const char *, int, int, const int *, int *);
 
 int io_def_var_chunking(int, int, int, int, size_t);
+
+int io_set_compression(int, int);
 
 #endif
