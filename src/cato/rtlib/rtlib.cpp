@@ -2,7 +2,7 @@
  * File: rtlib.cpp
  * 
  * -----
- * Last Modified: Friday, 19th May 2023 6:43:20 pm
+ * Last Modified: Friday, 19th May 2023 7:00:44 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -245,7 +245,7 @@ int io_open(const char *path, int omode, int *ncidp)
     }
 
     check_error_code(43, "Hallo");
-    Debug(check_error_code(err, "io_open (netCDF backend)"););
+    check_error_code(err, "io_open (netCDF backend)");
     return err;
 }
 
@@ -254,9 +254,16 @@ int io_open_par(const char *path, int omode, int *ncidp)
 {
     int err;
 
-    // determine alignment
+    // set alignment
     std::size_t alignment = 4096;
-    // if()
+    std::optional<std::size_t> env_alignment = parse_env_size_t("CATO_NC_ALIGNMENT");
+    if(env_alignment.has_value()){
+        alignment = env_alignment.value();
+    }
+    llvm::errs() << "Use alignment " << alignment << "\n";
+
+    err = nc_set_alignment(0,alignment);
+
     if (omode == 0)
     {
         // std::cerr << "Pfad: " << path << "\n";   
@@ -268,7 +275,7 @@ int io_open_par(const char *path, int omode, int *ncidp)
         if (!(stat(path, &buffer) == 0)) {
             std::cerr << "Could not find file " << path << "\n";
         }
-        err = nc_open_par(path, NC_NOWRITE, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
+        err += nc_open_par(path, NC_NOWRITE, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
         // err = nc_open(path, NC_NOWRITE, &test);
 
         // std::cerr << "Error value: " << err << "\n";
@@ -281,14 +288,25 @@ int io_open_par(const char *path, int omode, int *ncidp)
         err = 1;
     }
 
-    Debug(check_error_code(err, "io_open_par (netCDF backend)"););
+    check_error_code(err, "io_open_par (netCDF backend)");
     return err;
 }
 
 int io_create_par(const char *path, int cmode, int *ncidp) {
     int err;
-    err = nc_create_par(path, cmode, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
-    Debug(check_error_code(err, "io_create_par (netCDF backend)"););
+
+    // set alignment
+    std::size_t alignment = 4096;
+    std::optional<std::size_t> env_alignment = parse_env_size_t("CATO_NC_ALIGNMENT");
+    if(env_alignment.has_value()){
+        alignment = env_alignment.value();
+    }
+    llvm::errs() << "Use alignment " << alignment << "\n";
+
+    err = nc_set_alignment(0,alignment);
+
+    err += nc_create_par(path, cmode, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
+    check_error_code(err, "io_create_par (netCDF backend)");
     return err;
 }
 
@@ -310,7 +328,7 @@ int io_var_par_access(int ncid, int varid, int par_access)
     }
 
     err = nc_var_par_access(ncid, varid, mode);
-    Debug(check_error_code(err, "io_var_par_access (netCDF backend)"););
+    check_error_code(err, "io_var_par_access (netCDF backend)");
     return err;
 }
 
@@ -412,7 +430,7 @@ int io_close(int ncid)
     int err;
 
     err = nc_close(ncid);
-    Debug(check_error_code(err, "io_close (netCDF backend)"););
+    check_error_code(err, "io_close (netCDF backend)");
 
     return err;
 }

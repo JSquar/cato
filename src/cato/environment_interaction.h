@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Friday, 19th May 2023 3:52:38 pm
+ * Last Modified: Friday, 19th May 2023 6:49:01 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -17,6 +17,9 @@
 #include <optional>
 #include <string>
 #include <vector>
+
+// Return string from env variable if it is set
+std::optional<std::string> parse_env(const std::string &env_var_name);
 
 // Parse environment variable into vector of strings
 std::vector<std::string> parse_env_list(const std::string &);

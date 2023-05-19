@@ -5,7 +5,7 @@
  * -----
  *
  * -----
- * Last Modified: Friday, 19th May 2023 3:52:29 pm
+ * Last Modified: Friday, 19th May 2023 6:50:20 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -87,5 +87,17 @@ TEST(EnvParseTest, parse_size_t_exists) {
   EXPECT_EQ(42,result.value());
 }
 
+TEST(EnvParseTest, parse_env_not_exists) {
+  putenv("FOO=42");
+  std::optional<std::string> result = parse_env("BAR_UNDEFINED");
+  EXPECT_FALSE(result.has_value()); 
+}
+
+TEST(EnvParseTest, parse_env_exists) {
+  putenv("FOO=42");
+  std::optional<std::string> result = parse_env("FOO");
+  EXPECT_TRUE(result.has_value());
+  EXPECT_EQ("42",result.value());
+}
 
 

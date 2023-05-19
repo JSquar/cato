@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Friday, 19th May 2023 4:04:54 pm
+ * Last Modified: Friday, 19th May 2023 6:48:13 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -17,13 +17,24 @@
 #include <iostream>
 #include <sstream>
 
-std::optional<std::size_t> parse_env_size_t(const std::string &env_var_name) {
+std::optional<std::string> parse_env(const std::string &env_var_name) {
   
   const char *env_var = std::getenv(env_var_name.c_str());
   if(env_var) {
+    return env_var;
+  }
+  else {
+    return std::nullopt;
+  }
+}
+
+std::optional<std::size_t> parse_env_size_t(const std::string &env_var_name) {
+  
+  std::optional<std::string> env_var = parse_env(env_var_name);
+  if(env_var.has_value()) {
     try {
       std::size_t result;
-      std::stringstream stream(env_var);
+      std::stringstream stream(env_var.value());
       // size_t result = std::stoi(env_var);
       stream >> result;
       return result;
