@@ -1,3 +1,5 @@
+Note: Currently the `master` branch does not build. Development is done on `tschop-dev` branch.
+
 # CATO
 
 CATO (Compiler Assisted Source Transformation of OpenMP Kernels) uses LLVM and Clang to transform existing OpenMP code to MPI. This enables distributed code execution while keeping OpenMP's relatively low barrier of entry. The main focus lies on increasing the maximum problem size, which a scientific application can work on. Converting an intra-node problem into an inter-node problem makes it possible to overcome the limitation of memory of a single node.
