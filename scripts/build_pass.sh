@@ -2,14 +2,13 @@
 ###
 # Author: Michael Blesel
 # -----
-#Last Modified: Thursday, 18th May 2023 11:04:58 pm
+#Last Modified: Saturday, 27th May 2023 4:04:05 pm
 #Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
 # -----
 # Copyright (c) 2020 Michael Blesel
 # Copyright (c) 2023 Jannek Squar
 # 
 ###
-#!/bin/bash
 
 #nprocs -1 as building rtlib will use one CPU as well
 : ${CPUS:=1}

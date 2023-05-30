@@ -2,7 +2,7 @@
  * File: rtlib.cpp
  * 
  * -----
- * Last Modified: Friday, 19th May 2023 9:14:26 pm
+ * Last Modified: Wednesday, 24th May 2023 12:12:02 am
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <mpi.h>
 #include <netcdf.h>
+#include <netcdf_filter.h>
 #include <netcdf_par.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -597,5 +598,33 @@ int io_set_compression(int ncid, int varid) {
             }
         }
     }
+
+    /* ------------------------------ NETCDF FILTER ----------------------------- */
+    if (std::getenv("CATO_NC_FILTER")) {     
+        std::vector<unsigned int> filter_values = parse_env_list_int("CATO_NC_FILTER");
+        // unsigned int* parameters = &filter_values.data()[1];
+        // llvm::errs() << "Apply filter data\nID: " << filter_values.at(0) << ", number parameter: " << filter_values.size() - 1 << "\n";
+        // err = nc_def_var_filter(ncid, varid, filter_values.at(0) , filter_values.size() - 1, parameters);
+        // unsigned int filterid = 307;
+        // const unsigned int cd_values[1] = {9};  // Compression level
+
+        // Check filter
+        // err = nc_inq_filter_avail(ncid, filterid);
+        // if (err != NC_NOERR) {
+        //     fprintf(stderr, "Error checking filter %d availability: %s\n", filterid, nc_strerror(err));
+        //     return err;
+        // }
+
+        // err = nc_def_var_filter(ncid, varid, filterid, 1, cd_values);
+
+        err = nc_def_var_zstandard(ncid, varid, 9);
+
+        if (err != NC_NOERR) {
+            fprintf(stderr, "Error applying filter: %s\n", nc_strerror(err));
+            return err;
+        }
+        
+    }
+
     return err;
 }

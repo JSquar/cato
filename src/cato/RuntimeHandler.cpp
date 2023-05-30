@@ -15,9 +15,9 @@
 #include "helper.h"
 #include "NetCDFRegion.h"
 
-using namespace llvm;
+// using namespace llvm;
 
-RuntimeHandler::RuntimeHandler(Module &M)
+RuntimeHandler::RuntimeHandler(llvm::Module &M)
 {
     _M = &M;
     _entry_block = nullptr;
@@ -25,12 +25,12 @@ RuntimeHandler::RuntimeHandler(Module &M)
 
     if (load_rtlibs() == false)
     {
-        errs() << "ERROR: Could not load rtlibs.\n";
+        llvm::errs() << "ERROR: Could not load rtlibs.\n";
     }
 
     if (load_external_functions() == false)
     {
-        errs() << "ERROR: Problem with loading external functions\n";
+        llvm::errs() << "ERROR: Problem with loading external functions\n";
     }
 }
 
@@ -41,19 +41,19 @@ bool RuntimeHandler::load_rtlibs()
 
     if (cato_root.empty())
     {
-        errs() << "ERROR: Environment variable CATO_ROOT is not set.\n";
+        llvm::errs() << "ERROR: Environment variable CATO_ROOT is not set.\n";
         return false;
     }
 
-    SMDiagnostic rtlib_error;
+    llvm::SMDiagnostic rtlib_error;
 
 
     // Load main rtlib, open the rtlib*.bc file as a LLVM Module Object
-    errs() << "Load rtlib " << rtlib_module << "\n";
+    llvm::errs() << "Load rtlib " << rtlib_module << "\n";
     _rtlib_module = getLazyIRFileModule(cato_root + rtlib_module, rtlib_error, _M->getContext());
     if (_rtlib_module == nullptr)
     {
-        errs() << "ERROR: Could not load the rtlib module.\n";
+        llvm::errs() << "ERROR: Could not load the rtlib module.\n";
         return false;
     }
 
@@ -63,16 +63,16 @@ bool RuntimeHandler::load_rtlibs()
 void RuntimeHandler::match_function(llvm::Function **function_declaration,
                                     llvm::StringRef name)
 {
-    Function *func = _rtlib_module->getFunction(name);
+    llvm::Function *func = _rtlib_module->getFunction(name);
 
     if (func != nullptr)
     {
-        *function_declaration = cast<Function>(
+        *function_declaration = cast<llvm::Function>(
             _M->getOrInsertFunction(func->getName(), func->getFunctionType()).getCallee());
     }
     else
     {
-        errs() << "WARNING: Function with the name " << name
+        llvm::errs() << "WARNING: Function with the name " << name
                << " was not found in rtlib\n";
         *function_declaration = nullptr;
     }
@@ -143,19 +143,19 @@ bool RuntimeHandler::insert_cato_init_and_fin(llvm::Function *func, bool logging
         func = _M->getFunction("main");
     }
 
-    IRBuilder<> builder(func->getContext());
+    llvm::IRBuilder<> builder(func->getContext());
 
     // Create BasicBlocks for init and finalize code
-    BasicBlock *entry_block = &func->getEntryBlock();
+    llvm::BasicBlock *entry_block = &func->getEntryBlock();
     SplitBlock(entry_block, entry_block->getFirstNonPHI());
     _entry_block = entry_block;
 
-    BasicBlock *finalize_block = BasicBlock::Create(func->getContext(), "cato_finalize", func);
+    llvm::BasicBlock *finalize_block = llvm::BasicBlock::Create(func->getContext(), "cato_finalize", func);
     _finalize_block = finalize_block;
 
     // Place init and finalize code into the created blocks
     bool is_void = func->getReturnType()->isVoidTy();
-    Value *return_value_buffer = nullptr;
+    llvm::Value *return_value_buffer = nullptr;
 
     builder.SetInsertPoint(entry_block->getTerminator());
 
@@ -164,11 +164,11 @@ bool RuntimeHandler::insert_cato_init_and_fin(llvm::Function *func, bool logging
         return_value_buffer = builder.CreateAlloca(func->getReturnType());
     }
 
-    Value *logging_value = builder.getInt1(logging);
+    llvm::Value *logging_value = builder.getInt1(logging);
     builder.CreateCall(functions.cato_initialize, logging_value);
 
     // Add finalize in front of all function exit points
-    auto return_instructions = get_instruction_in_function<ReturnInst>(func);
+    auto return_instructions = get_instruction_in_function<llvm::ReturnInst>(func);
     for (auto &ret : return_instructions)
     {
         builder.SetInsertPoint(ret);
@@ -192,7 +192,7 @@ bool RuntimeHandler::insert_cato_init_and_fin(llvm::Function *func, bool logging
         // Todo createLoad with single argument has been deprecated and removed in llvm 14, see
         // https://github.com/llvm/llvm-project/blob/75e33f71c2dae584b13a7d1186ae0a038ba98838/llvm/include/llvm/IR/IRBuilder.h#L1678
         // Value *return_value = builder.CreateLoad(return_value_buffer);
-        Value *return_value =
+        llvm::Value *return_value =
             builder.CreateLoad(return_value_buffer->getType()->getPointerElementType(),
                                return_value_buffer, "CATO: Added Return Function");
         builder.CreateRet(return_value);
@@ -203,7 +203,7 @@ bool RuntimeHandler::insert_cato_init_and_fin(llvm::Function *func, bool logging
 
 void RuntimeHandler::adjust_netcdf_regions()
 {
-    errs() << "Function: adjust_netcdf_regions\n";
+    llvm::errs() << "Function: adjust_netcdf_regions\n";
     std::vector<std::unique_ptr<NetCDFRegion>> netcdf_regions;
 
     /* ----------------------------- Replace nc_open ---------------------------- */
@@ -270,8 +270,8 @@ void RuntimeHandler::adjust_netcdf_regions()
     llvm::errs() << "Found " << users_shared_memory.size() << " shared memory calls\n"; //TODO
     llvm::errs() << "Found " << users_def_var.size() << " nc_def_var calls\n"; //TODO
 
-    IRBuilder<> builder(_M->getContext());
-    LLVMContext &Ctx = _M->getContext();
+    llvm::IRBuilder<> builder(_M->getContext());
+    llvm::LLVMContext &Ctx = _M->getContext();
 
     llvm::User *memory_call_user = users_shared_memory.at(0);
     llvm::CallInst *memory_call = llvm::dyn_cast<llvm::CallInst>(memory_call_user);
@@ -289,7 +289,7 @@ void RuntimeHandler::adjust_netcdf_regions()
             llvm::Value *varid = call->getArgOperand(1);
             llvm::Value *buffer = call->getArgOperand(2);
 
-            SmallVector<Value *> args;//,args2,args3,args4;
+            llvm::SmallVector<llvm::Value *> args;//,args2,args3,args4;
             args.push_back(ncid);
             args.push_back(varid);
             args.push_back(num_bytes);
@@ -315,7 +315,7 @@ void RuntimeHandler::adjust_netcdf_regions()
             llvm::Value *varid = call->getArgOperand(1);
             llvm::Value *buffer = call->getArgOperand(2);
 
-            SmallVector<Value *> args;//,args2,args3,args4;
+            llvm::SmallVector<llvm::Value *> args;//,args2,args3,args4;
             args.push_back(ncid);
             args.push_back(varid);
             args.push_back(num_bytes);
@@ -341,7 +341,7 @@ void RuntimeHandler::adjust_netcdf_regions()
             llvm::Value *varid = call->getArgOperand(1);
             llvm::Value *buffer = call->getArgOperand(2);
 
-            SmallVector<Value *> args;//,args2,args3,args4;
+            llvm::SmallVector<llvm::Value *> args;//,args2,args3,args4;
             args.push_back(ncid);
             args.push_back(varid);
             args.push_back(num_bytes);
@@ -367,7 +367,7 @@ void RuntimeHandler::adjust_netcdf_regions()
             llvm::Value *varid = call->getArgOperand(1);
             llvm::Value *buffer = call->getArgOperand(2);
 
-            SmallVector<Value *> args;//,args2,args3,args4;
+            llvm::SmallVector<llvm::Value *> args;//,args2,args3,args4;
             args.push_back(ncid);
             args.push_back(varid);
             args.push_back(num_bytes);
@@ -400,11 +400,11 @@ void RuntimeHandler::replace_omp_functions()
     auto get_thread_num_users = get_function_users(*_M, "omp_get_thread_num");
     for (auto *user : get_thread_num_users)
     {
-        if (auto *invoke = dyn_cast<InvokeInst>(user))
+        if (auto *invoke = dyn_cast<llvm::InvokeInst>(user))
         {
             invoke->setCalledFunction(functions.get_mpi_rank);
         }
-        else if (auto *call = dyn_cast<CallInst>(user))
+        else if (auto *call = dyn_cast<llvm::CallInst>(user))
         {
             call->setCalledFunction(functions.get_mpi_rank);
         }
@@ -414,23 +414,23 @@ void RuntimeHandler::replace_omp_functions()
     auto get_num_threads_users = get_function_users(*_M, "omp_get_num_threads");
     for (auto *user : get_num_threads_users)
     {
-        if (auto *invoke = dyn_cast<InvokeInst>(user))
+        if (auto *invoke = dyn_cast<llvm::InvokeInst>(user))
         {
             invoke->setCalledFunction(functions.get_mpi_size);
         }
-        else if (auto *call = dyn_cast<CallInst>(user))
+        else if (auto *call = dyn_cast<llvm::CallInst>(user))
         {
             call->setCalledFunction(functions.get_mpi_size);
         }
     }
 
     // omp barrier
-    LLVMContext &Ctx = _M->getContext();
-    IRBuilder<> builder(Ctx);
+    llvm::LLVMContext &Ctx = _M->getContext();
+    llvm::IRBuilder<> builder(Ctx);
     auto omp_barrier_users = get_function_users(*_M, "__kmpc_barrier");
     for (auto *user : omp_barrier_users)
     {
-        if (auto *call = dyn_cast<CallInst>(user))
+        if (auto *call = dyn_cast<llvm::CallInst>(user))
         {
             builder.SetInsertPoint(call);
             auto new_call = builder.CreateCall(functions.mpi_barrier);

@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Friday, 19th May 2023 6:49:01 pm
+ * Last Modified: Tuesday, 23rd May 2023 11:17:58 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -23,6 +23,9 @@ std::optional<std::string> parse_env(const std::string &env_var_name);
 
 // Parse environment variable into vector of strings
 std::vector<std::string> parse_env_list(const std::string &);
+
+// Parse environment variable into vector of ints
+std::vector<unsigned int> parse_env_list_int(const std::string &);
 
 // check if a string key is in a vector of strings and get the index
 std::vector<std::string>::size_type

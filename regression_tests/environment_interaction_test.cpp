@@ -5,7 +5,7 @@
  * -----
  *
  * -----
- * Last Modified: Friday, 19th May 2023 6:50:20 pm
+ * Last Modified: Monday, 22nd May 2023 2:00:22 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -35,6 +35,14 @@ TEST(EnvParseTest, parse_vector_2) {
   auto result = parse_env_list("FOO");
   EXPECT_EQ(result.size(),1);
   EXPECT_EQ(expected, result);
+}
+
+TEST(EnvParseTest, parse_vector_int) {
+  putenv("FOO=1:2:3:4");
+  auto result = parse_env_list_int("FOO");
+  EXPECT_EQ(result.size(),4);
+  int result_sum = result.at(0) + result.at(1) + result.at(2) + result.at(3);
+  EXPECT_EQ(10, result_sum);
 }
 
 TEST(EnvParseTest, get_index_exists) {

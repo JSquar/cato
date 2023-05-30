@@ -5,7 +5,7 @@
  * -----
  * 
  * -----
- * Last Modified: Friday, 19th May 2023 6:48:13 pm
+ * Last Modified: Tuesday, 23rd May 2023 11:18:08 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Jannek Squar
@@ -62,6 +62,26 @@ std::vector<std::string> parse_env_list(const std::string &env_var_name) {
     env_var_str.erase(0, pos + 1);
   }
   values.push_back(env_var_str);
+
+  return values;
+}
+
+// TODO Use template
+std::vector<unsigned int> parse_env_list_int(const std::string &env_var_name) {
+  std::vector<unsigned int> values;
+  const char *env_var = std::getenv(env_var_name.c_str());
+  std::string env_var_str = (env_var != nullptr) ? env_var : "";
+
+  size_t pos = 0;
+  std::string token_string;
+  int token_int;
+  while ((pos = env_var_str.find(":")) != std::string::npos) {
+    token_string = env_var_str.substr(0, pos);
+    token_int = std::stoi(token_string);
+    values.push_back(token_int);
+    env_var_str.erase(0, pos + 1);
+  }
+  values.push_back(std::stoi(env_var_str));
 
   return values;
 }

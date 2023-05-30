@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Friday, 5th May 2023 1:52:09 pm
+ * Last Modified: Sunday, 28th May 2023 5:10:47 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -73,7 +73,6 @@ struct CatoPass : public ModulePass
                 }
             }
         }
-
         return memory_allocations;
     }
 
@@ -2119,8 +2118,11 @@ static void registerCatoPass(const PassManagerBuilder &, legacy::PassManagerBase
     PM.add(new CatoPass());
 }
 
-static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_ModuleOptimizerEarly,
+static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
                                              registerCatoPass);
 
-static RegisterStandardPasses RegisterMyPass0(PassManagerBuilder::EP_EnabledOnOptLevel0,
-                                              registerCatoPass);
+// static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_ModuleOptimizerEarly,
+//                                              registerCatoPass);
+
+// static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_EnabledOnOptLevel0,
+//                                               registerCatoPass);

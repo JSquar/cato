@@ -11,7 +11,7 @@ fi
 
 ${CATO_ROOT}/scripts/build_pass.sh
 cd ${CATO_ROOT}/src/test-suite
-$CATO_ROOT/../llvm-project/build/bin/llvm-lit -v .
+$CATO_ROOT/../llvm-project/build/bin/llvm-lit -v --max-time=15 .
 
 if [[ "${MODIFICATION}" == 1 ]]; then
   echo "Restore debug mode"
