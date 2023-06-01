@@ -53,7 +53,7 @@ void MemoryAbstractionHandler::free_memory(void *base_ptr)
     else
     {
         Debug(std::cout << "Trying to free an address that does not point to an existing "
-                           "MemoryAbstraction. Freeing normaly\n";);
+                           "MemoryAbstraction. Freeing normally\n";);
         if (base_ptr != nullptr)
         {
             free(base_ptr);

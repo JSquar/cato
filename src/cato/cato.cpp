@@ -110,7 +110,7 @@ struct CatoPass : public ModulePass
      * paths: The input vector of paths
      * store_paths: Output parameter for all store paths in paths (only stores of actual
      *values. no pointer stores) load_paths: Output parameter for all load paths in paths (only
-     *loads of acrual values. no pointer loads) ptr_store_paths: Output parameter for all paths
+     *loads of actual values. no pointer loads) ptr_store_paths: Output parameter for all paths
      *where a pointer is stored free_paths: Output parameter for all free paths in paths
      **/
     void categorize_memory_access_paths(
@@ -172,7 +172,7 @@ struct CatoPass : public ModulePass
                         {
                             Debug(errs() << "Store dest: ";);
                             Debug(store_destination->dump(););
-                            Debug(errs() << "Not a store to memeory abstraction.\n";);
+                            Debug(errs() << "Not a store to memory abstraction.\n";);
                         }
                     }
                 }
@@ -267,222 +267,51 @@ struct CatoPass : public ModulePass
 
         builder.SetInsertPoint(instruction);
 
-        // Check for all known access patterns to 1D/2D arrays/pointers
+        // Check for all known access patterns to arrays/pointers
         // and determine the offsets for the memory access
-        if (ptr_depth == 1)
+        int counter = ptr_depth;
+        Value* instr = instruction->getPointerOperand();
+        while (counter != 0)
         {
-            if (auto *gep = dyn_cast<GetElementPtrInst>(instruction->getPointerOperand()))
+            if (auto* load = dyn_cast<LoadInst>(instr))
             {
-                // TODO fix this case
-                if (auto *gep2 = dyn_cast<GetElementPtrInst>(gep->getOperand(0)))
-                {
-                    errs() << "Error: Unknown IR Pattern for evaluation of accessing index "
-                              "for 1d array.\n";
-                    Debug(gep2->dump(););
-                }
-
-                Value *index = gep->getOperand(1);
-                Debug(errs() << "Pointer access at index:\n";);
-                Debug(errs() << "  ->index1: ";);
-                Debug(index->dump(););
-
-                indices.push_back(builder.getInt32(1));
+                indices.push_back(builder.getInt32(0));
+                counter--;
+                if (counter != 0)
+                instr = load->getPointerOperand();
+            }
+            else if (auto* gep = dyn_cast<GetElementPtrInst>(instr))
+            {
+                Value* index = gep->getOperand(1);
                 indices.push_back(index);
-            }
-            else
-            {
-                Debug(errs() << "Pointer access at index:\n";);
-                Debug(errs() << "  ->index1: 0\n";);
-
-                indices.push_back(builder.getInt32(1));
-                indices.push_back(builder.getInt64(0));
-            }
-        }
-        else if (ptr_depth == 2)
-        {
-            Debug(errs() << "Pointer depth of 2\n";);
-            if (auto *last_inst = dyn_cast<LoadInst>(instruction->getPointerOperand()))
-            {
-                if (auto *gep = dyn_cast<GetElementPtrInst>(last_inst->getPointerOperand()))
+                counter--;
+                if (counter != 0)
                 {
-                    Value *index = gep->getOperand(1);
-                    Debug(errs() << "Pointer access at index:\n";);
-                    Debug(errs() << "  ->index1: ";);
-                    Debug(index->dump(););
-                    Debug(errs() << "  ->index2: 0\n";);
-
-                    indices.push_back(builder.getInt32(2));
-                    indices.push_back(index);
-                    indices.push_back(builder.getInt64(0));
-                }
-                else
-                {
-                    Debug(errs() << "Pointer access at index:\n";);
-                    Debug(errs() << "  ->index1: 0\n";);
-                    Debug(errs() << "  ->index2: 0\n";);
-
-                    indices.push_back(builder.getInt32(2));
-                    indices.push_back(builder.getInt64(0));
-                    indices.push_back(builder.getInt64(0));
+                    auto* load = dyn_cast<LoadInst>(gep->getPointerOperand());
+                    instr = load->getPointerOperand();
                 }
             }
-            else if (auto *gep2 =
-                         dyn_cast<GetElementPtrInst>(instruction->getPointerOperand()))
+            //Occasionally, a bitcast occurs instead of a load, but only at the very start
+            else if (counter == 1)
             {
-                if (auto *inst = dyn_cast<LoadInst>(gep2->getPointerOperand()))
-                {
-                    if (auto *gep1 = dyn_cast<GetElementPtrInst>(inst->getPointerOperand()))
-                    {
-                        Value *index1 = gep1->getOperand(1);
-                        Value *index2 = gep2->getOperand(1);
-                        Debug(errs() << "Pointer access at index:\n";);
-                        Debug(errs() << "  ->index1: ";);
-                        Debug(index1->dump(););
-                        Debug(errs() << "  ->index2: ";);
-                        Debug(index2->dump(););
-
-                        indices.push_back(builder.getInt32(2));
-                        indices.push_back(index1);
-                        indices.push_back(index2);
-                    }
-                    else
-                    {
-                        Value *index2 = gep2->getOperand(1);
-                        Debug(errs() << "Pointer access at index:\n";);
-                        Debug(errs() << "  ->index1: 0\n";);
-                        Debug(errs() << "  ->index2: ";);
-                        Debug(index2->dump(););
-
-                        indices.push_back(builder.getInt32(2));
-                        indices.push_back(builder.getInt64(0));
-                        indices.push_back(index2);
-                    }
-                }
-                else
-                {
-                    errs() << "Unrecognized pointer access pattern!\n";
-                }
+                indices.push_back(builder.getInt32(0));
+                counter--;
             }
             else
             {
                 errs() << "Unrecognized pointer access pattern!\n";
+                exit(1);
             }
         }
-        else if (ptr_depth == 3)
-        {
-            Debug(errs() << "Pointer depth of 3\n";);
+        indices.push_back(builder.getInt32(ptr_depth));
+        std::reverse(indices.begin(), indices.end());
 
-            if (auto *load = dyn_cast<LoadInst>(instruction->getPointerOperand()))
-            {
-                if (auto *load1 = dyn_cast<LoadInst>(load->getPointerOperand()))
-                {
-                    if (auto *gep2 = dyn_cast<GetElementPtrInst>(load1->getPointerOperand()))
-                    {
-                        indices.push_back(builder.getInt32(3));
-                        indices.push_back(gep2->getOperand(1));
-                        indices.push_back(builder.getInt64(0));
-                        indices.push_back(builder.getInt64(0));
-                    }
-                    else
-                    {
-                        indices.push_back(builder.getInt32(3));
-                        indices.push_back(builder.getInt64(0));
-                        indices.push_back(builder.getInt64(0));
-                        indices.push_back(builder.getInt64(0));
-                    }
-                }
-                else if (auto *gep1 = dyn_cast<GetElementPtrInst>(load->getPointerOperand()))
-                {
-                    if (auto *load2 = dyn_cast<LoadInst>(gep1->getPointerOperand()))
-                    {
-                        if (auto *gep2 =
-                                dyn_cast<GetElementPtrInst>(load2->getPointerOperand()))
-                        {
-                            indices.push_back(builder.getInt32(3));
-                            indices.push_back(gep2->getOperand(1));
-                            indices.push_back(gep1->getOperand(1));
-                            indices.push_back(builder.getInt64(0));
-                        }
-                        else
-                        {
-                            indices.push_back(builder.getInt32(3));
-                            indices.push_back(builder.getInt64(0));
-                            indices.push_back(gep1->getOperand(1));
-                            indices.push_back(builder.getInt64(0));
-                        }
-                    }
-                    else
-                    {
-                        errs() << "Error in 3d index calculation\n";
-                    }
-                }
-            }
-            else if (auto *gep = dyn_cast<GetElementPtrInst>(instruction->getPointerOperand()))
-            {
-                if (auto *load1 = dyn_cast<LoadInst>(gep->getPointerOperand()))
-                {
-                    if (auto *load2 = dyn_cast<LoadInst>(load1->getPointerOperand()))
-                    {
-                        if (auto *gep2 =
-                                dyn_cast<GetElementPtrInst>(load2->getPointerOperand()))
-                        {
-                            indices.push_back(builder.getInt32(3));
-                            indices.push_back(gep2->getOperand(1));
-                            indices.push_back(builder.getInt64(0));
-                            indices.push_back(gep->getOperand(1));
-                        }
-                        else
-                        {
-                            indices.push_back(builder.getInt32(3));
-                            indices.push_back(builder.getInt64(0));
-                            indices.push_back(builder.getInt64(0));
-                            indices.push_back(gep->getOperand(1));
-                        }
-                    }
-                    else if (auto *gep2 =
-                                 dyn_cast<GetElementPtrInst>(load1->getPointerOperand()))
-                    {
-                        if (auto *load2 = dyn_cast<LoadInst>(gep2->getPointerOperand()))
-                        {
-                            if (auto *gep3 =
-                                    dyn_cast<GetElementPtrInst>(load2->getPointerOperand()))
-                            {
-                                indices.push_back(builder.getInt32(3));
-                                indices.push_back(gep3->getOperand(1));
-                                indices.push_back(gep2->getOperand(1));
-                                indices.push_back(gep->getOperand(1));
-                            }
-                            else
-                            {
-                                indices.push_back(builder.getInt32(3));
-                                indices.push_back(builder.getInt64(0));
-                                indices.push_back(gep2->getOperand(1));
-                                indices.push_back(gep->getOperand(1));
-                            }
-                        }
-                        else
-                        {
-                            errs() << "Error in 3d index calculation\n";
-                        }
-                    }
-                }
-                else
-                {
-                    errs() << "Error in 3d index calculation\n";
-                }
-            }
-
-            Debug(errs() << "Pointer access at index:\n";);
-            Debug(errs() << "  -> index1: ";);
-            Debug(indices[1]->dump(););
-            Debug(errs() << "  -> index2: ";);
-            Debug(indices[2]->dump(););
-            Debug(errs() << "  -> index3: ";);
-            Debug(indices[3]->dump(););
-        }
-        else
+        Debug(errs() << "Pointer depth of " << ptr_depth << "\n";);
+        Debug(errs() << "Pointer access at index:\n";);
+        for (size_t i = 1; i < indices.size(); i++)
         {
-            errs() << "Error: Pointer depth > 3 not supported at the moment!\n";
+            Debug(errs() << " ->index" << i << ": ";);
+            Debug(indices[i]->dump(););
         }
 
         return indices;
@@ -1007,7 +836,7 @@ struct CatoPass : public ModulePass
                 args.insert(args.begin(), void_base_ptr);
             }
 
-            // Do the actutal replacement of the load instruction with a call to the cato
+            // Do the actual replacement of the load instruction with a call to the cato
             // runtime library
             if (args.size() >= 3)
             {
@@ -1358,7 +1187,7 @@ struct CatoPass : public ModulePass
                     args.insert(args.begin(), void_ptr);
                 }
 
-                // Do the acutal replacement of the load instruction with a call to the cato
+                // Do the actual replacement of the load instruction with a call to the cato
                 // runtime library
                 if (args.size() >= 3)
                 {
