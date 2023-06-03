@@ -2,7 +2,7 @@
  * File: rtlib.cpp
  * 
  * -----
- * Last Modified: Wednesday, 24th May 2023 12:12:02 am
+ * Last Modified: Friday, 2nd June 2023 7:02:44 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -590,11 +590,11 @@ int io_set_compression(int ncid, int varid) {
                     shuffle = std::stoi(deflate_values.at(1));
                 }
 
-                    err = nc_def_var_deflate(ncid, varid, shuffle, 1, deflate_level);
-                    if (err != NC_NOERR) {
-                        fprintf(stderr, "Error setting compression filter deflate: %s\n", nc_strerror(err));
-                        return err;
-                    }
+                err = nc_def_var_deflate(ncid, varid, shuffle, 1, deflate_level);
+                if (err != NC_NOERR) {
+                    fprintf(stderr, "Error setting compression filter deflate: %s\n", nc_strerror(err));
+                    return err;
+                }
             }
         }
     }
