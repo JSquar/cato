@@ -268,6 +268,8 @@ int io_open(const char *, int, int *);
 
 int io_open_par(const char *, int, MPI_Comm, MPI_Info, int *);
 
+int io_create_par(const char *, int, int *);
+
 int io_var_par_access(int, int, int);
 
 int io_inq_varid(int, char *, int *);
@@ -278,5 +280,14 @@ int io_get_vara(int, int, long int, void *, int);
 
 int io_close(int);
 
+int io_put_vara_int(int, int, long int, int *);
+
+int io_put_vara_float(int, int, long int, float *);
+
+int io_def_var(int, const char *, int, int, const int *, int *);
+
+int io_def_var_chunking(int, int, int, int, size_t);
+
+int io_set_compression(int, int);
 
 #endif

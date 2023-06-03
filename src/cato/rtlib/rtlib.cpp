@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <mpi.h>
 #include <netcdf.h>
+#include <netcdf_filter.h>
 #include <netcdf_par.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +11,12 @@
 #include <cstdarg>
 #include <iostream>
 
+#include <cstdarg>
+#include <iostream>
+#include <optional>
 #include "mpi_mutex.h"
 #include <sys/stat.h>
+//#include "../environment_interaction.h"
 // #include <fstream>
 // #include <llvm/Support/raw_ostream.h>
 
@@ -466,6 +471,207 @@ int io_close(int ncid)
 
     err = nc_close(ncid);
     Debug(check_error_code(err, "io_close (netCDF backend)"););
+
+    return err;
+}
+
+int io_put_vara_int(int ncid, int varid, long int num_elements, int *buffer) {
+    int err;
+    size_t start, count;
+
+    count = num_elements / MPI_SIZE / 4;
+    if (MPI_RANK < num_elements % MPI_SIZE)
+    {
+        count += 1;
+    }
+    // count = 10;
+    start = count * MPI_RANK;
+    if (MPI_RANK >= num_elements % MPI_SIZE)
+    {
+        start += num_elements % MPI_SIZE;
+    }
+
+    err = nc_put_vara_int(ncid, varid, &start, &count, buffer);
+    check_error_code(err, "io_put_vara_int (netCDF backend)");
+
+    return err;
+}
+
+int io_put_vara_float(int ncid, int varid, long int num_elements, float *buffer) {
+    int err;
+    size_t start, count;
+
+    count = num_elements / MPI_SIZE / 4;
+    if (MPI_RANK < num_elements % MPI_SIZE)
+    {
+        count += 1;
+    }
+    // count = 10;
+    start = count * MPI_RANK;
+    if (MPI_RANK >= num_elements % MPI_SIZE)
+    {
+        start += num_elements % MPI_SIZE;
+    }
+
+    err = nc_put_vara_float(ncid, varid, &start, &count, buffer);
+    check_error_code(err, "io_put_vara_int (netCDF backend)");
+
+    llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
+    int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
+
+    llvm::errs() << "Rang "<< MPI_RANK << ": ncid " << ncid << "\n" << "Rang "<< MPI_RANK << ": varid " << varid << "\n" << "Rang "<< MPI_RANK << ": start " << start << "\n" << "Rang "<< MPI_RANK << ": count " << count << "\n" << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
+
+    return err;
+}
+
+
+int io_def_var(int ncid, const char *name, int xtype, int ndims, const int *dimidsp, int *varidp ) {
+    int err = 0;
+
+    err = nc_def_var(ncid, name, xtype, ndims, dimidsp, varidp);
+    //std::optional<std::size_t> chunking_value = parse_env_size_t("CATO_NC_CHUNKING");
+    //if (chunking_value.has_value())
+    //TODO
+    if(false)
+    {
+        std::cout<<"Set user-defined chunking\n";
+        //err += io_def_var_chunking(ncid, *varidp, NC_CHUNKED, xtype, chunking_value.value());
+        //err += io_set_compression(ncid, varid);
+    }
+    else {
+        std::cout<<"Set no chunking\n";
+    }
+
+
+    check_error_code(err, "io_def_var (netCDF backend)");
+    return err;
+}
+
+int io_def_var_chunking(int ncid, int varid, int storage, int datatype, size_t bytes) {
+    int err = 0;
+    size_t chunksize[1] = {bytes}; //TODO allow multiple dimensions
+    if(chunksize[0] > 4*1024*1024*1024L) {
+        llvm::errs() << "Chunksize of " << chunksize[0] << " is too big, set chunk size to max value 4GiB\n";
+        chunksize[0] = 4*1024*1024*1024L;
+    }
+    std::cout << "Use chunksize " << chunksize[0] << "\n";
+    err = nc_def_var_chunking(ncid, varid, storage, chunksize);
+    return err;
+}
+
+int io_set_compression(int ncid, int varid) {
+    int err = 0;
+
+    // Check which compressor shall be used
+
+    /* -------------------------------- QUANTIZE -------------------------------- */
+    if (std::getenv("CATO_NC_CMPR_QUANTIZE"))
+    {
+        llvm::errs() << "Apply lossy compression preprocessing on data\n";
+        //std::vector<std::string> quantize_values = parse_env_list("CATO_NC_CMPR_QUANTIZE");
+        //TODO
+        std::vector<std::string> quantize_values{};
+        if(quantize_values.size() != 2) {
+            llvm::errs() << "CATO_NC_CMPR_QUANTIZE should have two parameters. Skip compression step!\n";
+            return 1;
+        }
+        int quantize_mode = std::stoi(quantize_values.at(0));
+        int quantize_nsd = std::stoi(quantize_values.at(1));
+
+        if(quantize_mode == 0) {
+            quantize_mode = NC_NOQUANTIZE;
+            llvm::errs() << "Do not apply quantization preprocessing\n";
+        }
+        else {
+            if(quantize_mode == 1) {
+                quantize_mode = NC_QUANTIZE_BITGROOM;
+            }
+            else if (quantize_mode == 2)
+            {
+                quantize_mode = NC_QUANTIZE_GRANULARBR;
+            }
+            else if (quantize_mode == 3)
+            {
+                quantize_mode = NC_QUANTIZE_BITROUND;
+            }
+            else {
+                llvm::errs() << "Unknown quantize mode: " << quantize_mode << "\n";
+                return 1;
+            }
+
+            if(quantize_nsd < 1 ) {
+                llvm::errs() << "Invalid number of significant digits ("<< quantize_nsd << ")for quantize\n";
+                return 1;
+            }
+
+            err = nc_def_var_quantize(ncid, varid, quantize_mode, quantize_nsd);
+            if (err != NC_NOERR) {
+                fprintf(stderr, "Error setting lossy quantize preprocessing: %s\n", nc_strerror(err));
+                return err;
+            }
+        }
+    }
+
+    /* --------------------------------- DEFLATE -------------------------------- */
+    if (std::getenv("CATO_NC_CMPR_DEFLATE"))
+    {
+        llvm::errs() << "Apply deflate compression on data\n";
+        //std::vector<std::string> deflate_values = parse_env_list("CATO_NC_CMPR_DEFLATE");
+        //TODO
+        std::vector<std::string> deflate_values{};
+        if(deflate_values.size() > 2) {
+            llvm::errs() << "CATO_NC_CMPR_DEFLATE should have at least one and at max two parameters. Skip compression step!\n";
+            return 1;
+        }
+        else {
+            int deflate_level = std::stoi(deflate_values.at(0));
+            if(deflate_level < 0 || deflate_level > 9) {
+                llvm::errs() << "Invalid deflate compression level " << deflate_level << "\n";
+                return 1;
+            }
+            else {
+                int shuffle = 0;
+                if(deflate_values.size() == 2) {
+                    shuffle = std::stoi(deflate_values.at(1));
+                }
+
+                err = nc_def_var_deflate(ncid, varid, shuffle, 1, deflate_level);
+                if (err != NC_NOERR) {
+                    fprintf(stderr, "Error setting compression filter deflate: %s\n", nc_strerror(err));
+                    return err;
+                }
+            }
+        }
+    }
+
+    /* ------------------------------ NETCDF FILTER ----------------------------- */
+    if (std::getenv("CATO_NC_FILTER")) {
+        //std::vector<unsigned int> filter_values = parse_env_list_int("CATO_NC_FILTER");
+        //TODO
+        std::vector<unsigned int> filter_values{};
+        // unsigned int* parameters = &filter_values.data()[1];
+        // llvm::errs() << "Apply filter data\nID: " << filter_values.at(0) << ", number parameter: " << filter_values.size() - 1 << "\n";
+        // err = nc_def_var_filter(ncid, varid, filter_values.at(0) , filter_values.size() - 1, parameters);
+        // unsigned int filterid = 307;
+        // const unsigned int cd_values[1] = {9};  // Compression level
+
+        // Check filter
+        // err = nc_inq_filter_avail(ncid, filterid);
+        // if (err != NC_NOERR) {
+        //     fprintf(stderr, "Error checking filter %d availability: %s\n", filterid, nc_strerror(err));
+        //     return err;
+        // }
+
+        // err = nc_def_var_filter(ncid, varid, filterid, 1, cd_values);
+
+        err = nc_def_var_zstandard(ncid, varid, 9);
+
+        if (err != NC_NOERR) {
+            fprintf(stderr, "Error applying filter: %s\n", nc_strerror(err));
+            return err;
+        }
+
+    }
 
     return err;
 }
