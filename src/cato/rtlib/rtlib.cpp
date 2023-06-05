@@ -10,6 +10,7 @@
 
 #include <cstdarg>
 #include <iostream>
+#include <tuple>
 
 #include <cstdarg>
 #include <iostream>
@@ -273,6 +274,25 @@ int io_open_par(const char *path, int omode, int *ncidp)
     return err;
 }
 
+int io_create_par(const char *path, int cmode, int *ncidp) {
+    int err;
+
+    // set alignment
+    std::size_t alignment = 4096;
+    //TODO enable again
+    /*std::optional<std::size_t> env_alignment = parse_env_size_t("CATO_NC_ALIGNMENT");
+    if(env_alignment.has_value()){
+        alignment = env_alignment.value();
+    }
+    llvm::errs() << "Use alignment " << alignment << "\n";*/
+
+    err = nc_set_alignment(0,alignment);
+
+    err += nc_create_par(path, cmode, MPI_COMM_WORLD, MPI_INFO_NULL, ncidp);
+    check_error_code(err, "io_create_par (netCDF backend)");
+    return err;
+}
+
 /**
  * Currently unused, since this logic has been inserted into io_inq_varid function
  */
@@ -339,48 +359,25 @@ int io_get_var_int(int ncid, int varid, int *buffer)
     return err;
 }
 
-// int io_get_vara_int2()
-// {
-//     return 0;
-// }
 
-// int io_get_vara_int1a(int eingabe)
-// {
-//     llvm::errs() << eingabe << "\n";
-//     return eingabe;
-// }
-
-// int io_get_vara_int1b(int *eingabe)
-// {
-//     llvm::errs() << eingabe << "\n";
-//     return *eingabe;
-// }
-
-// int io_get_vara_int(int ncid, int varid, const size_t *startp, const size_t *countp,
-//                     int *buffer)
-
-
-int io_get_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctype)
+//Turn the index in a one-dimensional array into an n-dimensional index representing that element
+static void positionToIndex(const int num_dims, const size_t position, const size_t* dim_counts, size_t* index)
 {
-    int err;
+    size_t div_results[num_dims];
+    index[num_dims - 1] = position % dim_counts[num_dims-1];
+    div_results[num_dims - 1] = position / dim_counts[num_dims - 1];
 
-    int num_dims;
-    err = nc_inq_varndims(ncid, varid, &num_dims);
-    check_error_code(err, "nc_inq_varndims (netCDF backend)");
-
-    int dimids[num_dims];
-    err = nc_inq_vardimid(ncid, varid, dimids);
-    check_error_code(err, "nc_inq_vardimid (netCDF backend)");
-
-    size_t count[num_dims];
-    for(int i = 0; i < num_dims; i++)
+    for (int i = num_dims - 2; i >= 0; i--)
     {
-        err = nc_inq_dimlen(ncid, dimids[i], &count[i]);
-        check_error_code(err, "nc_inq_dimlen (netCDF backend)");
+        index[i] = div_results[i+1] % dim_counts[i];
+        div_results[i] = div_results[i+1] / dim_counts[i];
     }
+}
 
-    //TODO mainly copy-pasted from MemoryAbstractionDefault
-    size_t element_size = nctypelen(nctype);
+//Determine the process-local section of the shared memory
+//TODO mainly a copy-paste from MemoryAbstractionDefault
+static std::tuple<size_t, size_t, size_t> determinePositionInSharedMem(long int num_bytes, size_t element_size)
+{
     size_t global_num_elements = num_bytes / element_size;
 
     size_t div = global_num_elements / MPI_SIZE;
@@ -401,28 +398,36 @@ int io_get_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctyp
         local_to = local_from + local_num_elements - 1;
     }
 
-    //Turn the local start into an n-dimensional index representing the first elem
-    //of this process in the nc file
-    size_t start_indexes[num_dims], div_results[num_dims];
-    start_indexes[num_dims - 1] = local_from % count[num_dims-1];
-    div_results[num_dims - 1] = local_from / count[num_dims - 1];
+    return std::make_tuple(local_num_elements, local_from, local_to);
+}
 
-    for (int i = num_dims - 2; i >= 0; i--)
+int io_get_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctype)
+{
+    int err;
+
+    int num_dims;
+    err = nc_inq_varndims(ncid, varid, &num_dims);
+    check_error_code(err, "nc_inq_varndims (netCDF backend)");
+
+    int dimids[num_dims];
+    err = nc_inq_vardimid(ncid, varid, dimids);
+    check_error_code(err, "nc_inq_vardimid (netCDF backend)");
+
+    size_t count[num_dims];
+    for(int i = 0; i < num_dims; i++)
     {
-        start_indexes[i] = div_results[i+1] % count[i];
-        div_results[i] = div_results[i+1] / count[i];
+        err = nc_inq_dimlen(ncid, dimids[i], &count[i]);
+        check_error_code(err, "nc_inq_dimlen (netCDF backend)");
     }
 
-    //Do the same for the local end
-    size_t end_indexes[num_dims];
-    end_indexes[num_dims - 1] = local_to % count[num_dims-1];
-    div_results[num_dims - 1] = local_to / count[num_dims - 1];
+    size_t element_size = nctypelen(nctype);
+    size_t local_num_elements, local_from, local_to;
+    std::tie(local_num_elements, local_from, local_to) = determinePositionInSharedMem(num_bytes, element_size);
 
-    for (int i = num_dims - 2; i >= 0; i--)
-    {
-        end_indexes[i] = div_results[i+1] % count[i];
-        div_results[i] = div_results[i+1] / count[i];
-    }
+    size_t start_indexes[num_dims], end_indexes[num_dims];
+    positionToIndex(num_dims, local_from, count, start_indexes);
+    positionToIndex(num_dims, local_to, count, end_indexes);
+
 
     //In case that the reads per process do not align to rectangular hyperslabs,
     //we read slightly more than necessary to create these hyperslabs.
@@ -464,6 +469,63 @@ int io_get_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctyp
     return err;
 }
 
+int io_put_vara(int ncid, int varid, long int num_bytes, void *buffer, int nctype)
+{
+    int err;
+
+    int num_dims;
+    err = nc_inq_varndims(ncid, varid, &num_dims);
+    check_error_code(err, "nc_inq_varndims (netCDF backend)");
+
+    int dimids[num_dims];
+    err = nc_inq_vardimid(ncid, varid, dimids);
+    check_error_code(err, "nc_inq_vardimid (netCDF backend)");
+
+    size_t count[num_dims];
+    for(int i = 0; i < num_dims; i++)
+    {
+        err = nc_inq_dimlen(ncid, dimids[i], &count[i]);
+        check_error_code(err, "nc_inq_dimlen (netCDF backend)");
+    }
+
+    size_t element_size = nctypelen(nctype);
+    size_t local_num_elements, local_from;
+    std::tie(local_num_elements, local_from, std::ignore) = determinePositionInSharedMem(num_bytes, element_size);
+
+    size_t start_indexes[num_dims];
+    positionToIndex(num_dims, local_from, count, start_indexes);
+
+    size_t hyperslab_count[num_dims];
+    size_t elements_left = local_num_elements;
+    for (int i = num_dims-1; i >= 0; i--)
+    {
+        if (elements_left > count[i])
+        {
+            if (elements_left % count[i] != 0)
+            {
+                //TODO
+                std::cerr << "Process count and nc file layout lead to irregular hyperslabs! This is currently not supported by CATO\n";
+                exit(1);
+            }
+            hyperslab_count[i] = count[i];
+            elements_left /= count[i];
+        }
+        else
+        {
+            hyperslab_count[i] = elements_left;
+            for (int j = i-1; j >= 0; j--)
+            hyperslab_count[j] = 1;
+            break;
+        }
+    }
+
+    err = nc_put_vara(ncid, varid, start_indexes, hyperslab_count, buffer);
+    std::string location = "io_put_vara (netCDF backend) with nctype: " + std::to_string(nctype);
+    check_error_code(err, location); //TODO
+
+    return err;
+}
+
 int io_close(int ncid)
 {
 
@@ -471,55 +533,6 @@ int io_close(int ncid)
 
     err = nc_close(ncid);
     Debug(check_error_code(err, "io_close (netCDF backend)"););
-
-    return err;
-}
-
-int io_put_vara_int(int ncid, int varid, long int num_elements, int *buffer) {
-    int err;
-    size_t start, count;
-
-    count = num_elements / MPI_SIZE / 4;
-    if (MPI_RANK < num_elements % MPI_SIZE)
-    {
-        count += 1;
-    }
-    // count = 10;
-    start = count * MPI_RANK;
-    if (MPI_RANK >= num_elements % MPI_SIZE)
-    {
-        start += num_elements % MPI_SIZE;
-    }
-
-    err = nc_put_vara_int(ncid, varid, &start, &count, buffer);
-    check_error_code(err, "io_put_vara_int (netCDF backend)");
-
-    return err;
-}
-
-int io_put_vara_float(int ncid, int varid, long int num_elements, float *buffer) {
-    int err;
-    size_t start, count;
-
-    count = num_elements / MPI_SIZE / 4;
-    if (MPI_RANK < num_elements % MPI_SIZE)
-    {
-        count += 1;
-    }
-    // count = 10;
-    start = count * MPI_RANK;
-    if (MPI_RANK >= num_elements % MPI_SIZE)
-    {
-        start += num_elements % MPI_SIZE;
-    }
-
-    err = nc_put_vara_float(ncid, varid, &start, &count, buffer);
-    check_error_code(err, "io_put_vara_int (netCDF backend)");
-
-    llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
-    int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
-
-    llvm::errs() << "Rang "<< MPI_RANK << ": ncid " << ncid << "\n" << "Rang "<< MPI_RANK << ": varid " << varid << "\n" << "Rang "<< MPI_RANK << ": start " << start << "\n" << "Rang "<< MPI_RANK << ": count " << count << "\n" << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
 
     return err;
 }

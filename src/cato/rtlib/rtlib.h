@@ -280,9 +280,7 @@ int io_get_vara(int, int, long int, void *, int);
 
 int io_close(int);
 
-int io_put_vara_int(int, int, long int, int *);
-
-int io_put_vara_float(int, int, long int, float *);
+int io_put_vara(int, int, long int, void *, int);
 
 int io_def_var(int, const char *, int, int, const int *, int *);
 

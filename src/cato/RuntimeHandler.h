@@ -69,8 +69,7 @@ struct external_functions
     //llvm::Function *io_get_var_int;
     llvm::Function *io_get_vara;
     llvm::Function *io_close;
-    llvm::Function *io_put_vara_int;
-    llvm::Function *io_put_vara_float;
+    llvm::Function *io_put_vara;
     llvm::Function *io_def_var;
 };
 

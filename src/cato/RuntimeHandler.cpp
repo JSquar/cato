@@ -124,8 +124,7 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.io_inq_varid, "_Z12io_inq_varidiPcPi");
     match_function(&functions.io_get_vara, "_Z11io_get_varaiilPvi");
     match_function(&functions.io_close, "_Z8io_closei");
-    match_function(&functions.io_put_vara_int, "_Z15io_put_vara_intiilPi");
-    match_function(&functions.io_put_vara_float, "_Z17io_put_vara_floatiilPf");
+    match_function(&functions.io_put_vara, "_Z11io_put_varaiilPvi");
     match_function(&functions.io_def_var, "_Z10io_def_variPKciiPKiPi");
 
     return true;
@@ -252,29 +251,36 @@ void RuntimeHandler::adjust_netcdf_regions()
 
 
     /* ----------- parallel access via netCDF partial access functions ---------- */
-    std::vector< std::pair<std::string, nc_type> > func_calls = {   std::pair {"nc_get_var_int", NC_INT},
-                                                                    std::pair {"nc_get_var_double", NC_DOUBLE},
-                                                                    std::pair {"nc_get_var_float", NC_FLOAT},
-                                                                    std::pair {"nc_get_var_long", NC_LONG},
-                                                                    std::pair {"nc_get_var_longlong", NC_INT64},
-                                                                    std::pair {"nc_get_var_schar", NC_BYTE},
-                                                                    std::pair {"nc_get_var_short", NC_SHORT},
-                                                                    std::pair {"nc_get_var_string", NC_STRING},
-                                                                    std::pair {"nc_get_var_text", NC_CHAR},
-                                                                    std::pair {"nc_get_var_ubyte", NC_UBYTE},
-                                                                    std::pair {"nc_get_var_uchar", NC_UBYTE},
-                                                                    std::pair {"nc_get_var_uint", NC_UINT},
-                                                                    std::pair {"nc_get_var_ulonglong", NC_UINT64},
-                                                                    std::pair {"nc_get_var_ushort", NC_USHORT}
+    std::vector< std::pair<std::string, nc_type> > nc_datatypes = {   std::pair {"var_int", NC_INT},
+                                                                    std::pair {"var_double", NC_DOUBLE},
+                                                                    std::pair {"var_float", NC_FLOAT},
+                                                                    std::pair {"var_long", NC_LONG},
+                                                                    std::pair {"var_longlong", NC_INT64},
+                                                                    std::pair {"var_schar", NC_BYTE},
+                                                                    std::pair {"var_short", NC_SHORT},
+                                                                    std::pair {"var_string", NC_STRING},
+                                                                    std::pair {"var_text", NC_CHAR},
+                                                                    std::pair {"var_ubyte", NC_UBYTE},
+                                                                    std::pair {"var_uchar", NC_UBYTE},
+                                                                    std::pair {"var_uint", NC_UINT},
+                                                                    std::pair {"var_ulonglong", NC_UINT64},
+                                                                    std::pair {"var_ushort", NC_USHORT}
                                                                 };
 
-    for (auto func : func_calls)
+    std::string get = "nc_get_";
+    std::string put = "nc_put_";
+
+    for (auto nc_datatype : nc_datatypes)
     {
-        std::vector<llvm::User *>  get_var_users = get_function_users(*_M, func.first);
+        std::string get_call = get + nc_datatype.first;
+        std::string put_call = put + nc_datatype.first;
+        std::vector<llvm::User *>  get_var_users = get_function_users(*_M, get_call);
+        std::vector<llvm::User *>  put_var_users = get_function_users(*_M, put_call);
         std::vector<llvm::User *>  shared_memory_users = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
-        if (get_var_users.size() > 0 && shared_memory_users.size() > 0)
+        if ((get_var_users.size() > 0 || put_var_users.size() > 0) && shared_memory_users.size() > 0)
         {
-            llvm::errs() << "Found " << get_var_users.size() << " many " << func.first << " calls\n"; //TODO
+            llvm::errs() << "Found " << get_var_users.size() << " many " << get_call << " calls\n"; //TODO
+            llvm::errs() << "Found " << put_var_users.size() << " many " << put_call << " calls\n"; //TODO
             llvm::errs() << "Found " << shared_memory_users.size() << " shared memory calls\n"; //TODO
 
             IRBuilder<> builder(_M->getContext());
@@ -291,7 +297,7 @@ void RuntimeHandler::adjust_netcdf_regions()
                     llvm::Value *ncid = call->getArgOperand(0);
                     llvm::Value *varid = call->getArgOperand(1);
                     llvm::Value *buffer = call->getArgOperand(2);
-                    llvm::Value *nctype = builder.getInt32(func.second);
+                    llvm::Value *nctype = builder.getInt32(nc_datatype.second);
                     llvm::Value *void_buffer = CastInst::Create(CastInst::BitCast, buffer, builder.getInt8PtrTy(), "void_buf", call);
 
                     SmallVector<Value *> args;
@@ -307,80 +313,36 @@ void RuntimeHandler::adjust_netcdf_regions()
                     call->eraseFromParent();
                 }
             }
-        }
-    }
 
-    //TODO
-    llvm::errs() << "NC WRITE SECTION\n";
-    std::vector<llvm::User *>  users_put_var_int = get_function_users(*_M, "nc_put_var_int");
-    std::vector<llvm::User *>  users_put_var_float = get_function_users(*_M, "nc_put_var_float");
+            for (auto &user : put_var_users)
+            {
+                if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
+                {
+                    llvm::Value *ncid = call->getArgOperand(0);
+                    llvm::Value *varid = call->getArgOperand(1);
+                    llvm::Value *buffer = call->getArgOperand(2);
+                    llvm::Value *nctype = builder.getInt32(nc_datatype.second);
+                    llvm::Value *void_buffer = CastInst::Create(CastInst::BitCast, buffer, builder.getInt8PtrTy(), "void_buf", call);
 
-    std::vector<llvm::User *>  users_def_var = get_function_users(*_M, "nc_def_var");
-    std::vector<llvm::User *>  users_shared_memory = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
+                    SmallVector<Value *> args;
+                    args.push_back(ncid);
+                    args.push_back(varid);
+                    args.push_back(num_bytes);
+                    args.push_back(void_buffer);
+                    args.push_back(nctype);
 
-    llvm::errs() << "Found " << users_put_var_int.size() << " many nc_put_var_int calls\n"; //TODO
-    llvm::errs() << "Found " << users_put_var_float.size() << " many nc_put_var_float calls\n"; //TODO
-    llvm::errs() << "Found " << users_shared_memory.size() << " shared memory calls\n"; //TODO
-    llvm::errs() << "Found " << users_def_var.size() << " nc_def_var calls\n"; //TODO
-
-    llvm::IRBuilder<> builder(_M->getContext());
-    llvm::LLVMContext &Ctx = _M->getContext();
-
-    llvm::User *memory_call_user = users_shared_memory.at(0);
-    llvm::CallInst *memory_call = llvm::dyn_cast<llvm::CallInst>(memory_call_user);
-    llvm::Value *num_bytes = memory_call->getArgOperand(0);
-
-    for (auto &user : users_put_var_int)
-    {
-
-        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-        {
-
-
-            llvm::Value *ncid = call->getArgOperand(0);
-            llvm::Value *varid = call->getArgOperand(1);
-            llvm::Value *buffer = call->getArgOperand(2);
-
-            llvm::SmallVector<llvm::Value *> args;//,args2,args3,args4;
-            args.push_back(ncid);
-            args.push_back(varid);
-            args.push_back(num_bytes);
-            args.push_back(buffer);
-
-            builder.SetInsertPoint(call);
-            llvm::CallInst *new_call = builder.CreateCall(functions.io_put_vara_int, args);
-            call->replaceAllUsesWith(new_call);
-            call->eraseFromParent();
-
-        }
-    }
-
-    for (auto &user : users_put_var_float)
-    {
-
-        if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-        {
-
-
-            llvm::Value *ncid = call->getArgOperand(0);
-            llvm::Value *varid = call->getArgOperand(1);
-            llvm::Value *buffer = call->getArgOperand(2);
-
-            llvm::SmallVector<llvm::Value *> args;//,args2,args3,args4;
-            args.push_back(ncid);
-            args.push_back(varid);
-            args.push_back(num_bytes);
-            args.push_back(buffer);
-
-            builder.SetInsertPoint(call);
-            llvm::CallInst *new_call = builder.CreateCall(functions.io_put_vara_float, args);
-            call->replaceAllUsesWith(new_call);
-            call->eraseFromParent();
-
+                    builder.SetInsertPoint(call);
+                    llvm::CallInst *new_call = builder.CreateCall(functions.io_put_vara, args);
+                    call->replaceAllUsesWith(new_call);
+                    call->eraseFromParent();
+                }
+            }
         }
     }
 
     // Replace nc_def_var
+    std::vector<llvm::User *>  users_def_var = get_function_users(*_M, "nc_def_var");
+    llvm::errs() << "Found " << users_def_var.size() << " nc_def_var calls\n"; //TODO
     for (auto &user : users_def_var)
     {
 
