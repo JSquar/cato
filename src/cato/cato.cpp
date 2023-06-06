@@ -365,8 +365,8 @@ struct CatoPass : public ModulePass
                                     ->getPointerElementType()
                                     ->isStructTy())
                             {
-                                errs() << "FOUND STORE INTO STRUCT:\n";
-                                errs() << "    ";
+                                Debug(errs() << "FOUND STORE INTO STRUCT:\n";);
+                                Debug(errs() << "    ";);
                                 Debug(gep->getPointerOperand()->dump(););
 
                                 for (auto *user : gep->getPointerOperand()->users())
@@ -387,7 +387,7 @@ struct CatoPass : public ModulePass
                                                                  tmp_paths.end());
                                                     for (auto &p : tmp_paths)
                                                     {
-                                                        errs() << "STRUCT PATH:\n";
+                                                        Debug(errs() << "STRUCT PATH:\n";);
                                                         for (auto *e : p)
                                                         {
                                                             Debug(e->dump(););
@@ -452,7 +452,7 @@ struct CatoPass : public ModulePass
         Debug(errs() << "========================================\n";);
 
         // The paths need to be categorized into paths that lead to store, load or free
-        // instructions Only Accesses to non pointer values are categorized. The manipulation
+        // instructions. Only Accesses to non pointer values are categorized. The manipulation
         // of pointer values in shared memory objects is not supported at the moment.
 
         // The pair consists of: <Index of the load/store instruction in path, the path>
@@ -462,6 +462,49 @@ struct CatoPass : public ModulePass
 
         categorize_memory_access_paths(paths, &store_paths, &load_paths, &ptr_store_paths,
                                        &free_paths);
+
+        Debug(errs() << "CATEGORIZED PATHS\n";);
+        for (auto &path : store_paths)
+        {
+            Debug(errs() << "STORE PATH:\n";);
+            for (auto &u : path.second)
+            {
+                Debug(u->dump(););
+            }
+            Debug(errs() << "STORE PATH END\n";);
+        }
+        Debug(errs() << "========================================\n";);
+        for (auto &path : ptr_store_paths)
+        {
+            Debug(errs() << "PTR STORE PATH:\n";);
+            for (auto &u : path.second)
+            {
+                Debug(u->dump(););
+            }
+            Debug(errs() << "PTR STORE PATH END\n";);
+        }
+        Debug(errs() << "========================================\n";);
+        for (auto &path : load_paths)
+        {
+            Debug(errs() << "LOAD PATH:\n";);
+            for (auto &u : path.second)
+            {
+                Debug(u->dump(););
+            }
+            Debug(errs() << "LOAD PATH END\n";);
+        }
+        Debug(errs() << "========================================\n";);
+        for (auto &path : free_paths)
+        {
+            Debug(errs() << "FREE PATH:\n";);
+            for (auto &u : path)
+            {
+                Debug(u->dump(););
+            }
+            Debug(errs() << "FREE PATH END\n";);
+        }
+        Debug(errs() << "========================================\n";);
+
 
         IRBuilder<> builder(M.getContext());
         LLVMContext &Ctx = M.getContext();
@@ -565,7 +608,7 @@ struct CatoPass : public ModulePass
                 {
                     if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                     {
-                        // Identify the argument argument of the current function that is
+                        // Identify the argument of the current function that is
                         // the shared memory object
                         auto *last_inst = path[i - 1];
                         Value *matching_argument = nullptr;
@@ -602,7 +645,7 @@ struct CatoPass : public ModulePass
                 args.insert(args.begin(), path[0]);
             }
 
-            // Do the acutal replacement of the load instruction with a call to the cato
+            // Do the actual replacement of the load instruction with a call to the cato
             // runtime library
             if (args.size() >= 3)
             {
@@ -741,6 +784,7 @@ struct CatoPass : public ModulePass
             }
             Debug(errs() << "PATH END\n";);
         }
+        Debug(errs() << "========================================\n";);
 
         std::vector<std::pair<int, std::vector<Value *>>> store_paths;
         std::vector<std::pair<int, std::vector<Value *>>> load_paths;
@@ -779,6 +823,33 @@ struct CatoPass : public ModulePass
             }
         }
 
+        Debug(errs() << "LOAD PATHS: \n";);
+        for (auto &path : load_paths)
+        {
+            Debug(errs() << "PATH BEGIN\n";);
+            for (auto &u : path.second)
+            {
+                Debug(errs() << "    ");
+                Debug(u->dump(););
+            }
+            Debug(errs() << "PATH END\n";);
+        }
+        Debug(errs() << "========================================\n";);
+
+
+        Debug(errs() << "STORE PATHS: \n";);
+        for (auto &path : store_paths)
+        {
+            Debug(errs() << "PATH BEGIN\n";);
+            for (auto &u : path.second)
+            {
+                Debug(errs() << "    ");
+                Debug(u->dump(););
+            }
+            Debug(errs() << "PATH END\n";);
+        }
+        Debug(errs() << "========================================\n";);
+
         IRBuilder<> builder(M.getContext());
         LLVMContext &Ctx = M.getContext();
 
@@ -799,7 +870,7 @@ struct CatoPass : public ModulePass
                 {
                     if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                     {
-                        errs() << "   CallInst: ";
+                        Debug(errs() << "   CallInst: ";);
                         Debug(call_inst->dump(););
 
                         // Identify the argument argument of the current function that is
@@ -876,7 +947,7 @@ struct CatoPass : public ModulePass
                 {
                     if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                     {
-                        errs() << "   CallInst: ";
+                        Debug(errs() << "   CallInst: ";);
                         Debug(call_inst->dump(););
 
                         // Identify the argument argument of the current function that is
