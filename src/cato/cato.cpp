@@ -463,7 +463,7 @@ struct CatoPass : public ModulePass
         categorize_memory_access_paths(paths, &store_paths, &load_paths, &ptr_store_paths,
                                        &free_paths);
 
-        Debug(errs() << "CATEGORIZED PATHS\n";);
+        Debug(errs() << "CATEGORIZED PATHS IN SEQUENTIAL AREAS\n";);
         for (auto &path : store_paths)
         {
             Debug(errs() << "STORE PATH:\n";);
@@ -1198,6 +1198,50 @@ struct CatoPass : public ModulePass
             categorize_memory_access_paths(paths, &store_paths, &load_paths, &ptr_store_paths,
                                            &free_paths);
 
+
+            Debug(errs() << "CATEGORIZED PATHS IN MICROTASKS\n";);
+            for (auto &path : store_paths)
+            {
+                Debug(errs() << "STORE PATH:\n";);
+                for (auto &u : path.second)
+                {
+                    Debug(u->dump(););
+                }
+                Debug(errs() << "STORE PATH END\n";);
+            }
+            Debug(errs() << "========================================\n";);
+            for (auto &path : ptr_store_paths)
+            {
+                Debug(errs() << "PTR STORE PATH:\n";);
+                for (auto &u : path.second)
+                {
+                    Debug(u->dump(););
+                }
+                Debug(errs() << "PTR STORE PATH END\n";);
+            }
+            Debug(errs() << "========================================\n";);
+            for (auto &path : load_paths)
+            {
+                Debug(errs() << "LOAD PATH:\n";);
+                for (auto &u : path.second)
+                {
+                    Debug(u->dump(););
+                }
+                Debug(errs() << "LOAD PATH END\n";);
+            }
+            Debug(errs() << "========================================\n";);
+            for (auto &path : free_paths)
+            {
+                Debug(errs() << "FREE PATH:\n";);
+                for (auto &u : path)
+                {
+                    Debug(u->dump(););
+                }
+                Debug(errs() << "FREE PATH END\n";);
+            }
+            Debug(errs() << "========================================\n";);
+
+
             IRBuilder<> builder(M.getContext());
             LLVMContext &Ctx = M.getContext();
             // Now we need to find the offsets of the shared memory accesses
@@ -1222,10 +1266,10 @@ struct CatoPass : public ModulePass
                     {
                         if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                         {
-                            errs() << "   CallInst: ";
+                            Debug(errs() << "   CallInst: ";);
                             Debug(call_inst->dump(););
 
-                            // Identify the argument argument of the current function that is
+                            // Identify the argument of the current function that is
                             // the shared memory object
                             auto *last_inst = path[i - 1];
                             Value *matching_argument = nullptr;
@@ -1301,10 +1345,10 @@ struct CatoPass : public ModulePass
                     {
                         if (auto *call_inst = dyn_cast<CallInst>(path[i]))
                         {
-                            errs() << "   CallInst: ";
+                            Debug(errs() << "   CallInst: ";);
                             Debug(call_inst->dump(););
 
-                            // Identify the argument argument of the current function that is
+                            // Identify the argument of the current function that is
                             // the shared memory object
                             auto *last_inst = path[i - 1];
                             Value *matching_argument = nullptr;
