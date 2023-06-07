@@ -68,24 +68,37 @@ compile_cmd = (
 
 unmodified_ir_cmd = (
     "mpicc -cc=clang "
-    + CXXFLAGS
+    #+ CXXFLAGS
+    + " -g0 -fopenmp -Wunknown-pragmas "
     + "  "
     + arguments.infile
     + " -flegacy-pass-manager -S -emit-llvm"
 )
 
+#modified_ir_cmd = (
+#    "opt -enable-new-pm=0"
+#    + " -o "
+#    + arguments.output
+#    + "_modified.ll"
+#    + " -load "
+#    + PASS_PATH
+#    + " -Cato "
+#    + " "
+#    + arguments.infile.split(".")[0]
+#    + ".ll"
+#    + " -S"
+#)
 modified_ir_cmd = (
-    "opt -enable-new-pm=0"
+    "mpicc -cc=clang "
+    + CXXFLAGS
     + " -o "
     + arguments.output
-    + "_modified.ll"
-    + " -load "
+    + "_modified.ll "
+    + " -Xclang -load -Xclang "
     + PASS_PATH
-    + " -Cato "
-    + " "
-    + arguments.infile.split(".")[0]
-    + ".ll"
-    + " -S"
+    + " -S "
+    + arguments.infile
+    + " -emit-llvm -flegacy-pass-manager"
 )
 
 link_cmd = (
