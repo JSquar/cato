@@ -21,22 +21,14 @@ void *MemoryAbstractionHandler::create_memory(long size, MPI_Datatype type, int 
     // Base address of the allocated memory
     void *memory = nullptr;
 
-    if (dimensions < 4)
-    {
-        auto memory_abstraction =
-            std::make_unique<MemoryAbstractionDefault>(size, type, dimensions);
-        memory = memory_abstraction->get_base_ptr();
+    auto memory_abstraction =
+        std::make_unique<MemoryAbstractionDefault>(size, type, dimensions);
+    memory = memory_abstraction->get_base_ptr();
 
-        // Transfer ownership of the unique_ptr to the _memory_abstractions datastructure
-        _memory_abstractions.insert(
-            std::make_pair((long)memory, std::move(memory_abstraction)));
-        Debug(std::cout << "Created a memory abstraction at address: " << memory << "\n";);
-    }
-    else
-    {
-        std::cerr << "Error: Replacement of > 3D-Arrays not supported yet\n"; //TODO Niclas
-        exit(1);
-    }
+    // Transfer ownership of the unique_ptr to the _memory_abstractions datastructure
+    _memory_abstractions.insert(
+        std::make_pair((long)memory, std::move(memory_abstraction)));
+    Debug(std::cout << "Created a memory abstraction at address: " << memory << "\n";);
 
     return memory;
 }

@@ -242,12 +242,12 @@ int io_open_par(const char *path, int omode, int *ncidp)
     int err, test;
     if (omode == 0)
     {
-        // std::cerr << "Pfad: " << path << "\n";   
-        // std::cerr << "Omode: " << omode << "\n";   
-        // std::cerr << "ncidp: " << ncidp << "\n";   
-        // std::cerr << "MPI_COMM_WORLD: " << MPI_COMM_WORLD << "\n";   
-        // std::cerr << "MPI_INFO_NULL: " << MPI_INFO_NULL << "\n";   
-        struct stat buffer;   
+        // std::cerr << "Pfad: " << path << "\n";
+        // std::cerr << "Omode: " << omode << "\n";
+        // std::cerr << "ncidp: " << ncidp << "\n";
+        // std::cerr << "MPI_COMM_WORLD: " << MPI_COMM_WORLD << "\n";
+        // std::cerr << "MPI_INFO_NULL: " << MPI_INFO_NULL << "\n";
+        struct stat buffer;
         if (!(stat(path, &buffer) == 0)) {
             std::cerr << "Could not find file " << path << "\n";
         }
@@ -297,7 +297,7 @@ int io_inq_varid(int ncid, char *name, int *varidp)
 {
 
     int err, nc_par_mode=NC_COLLECTIVE;
-    
+
     err = nc_inq_varid(ncid, name, varidp);
     check_error_code(err, "io_inq_varid: inq varid (netCDF backend)"); //TODO
 
@@ -318,7 +318,7 @@ int io_inq_varid(int ncid, char *name, int *varidp)
     {
         std::cerr << "No par mode has been passed via CATO_PAR_MODE. CATO will use collective mode by default, you can choose between INDEPENDENT and COLLECTIVE\n";
     }
-        
+
     err = nc_var_par_access(ncid, varid, nc_par_mode);
     check_error_code(err, "io_inq_varid: set par access mode (netCDF backend)"); //TODO
 

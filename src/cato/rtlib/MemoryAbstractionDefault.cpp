@@ -15,37 +15,19 @@ MemoryAbstractionDefault::MemoryAbstractionDefault(long size, MPI_Datatype type,
     {
         create_1d_array(size, type, dimensions);
     }
-    else if (dimensions == 2)
-    {
-        _base_ptr = malloc(size);
-        Debug(std::cout << "2D-Array of size: " << size
-                        << " allocated at address: " << _base_ptr << "\n";);
-
-        if (auto *logger = CatoRuntimeLogger::get_logger())
-        {
-            std::string message = std::string("Created 2D MemoryAbstractionDefault:\n") +
-                                  "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
-                                  "   byte size: " + std::to_string(size);
-            *logger << message;
-        }
-    }
-    else if (dimensions == 3)
-    {
-        _base_ptr = malloc(size);
-        Debug(std::cout << "3D-Array of size: " << size
-                        << " allocated at address: " << _base_ptr << "\n";);
-
-        if (auto *logger = CatoRuntimeLogger::get_logger())
-        {
-            std::string message = std::string("Created 3D MemoryAbstractionDefault:\n") +
-                                  "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
-                                  "   byte size: " + std::to_string(size);
-            *logger << message;
-        }
-    }
     else
     {
-        std::cerr << "Error: > 3D-Arrays not supported yet\n";
+        _base_ptr = malloc(size);
+        Debug(std::cout << dimensions << "D-Array of size: " << size
+                        << " allocated at address: " << _base_ptr << "\n";);
+
+        if (auto *logger = CatoRuntimeLogger::get_logger())
+        {
+            std::string message = std::string("Created ") + std::to_string(dimensions) + "D MemoryAbstractionDefault:\n" +
+                                  "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+                                  "   byte size: " + std::to_string(size);
+            *logger << message;
+        }
     }
 }
 
@@ -60,39 +42,18 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
         *logger << message;
     }
 
+    Debug(std::cout << "Freeing MemoryAbstractionDefault at address: " << _base_ptr << "\n");
+
     if (_dimensions == 1)
     {
         MPI_Barrier(MPI_COMM_WORLD);
-        Debug(std::cout << "Freeing MemoryAbstractionDefault at address: " << _base_ptr
-                        << "\n");
         MPI_Win_free(&_mpi_window);
+    }
 
-        if (_base_ptr != nullptr)
-        {
-            free(_base_ptr);
-            _base_ptr = nullptr;
-        }
-    }
-    else if (_dimensions == 2)
+    if (_base_ptr != nullptr)
     {
-        Debug(std::cout << "Freeing MemoryAbstractionDefault at address: " << _base_ptr
-                        << "\n");
-        if (_base_ptr != nullptr)
-        {
-            free(_base_ptr);
-            _base_ptr = nullptr;
-        }
-    }
-    // TODO
-    else if (_dimensions == 3)
-    {
-        Debug(std::cout << "Freeing MemoryAbstractionDefault at address: " << _base_ptr
-                        << "\n");
-        if (_base_ptr != nullptr)
-        {
-            free(_base_ptr);
-            _base_ptr = nullptr;
-        }
+        free(_base_ptr);
+        _base_ptr = nullptr;
     }
 }
 
@@ -117,11 +78,6 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr,
             }
 
             MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
-
-            // if(_mpi_rank != rank_and_disp.first)
-            // {
-            //     std::cout << "PUT TO DIFFERENT RANKS MEMEORY\n";
-            // }
 
             MPI_Put(value_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
                     _mpi_window);
@@ -248,6 +204,7 @@ std::pair<int, long> MemoryAbstractionDefault::get_target_rank_and_disp_for_offs
             {
                 long target_disp = offset - _array_ranges[i].first;
                 ret = {i, target_disp};
+                break;
             }
         }
         return ret;
