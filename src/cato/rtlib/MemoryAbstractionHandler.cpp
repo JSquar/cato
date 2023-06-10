@@ -62,137 +62,104 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
     {
         memory_abstraction = _memory_abstractions[(long)(base_ptr)].get();
     }
+    else
+    {
+        std::cerr << "Error: Cato Runtime is trying to access an invalid memory section\n";
+        std::cerr << "Shutting down\n";
+        exit(1);
+    }
 
     if (indices.size() == 1)
     {
-        if (memory_abstraction != nullptr)
-        {
-            memory_abstraction->store(base_ptr, value_ptr, indices);
-        }
-        else
-        {
-            std::cerr << "Error: Cato Runtime is trying to access an invalid memory section\n";
-            std::cerr << "Shutting down\n";
-            exit(1);
-        }
+        memory_abstraction->store(base_ptr, value_ptr, indices);
     }
-    else if (indices.size() == 2)
+    else
     {
-        if (memory_abstraction != nullptr)
+        //The different ways to realize nD-arrays in C are reflected in the test cases for multidimensional arrays,
+        //suffixed with v1 and v2 respectively.
+        //For v1-style usage, we can just follow our pointers all the way to the lowest dimension, where the actual data is stored and
+        //call the store instruction on that memory with the final index.
+        //For v2-style use, the second-to-last dimension will not point to the beginning of any memory area, but rather somewhere in the
+        //middle. So we essentially have to calculate the index on the lowest dimension, which contains all data points, from the
+        //sizes of the higher-level dimensions.
+
+        size_t dimensions = indices.size();
+        MemoryAbstraction* current_memory = memory_abstraction;
+        long* base_ptr = (long*) current_memory->get_base_ptr();
+
+        for (size_t i = 0; i < dimensions - 2; i++)
         {
-            int index1 = indices[0];
-            long *d2_base_ptr = (long *)memory_abstraction->get_base_ptr();
-
-            MemoryAbstraction *sub_array = nullptr;
-            if (_memory_abstractions.find((long)d2_base_ptr[index1]) !=
-                _memory_abstractions.end())
+            long current_index = indices[i];
+            if (_memory_abstractions.find((long)base_ptr[current_index]) != _memory_abstractions.end())
             {
-                sub_array = _memory_abstractions[(long)d2_base_ptr[index1]].get();
-            }
-
-            if (sub_array == nullptr && index1 != 0)
-            {
-                // TODO clean up
-                MemoryAbstraction *first_entry_array = nullptr;
-                if (_memory_abstractions.find((long)d2_base_ptr[0]) !=
-                    _memory_abstractions.end())
-                {
-                    first_entry_array = _memory_abstractions[(long)d2_base_ptr[0]].get();
-                }
-
-                long outer_array_size_bytes = memory_abstraction->get_size_bytes();
-                long inner_array_size_bytes = first_entry_array->get_size_bytes();
-                int type_size;
-                MPI_Type_size(first_entry_array->get_type(), &type_size);
-
-                long num_elements_row = (inner_array_size_bytes / type_size) /
-                                        (outer_array_size_bytes / sizeof(long *));
-
-                long new_index = (index1 * num_elements_row) + indices[1];
-
-                first_entry_array->store(nullptr, value_ptr, {new_index});
-            }
-            else if (sub_array != nullptr)
-            {
-                sub_array->store(nullptr, value_ptr, {indices[1]});
+                current_memory = _memory_abstractions[(long)base_ptr[current_index]].get();
+                base_ptr = (long*) current_memory->get_base_ptr();
             }
             else
             {
-                std::cerr << "Error: could not do a store to this memory abstraction\n";
+                std::cerr << "Could not find MemoryAbstraction, aborting\n";
+                exit(1);
             }
         }
-    }
-    else if (indices.size() == 3)
-    {
-        if (memory_abstraction != nullptr)
+
+        //Check second to last dimension.
+        //Find memory abstraction? -> v1-style usage, call store with the last index on the retrieved memory
+        long second_to_last_index = indices[dimensions-2];
+        if (_memory_abstractions.find((long)base_ptr[second_to_last_index]) != _memory_abstractions.end())
         {
-            int index0 = indices[0];
-            long *d3_base_ptr = (long *)memory_abstraction->get_base_ptr();
+            current_memory = _memory_abstractions[(long)base_ptr[second_to_last_index]].get();
+            current_memory->store(nullptr, value_ptr, {indices[dimensions - 1]});
+        }
+        //Else: v2-style usage, loop through all the memory from highest to lowest dimension at index 0 and store the element counts for index calculations
+        else
+        {
+            std::vector<long> num_elements_in_dimension {};
+            num_elements_in_dimension.push_back(memory_abstraction->get_size_bytes() / sizeof(long*));
 
-            MemoryAbstraction *d2_abstraction = nullptr;
-            if (_memory_abstractions.find((long)d3_base_ptr[index0]) !=
-                _memory_abstractions.end())
+            //The content of memory_abstraction after the loop will be the one containing all data points
+            for (size_t i = 0; i < dimensions - 1; i++)
             {
-                d2_abstraction = _memory_abstractions[(long)d3_base_ptr[index0]].get();
-            }
-
-            if (d2_abstraction == nullptr && index0 != 0)
-            {
-                // TODO
-            }
-            else if (d2_abstraction != nullptr)
-            {
-                long *d2_base_ptr = (long *)d2_abstraction->get_base_ptr();
-                MemoryAbstraction *d1_abstraction = nullptr;
-                if (_memory_abstractions.find((long)d2_base_ptr[indices[1]]) !=
-                    _memory_abstractions.end())
+                long* base_ptr = (long*) memory_abstraction->get_base_ptr();
+                if (_memory_abstractions.find((long)base_ptr[0]) != _memory_abstractions.end())
                 {
-                    d1_abstraction = _memory_abstractions[(long)d2_base_ptr[indices[1]]].get();
-                }
-
-                if (d1_abstraction != nullptr)
-                {
-                    d1_abstraction->store(d1_abstraction->get_base_ptr(), value_ptr,
-                                          {indices[2]});
-                    return;
-                }
-
-                if (d1_abstraction == nullptr || indices[1] == 0)
-                {
-                    if (_memory_abstractions.find((long)d3_base_ptr[0]) !=
-                        _memory_abstractions.end())
+                    memory_abstraction = _memory_abstractions[(long)base_ptr[0]].get();
+                    long byte_size = memory_abstraction->get_size_bytes();
+                    if (i != dimensions - 2)
                     {
-                        d2_abstraction = _memory_abstractions[(long)d3_base_ptr[0]].get();
-                        long *d2_base_ptr = (long *)d2_abstraction->get_base_ptr();
-                        if (_memory_abstractions.find((long)d2_base_ptr[0]) !=
-                            _memory_abstractions.end())
-                        {
-                            d1_abstraction = _memory_abstractions[(long)d2_base_ptr[0]].get();
-                        }
+                        num_elements_in_dimension.push_back(byte_size / sizeof(long*));
                     }
-
-                    long d3_array_size_bytes = memory_abstraction->get_size_bytes();
-                    long d2_array_size_bytes = d2_abstraction->get_size_bytes();
-                    long d1_array_size_bytes = d1_abstraction->get_size_bytes();
-                    int type_size;
-                    MPI_Type_size(d1_abstraction->get_type(), &type_size);
-
-                    long d1_slice_size = (d1_array_size_bytes / type_size) /
-                                         ((d3_array_size_bytes / sizeof(long *)) *
-                                          (d2_array_size_bytes / sizeof(long *)));
-
-                    long new_index =
-                        indices[0] * (d2_array_size_bytes / sizeof(long *)) * d1_slice_size +
-                        indices[1] * d1_slice_size + indices[2];
-
-                    d1_abstraction->store(d1_abstraction->get_base_ptr(), value_ptr,
-                                          {new_index});
+                    else
+                    {
+                        int type_size;
+                        MPI_Type_size(memory_abstraction->get_type(), &type_size);
+                        num_elements_in_dimension.push_back(byte_size / type_size);
+                    }
                 }
                 else
                 {
-                    d2_abstraction->store(d2_base_ptr, value_ptr, {indices[1], indices[2]});
+                    std::cerr << "Could not find MemoryAbstraction, aborting\n";
+                    exit(1);
                 }
             }
+
+            long total_number_of_datapoints = num_elements_in_dimension[dimensions - 1];
+            std::vector<long> factors (dimensions, 1);
+            long product_of_element_counts = 1;
+
+            for (long i = dimensions - 2; i >= 0; i--)
+            {
+                product_of_element_counts *= num_elements_in_dimension[i];
+                factors[i] = factors[i+1] * num_elements_in_dimension[i];
+            }
+            long num_elements_last_dimension = total_number_of_datapoints / product_of_element_counts;
+
+            long new_index = indices[dimensions - 1];
+            for (size_t i = 0; i < dimensions - 1; i++)
+            {
+                new_index += indices[i] * factors[i+1] * num_elements_last_dimension;
+            }
+
+            memory_abstraction->store(memory_abstraction->get_base_ptr(), value_ptr, {new_index});
         }
     }
 }
