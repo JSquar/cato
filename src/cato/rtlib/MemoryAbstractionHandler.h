@@ -28,6 +28,25 @@ class MemoryAbstractionHandler
     int _mpi_rank;
     int _mpi_size;
 
+    /**
+     * Traverses the MemoryAbstractions starting at memory_abstraction, pointed to by indices, down to the second-to-last-dimension.
+     * This function and the next two are necessary to deal with v2-style array usage. Check the store function in
+     * MemoryAbstractionHandler.cpp for a detailed description.
+     **/
+    MemoryAbstraction* dereference_pointers(MemoryAbstraction* const memory_abstraction, const std::vector<long> indices);
+
+    /**
+     * Traverses the MemoryAbstractions at index 0 and gathers information regarding their element size.
+     * For efficiency's sake, the lowest level MemoryAbstraction containing all the data points is returned as well.
+     **/
+    std::pair<std::vector<long>, MemoryAbstraction*> get_elements_per_dimension(MemoryAbstraction* memory_abstraction, size_t dimensions);
+
+    /**
+     * Calculates the new index on a one-dimensional array from the previous indices and the
+     * elements that are supposed to be in each dimension.
+     **/
+    long calculate_new_index(const std::vector<long> indices, const std::vector<long> num_elements_in_dimension);
+
   public:
     MemoryAbstractionHandler(int rank, int size);
 
