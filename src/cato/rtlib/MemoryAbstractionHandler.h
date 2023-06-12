@@ -30,7 +30,7 @@ class MemoryAbstractionHandler
 
     /**
      * Traverses the MemoryAbstractions starting at memory_abstraction, pointed to by indices, down to the second-to-last-dimension.
-     * This function and the next two are necessary to deal with v2-style array usage. Check the store function in
+     * This function and the next two are necessary to deal with v2-style array usage. Check get_target_of_operation in
      * MemoryAbstractionHandler.cpp for a detailed description.
      **/
     MemoryAbstraction* dereference_pointers(MemoryAbstraction* const memory_abstraction, const std::vector<long> indices);
@@ -46,6 +46,12 @@ class MemoryAbstractionHandler
      * elements that are supposed to be in each dimension.
      **/
     long calculate_new_index(const std::vector<long> indices, const std::vector<long> num_elements_in_dimension);
+
+    /**
+     * Determines the memory abstraction and the index at which the store/load operation should take place.
+     **/
+    std::pair<MemoryAbstraction*, long> get_target_of_operation(void* base_ptr, std::vector<long> indices);
+
 
   public:
     MemoryAbstractionHandler(int rank, int size);

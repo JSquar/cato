@@ -142,7 +142,6 @@ long MemoryAbstractionHandler::calculate_new_index(const std::vector<long> indic
     return new_index;
 }
 
-
 /**
  * There are different ways to realize nD-arrays in C, as reflected in the test cases for multidimensional arrays,
  * suffixed with v1 and v2 respectively.
@@ -152,8 +151,7 @@ long MemoryAbstractionHandler::calculate_new_index(const std::vector<long> indic
  * middle. So we essentially have to calculate the index on the lowest dimension, which contains all data points, from the
  * sizes of the higher-level dimensions.
  **/
-void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
-                                     std::vector<long> indices)
+std::pair<MemoryAbstraction*, long> MemoryAbstractionHandler::get_target_of_operation(void* base_ptr, std::vector<long> indices)
 {
     MemoryAbstraction *memory_abstraction = nullptr;
 
@@ -170,7 +168,7 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
 
     if (indices.size() == 1)
     {
-        memory_abstraction->store(base_ptr, value_ptr, indices);
+        return std::make_pair(memory_abstraction, indices[0]);
     }
     else
     {
@@ -184,7 +182,7 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
         if (_memory_abstractions.find((long)base_ptr[second_to_last_index]) != _memory_abstractions.end())
         {
             current_memory = _memory_abstractions[(long)base_ptr[second_to_last_index]].get();
-            current_memory->store(nullptr, value_ptr, {indices[dimensions - 1]});
+            return std::make_pair(current_memory, indices[dimensions - 1]);
         }
         //Else: v2-style usage, calculate new index and store on the lowest dimension MemoryAbstraction
         else
@@ -192,438 +190,44 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
             std::vector<long> num_elements_in_dimension;
             std::tie(num_elements_in_dimension, memory_abstraction) = get_elements_per_dimension(memory_abstraction, dimensions);
             long new_index = calculate_new_index(indices, num_elements_in_dimension);
-            memory_abstraction->store(memory_abstraction->get_base_ptr(), value_ptr, {new_index});
+            return std::make_pair(memory_abstraction, new_index);
         }
     }
 }
 
+void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
+                                     std::vector<long> indices)
+{
+    MemoryAbstraction* memory_abstraction = nullptr;
+    long index = 0;
+    std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+    memory_abstraction->store(base_ptr, value_ptr, {index});
+}
+
 void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<long> indices)
 {
-    MemoryAbstraction *memory_abstraction = nullptr;
-    if (_memory_abstractions.find((long)base_ptr) != _memory_abstractions.end())
-    {
-        memory_abstraction = _memory_abstractions[(long)base_ptr].get();
-    }
-
-    if (indices.size() == 1)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            memory_abstraction->load(base_ptr, dest_ptr, indices);
-        }
-        else
-        {
-            std::cerr << "Error: Cato Runtime is trying to access an invalid memory section\n";
-            std::cerr << "Shutting down\n";
-            exit(1);
-        }
-    }
-    else if (indices.size() == 2)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            int index1 = indices[0];
-            long *d2_base_ptr = (long *)memory_abstraction->get_base_ptr();
-
-            MemoryAbstraction *sub_array = nullptr;
-            if (_memory_abstractions.find((long)d2_base_ptr[index1]) !=
-                _memory_abstractions.end())
-            {
-                sub_array = _memory_abstractions[(long)d2_base_ptr[index1]].get();
-            }
-
-            if (sub_array == nullptr && index1 != 0)
-            {
-                // TODO clean up
-                MemoryAbstraction *first_entry_array = nullptr;
-                if (_memory_abstractions.find((long)d2_base_ptr[0]) !=
-                    _memory_abstractions.end())
-                {
-                    first_entry_array = _memory_abstractions[(long)d2_base_ptr[0]].get();
-                }
-
-                long outer_array_size_bytes = memory_abstraction->get_size_bytes();
-                long inner_array_size_bytes = first_entry_array->get_size_bytes();
-                int type_size;
-                MPI_Type_size(first_entry_array->get_type(), &type_size);
-
-                long num_elements_row = (inner_array_size_bytes / type_size) /
-                                        (outer_array_size_bytes / sizeof(long *));
-
-                long new_index = (index1 * num_elements_row) + indices[1];
-
-                first_entry_array->load(nullptr, dest_ptr, {new_index});
-            }
-            else if (sub_array != nullptr)
-            {
-                sub_array->load(nullptr, dest_ptr, {indices[1]});
-            }
-            else
-            {
-                std::cerr << "Error: could not do a load from this memory abstraction\n";
-            }
-        }
-    }
-    else if (indices.size() == 3)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            int index0 = indices[0];
-            long *d3_base_ptr = (long *)memory_abstraction->get_base_ptr();
-
-            MemoryAbstraction *d2_abstraction = nullptr;
-            if (_memory_abstractions.find((long)d3_base_ptr[index0]) !=
-                _memory_abstractions.end())
-            {
-                d2_abstraction = _memory_abstractions[(long)d3_base_ptr[index0]].get();
-            }
-
-            if (d2_abstraction == nullptr && index0 != 0)
-            {
-                // TODO
-            }
-            else if (d2_abstraction != nullptr)
-            {
-                long *d2_base_ptr = (long *)d2_abstraction->get_base_ptr();
-                MemoryAbstraction *d1_abstraction = nullptr;
-                if (_memory_abstractions.find((long)d2_base_ptr[indices[1]]) !=
-                    _memory_abstractions.end())
-                {
-                    d1_abstraction = _memory_abstractions[(long)d2_base_ptr[indices[1]]].get();
-                }
-
-                if (d1_abstraction != nullptr)
-                {
-                    d1_abstraction->load(d1_abstraction->get_base_ptr(), dest_ptr,
-                                         {indices[2]});
-                    return;
-                }
-
-                if (d1_abstraction == nullptr || indices[1] == 0)
-                {
-                    if (_memory_abstractions.find((long)d3_base_ptr[0]) !=
-                        _memory_abstractions.end())
-                    {
-                        d2_abstraction = _memory_abstractions[(long)d3_base_ptr[0]].get();
-                        long *d2_base_ptr = (long *)d2_abstraction->get_base_ptr();
-                        if (_memory_abstractions.find((long)d2_base_ptr[0]) !=
-                            _memory_abstractions.end())
-                        {
-                            d1_abstraction = _memory_abstractions[(long)d2_base_ptr[0]].get();
-                        }
-                    }
-
-                    long d3_array_size_bytes = memory_abstraction->get_size_bytes();
-                    long d2_array_size_bytes = d2_abstraction->get_size_bytes();
-                    long d1_array_size_bytes = d1_abstraction->get_size_bytes();
-                    int type_size;
-                    MPI_Type_size(d1_abstraction->get_type(), &type_size);
-
-                    long d1_slice_size = (d1_array_size_bytes / type_size) /
-                                         ((d3_array_size_bytes / sizeof(long *)) *
-                                          (d2_array_size_bytes / sizeof(long *)));
-
-                    long new_index =
-                        indices[0] * (d2_array_size_bytes / sizeof(long *)) * d1_slice_size +
-                        indices[1] * d1_slice_size + indices[2];
-
-                    d1_abstraction->load(d1_abstraction->get_base_ptr(), dest_ptr,
-                                         {new_index});
-                }
-                else
-                {
-                    d2_abstraction->load(d2_base_ptr, dest_ptr, {indices[1], indices[2]});
-                }
-            }
-        }
-    }
+    MemoryAbstraction* memory_abstraction = nullptr;
+    long index = 0;
+    std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+    memory_abstraction->load(base_ptr, dest_ptr, {index});
 }
 
 void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
                                                 std::vector<long> indices)
 {
-    MemoryAbstraction *memory_abstraction = nullptr;
-    if (_memory_abstractions.find((long)base_ptr) != _memory_abstractions.end())
-    {
-        memory_abstraction = _memory_abstractions[(long)base_ptr].get();
-    }
-
-    if (indices.size() == 1)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            memory_abstraction->sequential_store(base_ptr, value_ptr, indices);
-        }
-        else
-        {
-            std::cerr << "Error: Cato Runtime is trying to access an invalid memory section\n";
-            std::cerr << "Shutting down\n";
-            exit(1);
-        }
-    }
-    else if (indices.size() == 2)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            int index1 = indices[0];
-            long *d2_base_ptr = (long *)memory_abstraction->get_base_ptr();
-
-            MemoryAbstraction *sub_array = nullptr;
-            if (_memory_abstractions.find((long)d2_base_ptr[index1]) !=
-                _memory_abstractions.end())
-            {
-                sub_array = _memory_abstractions[(long)d2_base_ptr[index1]].get();
-            }
-
-            if (sub_array == nullptr && index1 != 0)
-            {
-                // TODO clean up
-                MemoryAbstraction *first_entry_array = nullptr;
-                if (_memory_abstractions.find((long)d2_base_ptr[0]) !=
-                    _memory_abstractions.end())
-                {
-                    first_entry_array = _memory_abstractions[(long)d2_base_ptr[0]].get();
-                }
-
-                long outer_array_size_bytes = memory_abstraction->get_size_bytes();
-                long inner_array_size_bytes = first_entry_array->get_size_bytes();
-                int type_size;
-                MPI_Type_size(first_entry_array->get_type(), &type_size);
-
-                long num_elements_row = (inner_array_size_bytes / type_size) /
-                                        (outer_array_size_bytes / sizeof(long *));
-
-                long new_index = (index1 * num_elements_row) + indices[1];
-
-                first_entry_array->sequential_store(nullptr, value_ptr, {new_index});
-            }
-            else if (sub_array != nullptr)
-            {
-                sub_array->sequential_store(nullptr, value_ptr, {indices[1]});
-            }
-            else
-            {
-                std::cerr << "Error: could not do a store to this memory abstraction\n";
-            }
-        }
-    }
-    else if (indices.size() == 3)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            int index0 = indices[0];
-            long *d3_base_ptr = (long *)memory_abstraction->get_base_ptr();
-
-            MemoryAbstraction *d2_abstraction = nullptr;
-            if (_memory_abstractions.find((long)d3_base_ptr[index0]) !=
-                _memory_abstractions.end())
-            {
-                d2_abstraction = _memory_abstractions[(long)d3_base_ptr[index0]].get();
-            }
-
-            if (d2_abstraction == nullptr && index0 != 0)
-            {
-                // TODO
-            }
-            else if (d2_abstraction != nullptr)
-            {
-                long *d2_base_ptr = (long *)d2_abstraction->get_base_ptr();
-                MemoryAbstraction *d1_abstraction = nullptr;
-                if (_memory_abstractions.find((long)d2_base_ptr[indices[1]]) !=
-                    _memory_abstractions.end())
-                {
-                    d1_abstraction = _memory_abstractions[(long)d2_base_ptr[indices[1]]].get();
-                }
-
-                if (d1_abstraction != nullptr)
-                {
-                    d1_abstraction->sequential_store(d1_abstraction->get_base_ptr(), value_ptr,
-                                                     {indices[2]});
-                    return;
-                }
-
-                if (d1_abstraction == nullptr || indices[1] == 0)
-                {
-                    if (_memory_abstractions.find((long)d3_base_ptr[0]) !=
-                        _memory_abstractions.end())
-                    {
-                        d2_abstraction = _memory_abstractions[(long)d3_base_ptr[0]].get();
-                        long *d2_base_ptr = (long *)d2_abstraction->get_base_ptr();
-                        if (_memory_abstractions.find((long)d2_base_ptr[0]) !=
-                            _memory_abstractions.end())
-                        {
-                            d1_abstraction = _memory_abstractions[(long)d2_base_ptr[0]].get();
-                        }
-                    }
-
-                    long d3_array_size_bytes = memory_abstraction->get_size_bytes();
-                    long d2_array_size_bytes = d2_abstraction->get_size_bytes();
-                    long d1_array_size_bytes = d1_abstraction->get_size_bytes();
-                    int type_size;
-                    MPI_Type_size(d1_abstraction->get_type(), &type_size);
-
-                    long d1_slice_size = (d1_array_size_bytes / type_size) /
-                                         ((d3_array_size_bytes / sizeof(long *)) *
-                                          (d2_array_size_bytes / sizeof(long *)));
-
-                    long new_index =
-                        indices[0] * (d2_array_size_bytes / sizeof(long *)) * d1_slice_size +
-                        indices[1] * d1_slice_size + indices[2];
-
-                    d1_abstraction->sequential_store(d1_abstraction->get_base_ptr(), value_ptr,
-                                                     {new_index});
-                }
-                else
-                {
-                    d2_abstraction->sequential_store(d2_base_ptr, value_ptr,
-                                                     {indices[1], indices[2]});
-                }
-            }
-        }
-    }
+    MemoryAbstraction* memory_abstraction = nullptr;
+    long index = 0;
+    std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+    memory_abstraction->sequential_store(base_ptr, value_ptr, {index});
 }
 
 void MemoryAbstractionHandler::sequential_load(void *base_ptr, void *dest_ptr,
                                                std::vector<long> indices)
 {
-    MemoryAbstraction *memory_abstraction = nullptr;
-    if (_memory_abstractions.find((long)base_ptr) != _memory_abstractions.end())
-    {
-        memory_abstraction = _memory_abstractions[(long)base_ptr].get();
-    }
-
-    if (indices.size() == 1)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            memory_abstraction->sequential_load(base_ptr, dest_ptr, indices);
-        }
-        else
-        {
-            std::cerr << "Error: Cato Runtime is trying to access an invalid memory section\n";
-            std::cerr << "Shutting down\n";
-            exit(1);
-        }
-    }
-    else if (indices.size() == 2)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            int index1 = indices[0];
-            long *d2_base_ptr = (long *)memory_abstraction->get_base_ptr();
-
-            MemoryAbstraction *sub_array = nullptr;
-            if (_memory_abstractions.find((long)d2_base_ptr[index1]) !=
-                _memory_abstractions.end())
-            {
-                sub_array = _memory_abstractions[(long)d2_base_ptr[index1]].get();
-            }
-
-            if (sub_array == nullptr && index1 != 0)
-            {
-                // TODO clean up
-                MemoryAbstraction *first_entry_array = nullptr;
-                if (_memory_abstractions.find((long)d2_base_ptr[0]) !=
-                    _memory_abstractions.end())
-                {
-                    first_entry_array = _memory_abstractions[(long)d2_base_ptr[0]].get();
-                }
-                long outer_array_size_bytes = memory_abstraction->get_size_bytes();
-                long inner_array_size_bytes = first_entry_array->get_size_bytes();
-                int type_size;
-                MPI_Type_size(first_entry_array->get_type(), &type_size);
-
-                long num_elements_row = (inner_array_size_bytes / type_size) /
-                                        (outer_array_size_bytes / sizeof(long *));
-
-                long new_index = (index1 * num_elements_row) + indices[1];
-
-                first_entry_array->sequential_load(nullptr, dest_ptr, {new_index});
-            }
-            else if (sub_array != nullptr)
-            {
-                sub_array->sequential_load(nullptr, dest_ptr, {indices[1]});
-            }
-            else
-            {
-                std::cerr << "Error: could not do a load from this memory abstraction\n";
-            }
-        }
-    }
-    else if (indices.size() == 3)
-    {
-        if (memory_abstraction != nullptr)
-        {
-            int index0 = indices[0];
-            long *d3_base_ptr = (long *)memory_abstraction->get_base_ptr();
-
-            MemoryAbstraction *d2_abstraction = nullptr;
-            if (_memory_abstractions.find((long)d3_base_ptr[index0]) !=
-                _memory_abstractions.end())
-            {
-                d2_abstraction = _memory_abstractions[(long)d3_base_ptr[index0]].get();
-            }
-
-            if (d2_abstraction == nullptr && index0 != 0)
-            {
-                // TODO
-            }
-            else if (d2_abstraction != nullptr)
-            {
-                long *d2_base_ptr = (long *)d2_abstraction->get_base_ptr();
-                MemoryAbstraction *d1_abstraction = nullptr;
-                if (_memory_abstractions.find((long)d2_base_ptr[indices[1]]) !=
-                    _memory_abstractions.end())
-                {
-                    d1_abstraction = _memory_abstractions[(long)d2_base_ptr[indices[1]]].get();
-                }
-
-                if (d1_abstraction != nullptr)
-                {
-                    d1_abstraction->sequential_load(d1_abstraction->get_base_ptr(), dest_ptr,
-                                                    {indices[2]});
-                    return;
-                }
-
-                if (d1_abstraction == nullptr || indices[1] == 0)
-                {
-                    if (_memory_abstractions.find((long)d3_base_ptr[0]) !=
-                        _memory_abstractions.end())
-                    {
-                        d2_abstraction = _memory_abstractions[(long)d3_base_ptr[0]].get();
-                        long *d2_base_ptr = (long *)d2_abstraction->get_base_ptr();
-                        if (_memory_abstractions.find((long)d2_base_ptr[0]) !=
-                            _memory_abstractions.end())
-                        {
-                            d1_abstraction = _memory_abstractions[(long)d2_base_ptr[0]].get();
-                        }
-                    }
-
-                    long d3_array_size_bytes = memory_abstraction->get_size_bytes();
-                    long d2_array_size_bytes = d2_abstraction->get_size_bytes();
-                    long d1_array_size_bytes = d1_abstraction->get_size_bytes();
-                    int type_size;
-                    MPI_Type_size(d1_abstraction->get_type(), &type_size);
-
-                    long d1_slice_size = (d1_array_size_bytes / type_size) /
-                                         ((d3_array_size_bytes / sizeof(long *)) *
-                                          (d2_array_size_bytes / sizeof(long *)));
-
-                    long new_index =
-                        indices[0] * (d2_array_size_bytes / sizeof(long *)) * d1_slice_size +
-                        indices[1] * d1_slice_size + indices[2];
-
-                    d1_abstraction->sequential_load(d1_abstraction->get_base_ptr(), dest_ptr,
-                                                    {new_index});
-                }
-                else
-                {
-                    d2_abstraction->sequential_load(d2_base_ptr, dest_ptr,
-                                                    {indices[1], indices[2]});
-                }
-            }
-        }
-    }
+    MemoryAbstraction* memory_abstraction = nullptr;
+    long index = 0;
+    std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+    memory_abstraction->sequential_load(base_ptr, dest_ptr, {index});
 }
 
 void MemoryAbstractionHandler::pointer_store(void *dest_ptr, void *source_ptr, long dest_index)
