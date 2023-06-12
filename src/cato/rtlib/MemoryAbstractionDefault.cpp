@@ -143,19 +143,21 @@ void MemoryAbstractionDefault::sequential_store(void *base_ptr, void *value_ptr,
                 *logger << message;
             }
 
-            MPI_Win_fence(0, _mpi_window);
+            //MPI_Win_fence(0, _mpi_window);
+            MPI_Win_fence(MPI_MODE_NOPRECEDE, _mpi_window);
             if (_mpi_rank == rank_and_disp.first)
             {
                 MPI_Put(value_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1,
                         _type, _mpi_window);
             }
-            MPI_Win_fence(0, _mpi_window);
+            //MPI_Win_fence(0, _mpi_window);
+            MPI_Win_fence(MPI_MODE_NOSUCCEED, _mpi_window);
         }
         else
         {
             std::cerr << "MemoryAbstractionDefault does not support > 1D arrays yet\n";
         }
-        MPI_Barrier(MPI_COMM_WORLD);
+        //MPI_Barrier(MPI_COMM_WORLD);
     }
 }
 
@@ -179,17 +181,19 @@ void MemoryAbstractionDefault::sequential_load(void *base_ptr, void *dest_ptr,
                 *logger << message;
             }
 
-            MPI_Win_fence(0, _mpi_window);
+            //MPI_Win_fence(0, _mpi_window);
+            MPI_Win_fence(MPI_MODE_NOPRECEDE | MPI_MODE_NOPUT, _mpi_window);
             MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
                     _mpi_window);
             // std::cout << "Rank " << _mpi_rank << " loading " << *((int*)dest_ptr) << "\n";
-            MPI_Win_fence(0, _mpi_window);
+            //MPI_Win_fence(0, _mpi_window);
+            MPI_Win_fence(MPI_MODE_NOSUCCEED, _mpi_window);
         }
         else
         {
             std::cerr << "MemoryAbstractionDefault does not support > 1D arrays yet\n";
         }
-        MPI_Barrier(MPI_COMM_WORLD);
+        //MPI_Barrier(MPI_COMM_WORLD);
     }
 }
 
