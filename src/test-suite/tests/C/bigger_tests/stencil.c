@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <omp.h>
 
+#ifndef DIM
 #define DIM 10
+#endif
 
 int main()
 {
