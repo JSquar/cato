@@ -677,32 +677,32 @@ struct CatoPass : public ModulePass
 
             // TODO
             // if (get_pointer_depth(store->getValueOperand()->getType()) < 2)
-            if (get_pointer_depth(store->getValueOperand()->getType()) < 3)
+            //if (get_pointer_depth(store->getValueOperand()->getType()) < 3)
+            //{
+            builder.SetInsertPoint(store);
+
+            Value *index = nullptr;
+
+            if (auto *gep = dyn_cast<GetElementPtrInst>(store->getPointerOperand()))
             {
-                builder.SetInsertPoint(store);
-
-                Value *index = nullptr;
-
-                if (auto *gep = dyn_cast<GetElementPtrInst>(store->getPointerOperand()))
-                {
-                    index = gep->getOperand(1);
-                }
-                else
-                {
-                    index = builder.getInt64(0);
-                }
-
-                Value *dest_ptr =
-                    builder.CreateBitCast(store->getPointerOperand(), Type::getInt8PtrTy(Ctx));
-                Value *source_ptr =
-                    builder.CreateBitCast(store->getValueOperand(), Type::getInt8PtrTy(Ctx));
-                std::vector<Value *> args = {dest_ptr, source_ptr, index};
-
-                auto *new_call =
-                    builder.CreateCall(runtime.functions.shared_memory_pointer_store, args);
-                store->replaceAllUsesWith(new_call);
-                store->eraseFromParent();
+                index = gep->getOperand(1);
             }
+            else
+            {
+                index = builder.getInt64(0);
+            }
+
+            Value *dest_ptr =
+                builder.CreateBitCast(store->getPointerOperand(), Type::getInt8PtrTy(Ctx));
+            Value *source_ptr =
+                builder.CreateBitCast(store->getValueOperand(), Type::getInt8PtrTy(Ctx));
+            std::vector<Value *> args = {dest_ptr, source_ptr, index};
+
+            auto *new_call =
+                builder.CreateCall(runtime.functions.shared_memory_pointer_store, args);
+            store->replaceAllUsesWith(new_call);
+            store->eraseFromParent();
+            //}
         }
 
         // Replace freeing of shared memory with corresponding call to the cato runtime library
@@ -984,7 +984,7 @@ struct CatoPass : public ModulePass
                 args.insert(args.begin(), void_base_ptr);
             }
 
-            // Do the acutal replacement of the load instruction with a call to the cato
+            // Do the actual replacement of the load instruction with a call to the cato
             // runtime library
             if (args.size() >= 3)
             {
