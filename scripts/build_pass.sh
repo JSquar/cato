@@ -13,7 +13,7 @@
 #nprocs -1 as building rtlib will use one CPU as well
 : ${CPUS:=1}
 
-RTLIBFLAGS=" -O2 -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
+RTLIBFLAGS=" -O2 -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable $(nc-config --cflags) "
 RTLIB_SRC="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
 RTLIB_OUT="${CATO_ROOT}/build/rtlib.bc"
 export CC=clang

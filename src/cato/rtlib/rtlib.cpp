@@ -2,7 +2,7 @@
  * File: rtlib.cpp
  * 
  * -----
- * Last Modified: Friday, 2nd June 2023 7:02:44 pm
+ * Last Modified: Saturday, 3rd June 2023 3:06:09 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -515,6 +515,7 @@ int io_def_var_chunking(int ncid, int varid, int storage, int datatype, size_t b
     }
     std::cout << "Use chunksize " << chunksize[0] << "\n";
     err = nc_def_var_chunking(ncid, varid, storage, chunksize);
+    check_error_code(err, "io_def_var_chunking (netCDF backend)"); 
     return err;   
 }
 
