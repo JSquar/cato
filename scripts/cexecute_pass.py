@@ -7,7 +7,9 @@ import subprocess
 
 def run_command(command, verbose=False):
     if verbose:
+        print("######################")
         print(command)
+        print("######################")
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
     result = ""
     while True:
@@ -87,7 +89,7 @@ compile_cmd = (
 
 unmodified_ir_cmd = (
     "mpicc -cc=clang "
-    + arg_cxxflags
+    + arg_cxxflags.replace("-O2","-O0")
     + "  "
     + arguments.infile
     + " -flegacy-pass-manager -S -emit-llvm"
@@ -134,7 +136,7 @@ rm_cmd = "rm " + arguments.output + ".o"
 #                                RUN COMPILATION                               #
 # ---------------------------------------------------------------------------- #
 
-run_command(compile_cmd)
+run_command(compile_cmd, False)
 run_command(unmodified_ir_cmd, False)
 run_command(modified_ir_cmd, False)
 run_command(link_cmd, False)
