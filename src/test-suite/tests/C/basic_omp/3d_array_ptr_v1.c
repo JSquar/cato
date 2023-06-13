@@ -8,12 +8,12 @@
 int main()
 {
     int*** M = (int***) malloc(sizeof(int**)*2);
-    M[0] = (int**)malloc(sizeof(int**)*2);
-    M[1] = (int**)malloc(sizeof(int**)*2);
-    M[0][0] = (int*)malloc(sizeof(int*)*2);
-    M[0][1] = (int*)malloc(sizeof(int*)*2);
-    M[1][0] = (int*)malloc(sizeof(int*)*2);
-    M[1][1] = (int*)malloc(sizeof(int*)*2);
+    M[0] = (int**)malloc(sizeof(int*)*2);
+    M[1] = (int**)malloc(sizeof(int*)*2);
+    M[0][0] = (int*)malloc(sizeof(int)*2);
+    M[0][1] = (int*)malloc(sizeof(int)*2);
+    M[1][0] = (int*)malloc(sizeof(int)*2);
+    M[1][1] = (int*)malloc(sizeof(int)*2);
 
     #pragma omp parallel
     {
