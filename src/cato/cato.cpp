@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sunday, 28th May 2023 5:10:47 pm
+ * Last Modified: Tuesday, 13th June 2023 7:08:02 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -2118,7 +2118,7 @@ static void registerCatoPass(const PassManagerBuilder &, legacy::PassManagerBase
     PM.add(new CatoPass());
 }
 
-static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
+static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_ModuleOptimizerEarly,
                                              registerCatoPass);
 
 // static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_ModuleOptimizerEarly,
