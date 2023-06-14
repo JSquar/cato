@@ -1,3 +1,13 @@
+/*
+ * File: MemoryAbstractionHandler.cpp
+ * -----
+ *
+ * -----
+ * Last Modified: Tuesday, 12th June 2023
+ * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
+ * -----
+ */
+
 #include "MemoryAbstractionHandler.h"
 
 #include <stdlib.h>

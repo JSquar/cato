@@ -3,12 +3,13 @@
  * -----
  *
  * -----
- * Last Modified: Monday, 6th April 2023 11:40:06 pm
- * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * Last Modified: Tuesday, 13th June 2023
+ * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
  * Copyright (c) 2020 Michael Blesel
  * Copyright (c) 2023 Jannek Squar
+ * Copyright (c) 2023 Niclas Schroeter
  *
  */
 #include <llvm/Pass.h>

@@ -1,3 +1,13 @@
+/*
+ * File: rtlib.cpp
+ * -----
+ *
+ * -----
+ * Last Modified: Tuesday, 8th June 2023
+ * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
+ * -----
+ */
+
 #include "rtlib.h"
 
 #include <cstdlib>

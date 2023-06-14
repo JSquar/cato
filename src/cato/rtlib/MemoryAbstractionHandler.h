@@ -1,3 +1,13 @@
+/*
+ * File: MemoryAbstractionDefault.h
+ * -----
+ *
+ * -----
+ * Last Modified: Tuesday, 12th June 2023
+ * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
+ * -----
+ */
+
 #ifndef CATO_RTLIB_MEMORY_ABSTRACTION_HANDLER_H
 #define CATO_RTLIB_MEMORY_ABSTRACTION_HANDLER_H
 
