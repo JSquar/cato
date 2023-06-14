@@ -61,7 +61,7 @@ if "LIBS" in os.environ:
     arg_libs = os.environ["LIBS"]
 else:
     arg_libs = ""
-arg_libs += " " + run_command("nc-config --libs")[1]
+arg_libs += " -lm " + run_command("nc-config --libs")[1]
 
 # ----------------------------------- PATHS ---------------------------------- #
 arg_pass_dir = os.environ["CATO_ROOT"] + "/build/src/cato/libCatoPass.so"
