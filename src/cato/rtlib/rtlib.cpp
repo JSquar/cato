@@ -52,8 +52,11 @@ void cato_initialize(bool logging)
     std::optional<std::size_t> env_metrics = parse_env_size_t("CATO_METRICS");
     if (env_metrics.has_value())
     {
-        std::cout<<"Collect metrics\n";
+        //std::cout<<"Collect metrics\n";
+        // Get memory usage
         getrusage(RUSAGE_SELF, &_start_usage);
+        // Get time
+        gettimeofday(&_start_time, NULL);
     }
 
 
@@ -77,10 +80,36 @@ void cato_finalize()
     std::optional<std::size_t> env_metrics = parse_env_size_t("CATO_METRICS");
     if (env_metrics.has_value())
     {
-        std::cout<<"Evaluate metrics\n";
+        // std::cout<<"Evaluate metrics\n";
         getrusage(RUSAGE_SELF, &_end_usage);
 
         std::vector<std::string> metrics = parse_env_list("CATO_METRICS");
+        if(check_string_in_vector("TIME", metrics).has_value()) {
+
+            if(MPI_RANK == 0) {
+                // Get time
+                gettimeofday(&_end_time, NULL);
+                double time = (_end_time.tv_sec - _start_time.tv_sec) + (_end_time.tv_usec - _start_time.tv_usec) * 1e-6;
+		        std::cerr << "Runtime [s]: " << time << "\n";
+
+            }
+
+        }
+        if(check_string_in_vector("MEM", metrics).has_value()) {
+            // Process local memory consumption
+            long my_ru_maxrss = _end_usage.ru_maxrss - _start_usage.ru_maxrss;
+
+            if(MPI_RANK == 0) {
+                MPI_Reduce(MPI_IN_PLACE, &my_ru_maxrss, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+                double avg_mem = my_ru_maxrss / MPI_SIZE;
+                std::cerr << "Total memory consumption [kB] over " << MPI_SIZE << " processes: " << my_ru_maxrss << "\n";
+                std::cerr << "Avg. memory consumption per process [kB]: " << avg_mem << "\n";
+            }
+            else {
+                MPI_Reduce(&my_ru_maxrss, nullptr, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+            }
+
+        }
     }
 
     MPI_Finalize();

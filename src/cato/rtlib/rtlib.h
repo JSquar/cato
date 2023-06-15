@@ -20,6 +20,7 @@
 #include <memory>
 #include <mpi.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 
 #include "CatoRuntimeLogger.h"
 #include "MemoryAbstractionHandler.h"
@@ -83,9 +84,11 @@ int varid;
 // One global instance of the MemoryAbstractionHandler class to manage shared memory objects
 std::unique_ptr<MemoryAbstractionHandler> _memory_handler;
 
-// One global rusage per process
+// Process metrics
 struct rusage _start_usage;
 struct rusage _end_usage;
+struct timeval _start_time; /* time when program started                      */
+struct timeval _end_time;  /* time when calculation completed                */
 
 /**
  * Dummy function for testing
