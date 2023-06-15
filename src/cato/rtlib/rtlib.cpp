@@ -25,6 +25,7 @@
 #include <optional>
 #include "mpi_mutex.h"
 #include <sys/stat.h>
+
 #include "../environment_interaction.h"
 // #include <fstream>
 // #include <llvm/Support/raw_ostream.h>
@@ -48,6 +49,14 @@ void cato_initialize(bool logging)
     MPI_Comm_rank(MPI_COMM_WORLD, &MPI_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &MPI_SIZE);
 
+    std::optional<std::size_t> env_metrics = parse_env_size_t("CATO_METRICS");
+    if (env_metrics.has_value())
+    {
+        std::cout<<"Collect metrics\n";
+        getrusage(RUSAGE_SELF, &_start_usage);
+    }
+
+
     MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     _memory_handler = std::make_unique<MemoryAbstractionHandler>(MPI_RANK, MPI_SIZE);
@@ -64,6 +73,15 @@ void cato_finalize()
     _memory_handler.reset();
 
     CatoRuntimeLogger::stop_logger();
+
+    std::optional<std::size_t> env_metrics = parse_env_size_t("CATO_METRICS");
+    if (env_metrics.has_value())
+    {
+        std::cout<<"Evaluate metrics\n";
+        getrusage(RUSAGE_SELF, &_end_usage);
+
+        std::vector<std::string> metrics = parse_env_list("CATO_METRICS");
+    }
 
     MPI_Finalize();
 }

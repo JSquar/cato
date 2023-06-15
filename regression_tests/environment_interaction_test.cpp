@@ -48,15 +48,16 @@ TEST(EnvParseTest, parse_vector_int) {
 TEST(EnvParseTest, get_index_exists) {
   putenv("FOO=hallo:welt:hello:world");
   auto result = parse_env_list("FOO");
-  int index = check_string_in_vector("hello", result);
-  EXPECT_EQ(2,index);
+  std::optional<std::vector<std::string>::size_type> index = check_string_in_vector("hello", result);
+  EXPECT_TRUE(index.has_value());
+  EXPECT_EQ(2,index.value());
 }
 
 TEST(EnvParseTest, get_index_not_exists) {
   putenv("FOO=hallo:welt:hello:world");
   auto result = parse_env_list("FOO");
-  int index = check_string_in_vector("bonjour", result);
-  EXPECT_EQ(-1,index);
+  std::optional<std::vector<std::string>::size_type> index = check_string_in_vector("bonjour", result);
+  EXPECT_FALSE(index.has_value());
 }
 
 TEST(EnvParseTest, get_pair_exists) {

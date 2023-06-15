@@ -28,7 +28,7 @@ std::vector<std::string> parse_env_list(const std::string &);
 std::vector<unsigned int> parse_env_list_int(const std::string &);
 
 // check if a string key is in a vector of strings and get the index
-std::vector<std::string>::size_type
+std::optional<std::vector<std::string>::size_type>
     check_string_in_vector(std::string, std::vector<std::string>);
 
 // check if a string is in the first environment variable and get the value of

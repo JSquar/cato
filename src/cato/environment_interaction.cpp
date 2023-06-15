@@ -86,9 +86,9 @@ std::vector<unsigned int> parse_env_list_int(const std::string &env_var_name) {
   return values;
 }
 
-std::vector<std::string>::size_type
+std::optional<std::vector<std::string>::size_type>
 check_string_in_vector(std::string name, std::vector<std::string> values) {
-  std::vector<std::string>::size_type index = -1;
+  std::optional<std::vector<std::string>::size_type> index = std::nullopt;
   std::vector<std::string>::iterator iter =
       std::find(values.begin(), values.end(), name);
   if (iter != values.end()) {
@@ -105,12 +105,12 @@ std::optional<std::string> get_paired_value(std::string env_name_A,
 
   auto values_A = parse_env_list(env_name_A);
   auto values_B = parse_env_list(env_name_B);
-  std::vector<std::string>::size_type index =
+  std::optional<std::vector<std::string>::size_type> index =
       check_string_in_vector(key, values_A);
 
-  if (index == -1 || index >= values_B.size()) {
+  if (!index.has_value() || index.value() >= values_B.size()) {
     return std::nullopt;
   }
 
-  return values_B.at(index);
+  return values_B.at(index.value());
 }
