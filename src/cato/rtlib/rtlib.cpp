@@ -100,10 +100,12 @@ void cato_finalize()
             long my_ru_maxrss = _end_usage.ru_maxrss - _start_usage.ru_maxrss;
 
             if(MPI_RANK == 0) {
-                MPI_Reduce(MPI_IN_PLACE, &my_ru_maxrss, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-                double avg_mem = my_ru_maxrss / MPI_SIZE;
-                std::cerr << "Total memory consumption [kB] over " << MPI_SIZE << " processes: " << my_ru_maxrss << "\n";
+                long ru_maxrss_sum;
+                MPI_Reduce(&my_ru_maxrss, &ru_maxrss_sum, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+                double avg_mem = ru_maxrss_sum / MPI_SIZE;
+                std::cerr << "Total memory consumption [kB] over " << MPI_SIZE << " processes: " << ru_maxrss_sum << "\n";
                 std::cerr << "Avg. memory consumption per process [kB]: " << avg_mem << "\n";
+                std::cerr << "Memory consumption rank 0 [kB]: " << my_ru_maxrss << "\n";
             }
             else {
                 MPI_Reduce(&my_ru_maxrss, nullptr, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
