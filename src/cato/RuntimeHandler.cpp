@@ -329,7 +329,7 @@ void RuntimeHandler::adjust_netcdf_regions()
         }
     }
 
-    // Replace nc_get_var_int
+    // Replace nc_get_var_float
     for (auto &user : users_get_var_float)
     {
 
@@ -348,6 +348,7 @@ void RuntimeHandler::adjust_netcdf_regions()
             args.push_back(buffer);
 
             builder.SetInsertPoint(call);
+            // Todo crash on simple_load with float
             llvm::CallInst *new_call = builder.CreateCall(functions.io_get_vara_float, args);
             call->replaceAllUsesWith(new_call);
             call->eraseFromParent();
@@ -355,7 +356,7 @@ void RuntimeHandler::adjust_netcdf_regions()
         }
     }
 
-    // Replace nc_put_var_int
+    // Replace nc_put_var_float
     for (auto &user : users_put_var_float)
     {
 

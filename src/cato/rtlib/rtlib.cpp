@@ -2,7 +2,7 @@
  * File: rtlib.cpp
  * 
  * -----
- * Last Modified: Saturday, 3rd June 2023 3:06:09 pm
+ * Last Modified: Monday, 19th June 2023 3:48:51 pm
  * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -417,25 +417,26 @@ int io_inq_varid(int ncid, char *name, int *varidp)
     return err;
 }
 
-int io_get_vara_int(int ncid, int varid, long int num_elements, int *buffer)
+int io_get_vara_int(int ncid, int varid, long int num_bytes, int *buffer)
 {
     int err;
     Debug(llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n";); //TODO
 
     size_t start, count;
-    count = num_elements / MPI_SIZE / 4;
-    if (MPI_RANK < num_elements % MPI_SIZE)
+    long int num_elements = num_bytes / sizeof(*buffer);
+    count = num_elements / MPI_SIZE;
+    if (MPI_RANK < (num_elements % MPI_SIZE))
     {
         count += 1;
     }
     // count = 10;
     start = count * MPI_RANK;
-    if (MPI_RANK >= num_elements % MPI_SIZE)
+    if (MPI_RANK >= (num_elements % MPI_SIZE))
     {
         start += num_elements % MPI_SIZE;
     }
 
-    // llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
+    Debug(llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries to distribute " << num_elements << "elements\n";); //TODO
     // int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
 
     // llvm::errs() << "Rang "<< MPI_RANK << ": ncid " << ncid << "\n";
@@ -450,13 +451,14 @@ int io_get_vara_int(int ncid, int varid, long int num_elements, int *buffer)
     return err;
 }
 
-int io_get_vara_float(int ncid, int varid, long int num_elements, float *buffer)
+int io_get_vara_float(int ncid, int varid, long int num_bytes, float *buffer)
 {
     int err;
     Debug(llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n";); //TODO
 
     size_t start, count;
-    count = num_elements / MPI_SIZE / 4;
+    size_t num_elements = num_bytes / sizeof(*buffer);
+    count = num_elements / MPI_SIZE;
     if (MPI_RANK < num_elements % MPI_SIZE)
     {
         count += 1;
@@ -485,11 +487,12 @@ int io_close(int ncid)
     return err;
 }
 
-int io_put_vara_int(int ncid, int varid, long int num_elements, int *buffer) {
+int io_put_vara_int(int ncid, int varid, long int num_bytes, int *buffer) {
     int err;
     size_t start, count;
 
-    count = num_elements / MPI_SIZE / 4;
+    size_t num_elements = num_bytes / sizeof(*buffer);
+    count = num_elements / MPI_SIZE;
     if (MPI_RANK < num_elements % MPI_SIZE)
     {
         count += 1;
@@ -507,11 +510,12 @@ int io_put_vara_int(int ncid, int varid, long int num_elements, int *buffer) {
     return err;
 }
 
-int io_put_vara_float(int ncid, int varid, long int num_elements, float *buffer) {
+int io_put_vara_float(int ncid, int varid, long int num_bytes, float *buffer) {
     int err;
     size_t start, count;
 
-    count = num_elements / MPI_SIZE / 4;
+    size_t num_elements = num_bytes / sizeof(*buffer);
+    count = num_elements / MPI_SIZE;
     if (MPI_RANK < num_elements % MPI_SIZE)
     {
         count += 1;
@@ -526,10 +530,10 @@ int io_put_vara_float(int ncid, int varid, long int num_elements, float *buffer)
     err = nc_put_vara_float(ncid, varid, &start, &count, buffer);
     check_error_code(err, "io_put_vara_int (netCDF backend)"); 
 
-    llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries\n"; //TODO
-    int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
+    // llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start[0] <<"\t with\t "<< count[0] << "\t entries\n"; //TODO
+    // int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
 
-    llvm::errs() << "Rang "<< MPI_RANK << ": ncid " << ncid << "\n" << "Rang "<< MPI_RANK << ": varid " << varid << "\n" << "Rang "<< MPI_RANK << ": start " << start << "\n" << "Rang "<< MPI_RANK << ": count " << count << "\n" << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
+    llvm::errs() << "Rang "<< MPI_RANK << ": ncid " << ncid << ": varid " << varid << ": start " << start << ": count " << count << ": buffer " << buffer << "\n";
 
     return err;
 }
