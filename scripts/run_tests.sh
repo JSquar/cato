@@ -15,7 +15,8 @@ rm -rf tests/C/basic_non_omp/Output
 rm -rf tests/C/basic_omp/Output
 rm -rf tests/C/bigger_tests/Output
 rm -rf tests/C++/Output
-$CATO_ROOT/../llvm-project/build/bin/llvm-lit -v --max-time=15 .
+#$CATO_ROOT/../llvm-project/build/bin/llvm-lit -v --max-time=15 .
+lit -v --max-time=15 .
 
 if [[ "${MODIFICATION}" == 1 ]]; then
   echo "Restore debug mode"

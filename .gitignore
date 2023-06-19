@@ -37,3 +37,4 @@
 src/test-suite/.lit_test_times.txt
 microtests/
 partdiff_catofied
+venv
