@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tuesday, 12th June 2023
+ * Last Modified: Tue Jul 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -272,7 +272,7 @@ void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int
             _local_num_elements = local_num_elements;
             _base_ptr = malloc(local_num_elements * type_size);
             Debug(std::cout << "MemoryAbstractionDefault: rank " << _mpi_rank << " allocated "
-                            << local_num_elements * type_size << " bytes\n");
+                            << local_num_elements * type_size << " bytes at " << _base_ptr << "\n");
         }
     }
 

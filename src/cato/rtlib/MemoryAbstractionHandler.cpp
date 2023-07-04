@@ -1,12 +1,11 @@
 /*
  * File: MemoryAbstractionHandler.cpp
  * -----
- *
- * -----
- * Last Modified: Tuesday, 12th June 2023
+ * Last Modified: Tue Jul 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
+
 
 #include "MemoryAbstractionHandler.h"
 
@@ -244,31 +243,23 @@ void MemoryAbstractionHandler::pointer_store(void *dest_ptr, void *source_ptr, l
 {
     if (dest_index > 0)
     {
-        dest_ptr = (void *)((char *)dest_ptr - dest_index * sizeof(long *));
+        dest_ptr = (void *)((long)dest_ptr - dest_index * sizeof(long *));
     }
 
     MemoryAbstraction *memory_abstraction = nullptr;
     MemoryAbstraction *memory_abstraction2 = nullptr;
-    if (_memory_abstractions.find((long)dest_ptr) != _memory_abstractions.end() &&
-        _memory_abstractions.find((long)source_ptr) != _memory_abstractions.end())
+
+    if (_memory_abstractions.find((long)dest_ptr) != _memory_abstractions.end())
     {
         memory_abstraction = _memory_abstractions[(long)dest_ptr].get();
-        memory_abstraction2 = _memory_abstractions[(long)source_ptr].get();
-    }
-
-    if (memory_abstraction != nullptr && memory_abstraction2 != nullptr)
-    {
-        memory_abstraction->pointer_store(source_ptr, dest_index);
-    }
-    else if (memory_abstraction != nullptr && memory_abstraction2 == nullptr)
-    {
-        Debug(std::cout << "Pointer store to memory abstraction does not store the base "
-                           "pointer of other memory abstraction\n");
     }
     else
     {
-        std::cerr << "Error: Pointer store to shared memory could not be done\n";
+        std::cerr << "Error: Pointer store to shared memory could not be done, dest does not exist\n";
+        exit(1);
     }
+
+    memory_abstraction->pointer_store(source_ptr, dest_index);
 }
 
 void MemoryAbstractionHandler::allocate_shared_value(void *base_ptr, MPI_Datatype type)

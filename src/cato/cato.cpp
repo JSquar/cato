@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tuesday, 13th June 2023
+ * Last Modified: Tue Jul 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -676,10 +676,6 @@ struct CatoPass : public ModulePass
                 Debug(x->dump(););
             }
 
-            // TODO
-            // if (get_pointer_depth(store->getValueOperand()->getType()) < 2)
-            //if (get_pointer_depth(store->getValueOperand()->getType()) < 3)
-            //{
             builder.SetInsertPoint(store);
 
             Value *index = nullptr;
@@ -703,7 +699,6 @@ struct CatoPass : public ModulePass
                 builder.CreateCall(runtime.functions.shared_memory_pointer_store, args);
             store->replaceAllUsesWith(new_call);
             store->eraseFromParent();
-            //}
         }
 
         // Replace freeing of shared memory with corresponding call to the cato runtime library
