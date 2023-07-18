@@ -1,3 +1,12 @@
+/*
+ * File: MemoryAbstractionDefault.h
+ * -----
+ *
+ * -----
+ * Last Modified: Tue Jul 18 2023
+ * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
+ * -----
+ */
 #ifndef CATO_RTLIB_MEMORY_ABSTRACTION_DEFAULT_H
 #define CATO_RTLIB_MEMORY_ABSTRACTION_DEFAULT_H
 
@@ -63,7 +72,7 @@ class MemoryAbstractionDefault : public MemoryAbstraction
     /**
      * Loads the value at the given indices and copies it to the given dest_ptr address.
      **/
-    void load(void *base_ptr, void *dest_ptr, std::vector<long> indices) override;
+    void load(void *base_ptr, void *dest_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices) override;
 
     /**
      * Same as store but each process only continues after the store has been completed.

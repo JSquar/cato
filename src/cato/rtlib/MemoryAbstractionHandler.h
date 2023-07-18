@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tuesday, 12th June 2023
+ * Last Modified: Tue Jul 18 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -37,6 +37,8 @@ class MemoryAbstractionHandler
 
     int _mpi_rank;
     int _mpi_size;
+
+    Cache _cache;
 
     /**
      * Traverses the MemoryAbstractions starting at memory_abstraction, pointed to by indices, down to the second-to-last-dimension.

@@ -15,19 +15,23 @@ add_library(CatoRuntime MODULE
     mpi_mutex.cpp
     CatoRuntimeLogger.h
     CatoRuntimeLogger.cpp
+    Cache.h
+    Cache.cpp
 )
 
 find_package(LLVM REQUIRED CONFIG)
 find_package(MPI REQUIRED)
 # find_package(NetCDF REQUIRED)
-find_file(CMAKE_PREFIX_PATH netCDFConfig.make)
+#find_file(CMAKE_PREFIX_PATH netCDFConfig.make)
+pkg_search_module(NETCDF REQUIRED netcdf)
+include_directories(${NETCDF_INCLUDE_DIRS})
 
 include_directories(${MPI_INCLUDE_PATH})
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 target_link_libraries(CatoRuntime ${MPI_LIBRARIES})
-target_link_libraries(CatoRuntime ${NETCDF_LIBRARIES})
+target_link_libraries(CatoRuntime ${NETCDF_LINK_LIBRARIES})
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
 llvm_map_components_to_libnames(llvm_libs support core irreader)
@@ -58,4 +62,3 @@ target_compile_features(CatoRuntime PRIVATE cxx_range_for cxx_auto_type cxx_std_
 set_target_properties(CatoRuntime PROPERTIES
 	COMPILE_FLAGS "-O0 -fno-rtti -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable"
 )
-

@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tue Jul 04 2023
+ * Last Modified: Tue Jul 18 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -16,6 +16,7 @@
 
 #include "../debug.h"
 #include "CatoRuntimeLogger.h"
+#include "Cache.h"
 
 MemoryAbstractionDefault::MemoryAbstractionDefault(long size, MPI_Datatype type,
                                                    int dimensions)
@@ -102,7 +103,7 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr,
     }
 }
 
-void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<long> indices)
+void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -125,6 +126,9 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<
             MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
                     _mpi_window);
             MPI_Win_unlock(rank_and_disp.first, _mpi_window);
+
+            cache->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
+            cache->print_cache();
         }
         else
         {
@@ -231,13 +235,10 @@ std::pair<int, long> MemoryAbstractionDefault::get_target_rank_and_disp_for_offs
 
 void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int dimensions)
 {
-    int type_size;
-
     MPI_Comm_rank(MPI_COMM_WORLD, &_mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_mpi_size);
 
-    MPI_Type_size(type, &type_size);
-    _global_num_elements = size / type_size;
+    _global_num_elements = size / _type_size;
 
     int div = _global_num_elements / _mpi_size;
     int rest = _global_num_elements % _mpi_size;
@@ -270,13 +271,13 @@ void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int
         if (rank == _mpi_rank)
         {
             _local_num_elements = local_num_elements;
-            _base_ptr = malloc(local_num_elements * type_size);
+            _base_ptr = malloc(local_num_elements * _type_size);
             Debug(std::cout << "MemoryAbstractionDefault: rank " << _mpi_rank << " allocated "
-                            << local_num_elements * type_size << " bytes at " << _base_ptr << "\n");
+                            << local_num_elements * _type_size << " bytes at " << _base_ptr << "\n");
         }
     }
 
-    MPI_Win_create(_base_ptr, _local_num_elements * type_size, type_size, MPI_INFO_NULL,
+    MPI_Win_create(_base_ptr, _local_num_elements * _type_size, _type_size, MPI_INFO_NULL,
                    MPI_COMM_WORLD, &_mpi_window);
 
     if (auto *logger = CatoRuntimeLogger::get_logger())
@@ -286,7 +287,7 @@ void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int
             "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
             "   local element count: " + std::to_string(_local_num_elements) + "\n" +
             "   global element count: " + std::to_string(_global_num_elements) + "\n" +
-            "   type size: " + std::to_string(type_size) + "\n";
+            "   type size: " + std::to_string(_type_size) + "\n";
         *logger << message;
     }
 }

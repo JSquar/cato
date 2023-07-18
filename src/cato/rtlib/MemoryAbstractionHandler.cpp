@@ -1,7 +1,7 @@
 /*
  * File: MemoryAbstractionHandler.cpp
  * -----
- * Last Modified: Tue Jul 04 2023
+ * Last Modified: Tue Jul 18 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -17,6 +17,7 @@
 
 #include "MemoryAbstractionDefault.h"
 #include "MemoryAbstractionSingleValueDefault.h"
+#include "Cache.h"
 
 #include "../debug.h"
 
@@ -218,7 +219,7 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
     std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
-    memory_abstraction->load(base_ptr, dest_ptr, {index});
+    memory_abstraction->load(base_ptr, dest_ptr, {index}, &_cache, indices);
 }
 
 void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,

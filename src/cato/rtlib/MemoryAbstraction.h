@@ -1,9 +1,19 @@
+/*
+ * File: MemoryAbstraction.h
+ * -----
+ *
+ * -----
+ * Last Modified: Tue Jul 18 2023
+ * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
+ * -----
+ */
 #ifndef CATO_RTLIB_MEMORY_ABSTRACTION_H
 #define CATO_RTLIB_MEMORY_ABSTRACTION_H
 
 #include "../debug.h"
 #include <mpi.h>
 #include <vector>
+#include "Cache.h"
 
 /**
  * Base class for a shared memory object
@@ -19,6 +29,8 @@ class MemoryAbstraction
     long _size_bytes;
 
     MPI_Datatype _type;
+
+    int _type_size;
 
     int _dimensions;
 
@@ -49,7 +61,7 @@ class MemoryAbstraction
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void load(void *base_ptr, void *dest_ptr, std::vector<long> indices);
+    virtual void load(void *base_ptr, void *dest_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices);
 
     /**
      * A store to the shared memory object.
@@ -79,6 +91,8 @@ class MemoryAbstraction
     virtual long get_size_bytes();
 
     virtual MPI_Datatype get_type();
+
+    virtual int get_type_size();
 };
 
 #endif
