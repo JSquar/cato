@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tue Jul 18 2023
+ * Last Modified: Wed Jul 19 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -127,8 +127,10 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<
                     _mpi_window);
             MPI_Win_unlock(rank_and_disp.first, _mpi_window);
 
+            if (_mpi_rank != rank_and_disp.first)
             cache->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
-            cache->print_cache();
+
+            Debug(cache->print_cache(););
         }
         else
         {

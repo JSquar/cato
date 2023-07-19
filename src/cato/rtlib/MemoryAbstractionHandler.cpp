@@ -1,7 +1,7 @@
 /*
  * File: MemoryAbstractionHandler.cpp
  * -----
- * Last Modified: Tue Jul 18 2023
+ * Last Modified: Wed Jul 19 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <utility>
 #include <functional>
+#include <cstring>
 
 #include <iostream>
 
@@ -109,9 +110,7 @@ MemoryAbstractionHandler::get_elements_per_dimension(MemoryAbstraction* memory_a
             }
             else
             {
-                int type_size;
-                MPI_Type_size(memory_abstraction->get_type(), &type_size);
-                num_elements_in_dimension.push_back(byte_size / type_size);
+                num_elements_in_dimension.push_back(byte_size / memory_abstraction->get_type_size());
             }
         }
         else
@@ -216,6 +215,13 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
 
 void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<long> indices)
 {
+    Cacheline* cached = _cache.find_cacheline(base_ptr, indices);
+    if (cached != nullptr)
+    {
+        std::memcpy(dest_ptr, cached->getData(), cached->getSize());
+        return;
+    }
+
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
     std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);

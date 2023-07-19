@@ -17,6 +17,8 @@ add_library(CatoRuntime MODULE
     CatoRuntimeLogger.cpp
     Cache.h
     Cache.cpp
+    Cacheline.h
+    Cacheline.cpp
 )
 
 find_package(LLVM REQUIRED CONFIG)
