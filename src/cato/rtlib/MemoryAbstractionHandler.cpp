@@ -1,7 +1,9 @@
 /*
  * File: MemoryAbstractionHandler.cpp
  * -----
- * Last Modified: Wed Jul 19 2023
+ *
+ * -----
+ * Last Modified: Thu Jul 20 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -210,7 +212,7 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
     std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
-    memory_abstraction->store(base_ptr, value_ptr, {index});
+    memory_abstraction->store(base_ptr, value_ptr, {index}, &_cache, indices);
 }
 
 void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<long> indices)
@@ -333,4 +335,9 @@ void MemoryAbstractionHandler::shared_value_synchronize(void *base_ptr)
     {
         memory_abstraction->synchronize(base_ptr);
     }
+}
+
+void MemoryAbstractionHandler::strong_flush()
+{
+    _cache.drop_cache();
 }

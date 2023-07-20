@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tue Jul 04 2023
+ * Last Modified: Thu Jul 20 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -1482,7 +1482,10 @@ struct CatoPass : public ModulePass
 
                 // Replace the fork_call with a direct call to the microtask function
                 builder.SetInsertPoint(fork_call_inst);
+                //TODO currently dropping cache at every entry ever, differentiate for runtime efficiency
+                builder.CreateCall(runtime.functions.strong_flush);
                 builder.CreateCall(microtask->get_function(), args);
+                builder.CreateCall(runtime.functions.strong_flush);
                 builder.CreateCall(runtime.functions.mpi_barrier);
                 fork_call_inst->eraseFromParent();
             }

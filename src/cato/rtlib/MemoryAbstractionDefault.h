@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tue Jul 18 2023
+ * Last Modified: Thu Jul 20 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -67,7 +67,7 @@ class MemoryAbstractionDefault : public MemoryAbstraction
      * Stores the value at the address value_ptr into the memory Abstraction at
      * the given indices.
      **/
-    void store(void *base_ptr, void *value_ptr, std::vector<long> indices) override;
+    void store(void *base_ptr, void *value_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices) override;
 
     /**
      * Loads the value at the given indices and copies it to the given dest_ptr address.

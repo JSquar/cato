@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tuesday, 8th June 2023
+ * Last Modified: Thu Jul 20 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -200,6 +200,11 @@ void critical_section_finalize(void *mpi_mutex)
     MPI_Mutex *mutex = (MPI_Mutex *)mpi_mutex;
     MPI_Mutex_destroy(mutex);
     delete mutex;
+}
+
+void strong_flush()
+{
+    _memory_handler->strong_flush();
 }
 
 void reduce_local_vars(void *local_var, int bin_op, MPI_Datatype type)

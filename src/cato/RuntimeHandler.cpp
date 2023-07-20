@@ -57,7 +57,7 @@ bool RuntimeHandler::load_rtlibs()
         return false;
     }
 
-    return true;    
+    return true;
 }
 
 void RuntimeHandler::match_function(llvm::Function **function_declaration,
@@ -111,6 +111,7 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.critical_section_enter, "_Z22critical_section_enterPv");
     match_function(&functions.critical_section_leave, "_Z22critical_section_leavePv");
     match_function(&functions.critical_section_finalize, "_Z25critical_section_finalizePv");
+    match_function(&functions.strong_flush, "_Z12strong_flushv");
 
     // netCDF library functions
 
@@ -214,14 +215,14 @@ void RuntimeHandler::adjust_netcdf_regions()
     for (auto &user : open_users)
     {
         if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-        {        
+        {
             std::unique_ptr<NetCDFRegion> netcdf_region = std::make_unique<NetCDFRegion>(NetCDFRegion(call));
             netcdf_regions.push_back(std::move(netcdf_region));
 
             //replace with nc_open_par
             call->setCalledFunction(functions.io_open_par);
         }
-    }    
+    }
 
     /* ---------------------- inq varid and set par access ---------------------- */
     std::vector<llvm::User *>  inq_varid_users = get_function_users(*_M, "nc_inq_varid");
@@ -229,7 +230,7 @@ void RuntimeHandler::adjust_netcdf_regions()
     for (auto &user : inq_varid_users)
     {
         if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-        {   
+        {
             //replace with CATO inq_varid
             call->setCalledFunction(functions.io_inq_varid);
         }
@@ -252,7 +253,7 @@ void RuntimeHandler::adjust_netcdf_regions()
     {
 
         if (auto *call = llvm::dyn_cast<llvm::CallInst>(user))
-        {   
+        {
 
 
             llvm::Value *ncid = call->getArgOperand(0);

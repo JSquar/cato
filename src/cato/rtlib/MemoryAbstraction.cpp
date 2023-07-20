@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tue Jul 18 2023
+ * Last Modified: Thu Jul 20 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -26,7 +26,7 @@ MemoryAbstraction::MemoryAbstraction(long size, MPI_Datatype type, int dimension
 
 MemoryAbstraction::~MemoryAbstraction() {}
 
-void MemoryAbstraction::store(void *base_ptr, void *value_ptr, std::vector<long> indices) {}
+void MemoryAbstraction::store(void *base_ptr, void *value_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices) {}
 
 void MemoryAbstraction::load(void *base_ptr, void *dest_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices) {}
 

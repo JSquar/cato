@@ -3,14 +3,15 @@
  * Created: Thursday, 16th February 2023 5:25:06 pm
  * Author: Jannek Squar (jannek.squar@uni-hamburg.de)
  * -----
- * 
+ *
  * -----
- * Last Modified: Friday, 17th February 2023 9:21:35 pm
- * Modified By: Jannek Squar (jannek.squar@uni-hamburg.de)
+ * Last Modified: Thu Jul 20 2023
+ * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
  * Copyright (c) 2020 Michael Blesel
  * Copyright (c) 2023 Jannek Squar
+ * Copyright (c) 2023 Niclas Schroeter
  * 
  */
 #ifndef CATO_RTLIB_RTLIB_H
@@ -254,6 +255,11 @@ void critical_section_leave(void *mpi_mutex);
  * Destroys the mutex
  **/
 void critical_section_finalize(void *mpi_mutex);
+
+/**
+ * Drops the cache
+ **/
+void strong_flush();
 
 /**
  * Performs the given reduction operation on the given values.

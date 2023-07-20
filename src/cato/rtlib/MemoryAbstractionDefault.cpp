@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Wed Jul 19 2023
+ * Last Modified: Thu Jul 20 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -68,8 +68,8 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
     }
 }
 
-void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr,
-                                     std::vector<long> indices)
+void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, std::vector<long> indices,
+                                    Cache* cache, std::vector<long> initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -95,6 +95,11 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr,
             // TODO check if flush does something
             // MPI_Win_flush(rank_and_disp.first, _mpi_window);
             MPI_Win_unlock(rank_and_disp.first, _mpi_window);
+
+            if (_mpi_rank != rank_and_disp.first)
+            cache->store_in_cache(value_ptr, _type_size, base_ptr, initial_indices);
+
+            Debug(std::cout << "IN STORE ";cache->print_cache(););
         }
         else
         {
@@ -103,7 +108,8 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr,
     }
 }
 
-void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices)
+void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<long> indices,
+                                    Cache* cache, std::vector<long> initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -130,7 +136,7 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<
             if (_mpi_rank != rank_and_disp.first)
             cache->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
 
-            Debug(cache->print_cache(););
+            Debug(std::cout << "IN LOAD ";cache->print_cache(););
         }
         else
         {

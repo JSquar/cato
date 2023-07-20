@@ -2,7 +2,7 @@
  * File: Cache.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Jul 19 2023
+ * Last Modified: Thu Jul 20 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -17,7 +17,7 @@ void Cache::store_in_cache(void* src, size_t size, void* base_ptr, std::vector<l
 {
     Cacheline value {src, size};
     auto key = std::make_pair(base_ptr, initial_indices);
-    _cache.insert({std::move(key), std::move(value)});
+    _cache.insert_or_assign(std::move(key), std::move(value));
 }
 
 void Cache::print_cache()
@@ -39,4 +39,9 @@ Cacheline* Cache::find_cacheline(void* const base_ptr, const std::vector<long>& 
         res = &(entry->second);
     }
     return res;
+}
+
+void Cache::drop_cache()
+{
+    _cache.clear();
 }

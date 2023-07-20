@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tue Jul 18 2023
+ * Last Modified: Thu Jul 20 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -126,6 +126,11 @@ class MemoryAbstractionHandler
      * See MemoryAbstractionSingleValue::synchronize
      **/
     void shared_value_synchronize(void *base_ptr);
+
+    /**
+     * See OpenMP memory model. Used to drop the cache at implied flushes
+     **/
+    void strong_flush();
 };
 
 #endif
