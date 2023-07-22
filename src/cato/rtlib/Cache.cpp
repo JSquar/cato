@@ -12,12 +12,23 @@
 #include <cstdlib>
 
 #include "Cache.h"
+#include "../debug.h"
+
+Cache::Cache()
+{
+    char* cache_enable = std::getenv("CATO_ENABLE_CACHE");
+    _cache_enabled = (cache_enable != NULL && std::strcmp(cache_enable, "1") == 0);
+    Debug(std::cout << "Cache enabled: " << _cache_enabled << "\n";);
+}
 
 void Cache::store_in_cache(void* src, size_t size, void* base_ptr, const std::vector<long> initial_indices)
 {
-    Cacheline value {src, size};
-    auto key = std::make_pair(base_ptr, initial_indices);
-    _cache.insert_or_assign(std::move(key), std::move(value));
+    if (_cache_enabled)
+    {
+        Cacheline value {src, size};
+        auto key = std::make_pair(base_ptr, initial_indices);
+        _cache.insert_or_assign(std::move(key), std::move(value));
+    }
 }
 
 void Cache::print_cache()
@@ -32,13 +43,17 @@ void Cache::print_cache()
 
 Cacheline* Cache::find_cacheline(void* const base_ptr, const std::vector<long>& indices)
 {
-    Cacheline* res = nullptr;
-    auto entry = _cache.find({base_ptr, indices});
-    if (entry != _cache.end())
+    if (_cache_enabled)
     {
-        res = &(entry->second);
+        Cacheline* res = nullptr;
+        auto entry = _cache.find({base_ptr, indices});
+        if (entry != _cache.end())
+        {
+            res = &(entry->second);
+        }
+        return res;
     }
-    return res;
+    return nullptr;
 }
 
 void Cache::drop_cache()

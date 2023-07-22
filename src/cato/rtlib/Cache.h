@@ -38,7 +38,11 @@ class Cache
 
     std::unordered_map<std::pair<void*,std::vector<long>>, Cacheline, hash_combiner> _cache;
 
+    bool _cache_enabled;
+
   public:
+    Cache();
+
     void store_in_cache(void* src, size_t size, void* base_ptr, const std::vector<long> initial_indices);
 
     void print_cache();
