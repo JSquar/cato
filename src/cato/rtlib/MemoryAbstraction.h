@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Sat Jul 22 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -54,14 +54,14 @@ class MemoryAbstraction
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void store(void *base_ptr, void *value_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices);
+    virtual void store(void *base_ptr, void *value_ptr, const std::vector<long> indices, Cache* cache, const std::vector<long>& initial_indices) =0;
 
     /**
      * A load from the shared memory object.
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void load(void *base_ptr, void *dest_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices);
+    virtual void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices, Cache* cache, const std::vector<long>& initial_indices) =0;
 
     /**
      * A store to the shared memory object.
@@ -70,7 +70,7 @@ class MemoryAbstraction
      * that it can be called by all MPI processes simultaniously and that
      * this is a synchronous operation between all processes.
      **/
-    virtual void sequential_store(void *base_ptr, void *value_ptr, std::vector<long> indices);
+    virtual void sequential_store(void *base_ptr, void *value_ptr, const std::vector<long> indices) =0;
 
     /**
      * A load from the shared memory object.
@@ -79,12 +79,12 @@ class MemoryAbstraction
      * that it can be called by all MPI processes simultaniously and that
      * this is a synchronous operation between all processes.
      **/
-    virtual void sequential_load(void *base_ptr, void *dest_ptr, std::vector<long> indices);
+    virtual void sequential_load(void *base_ptr, void *dest_ptr, const std::vector<long> indices) =0;
 
     /**
      * A pointer store to an MemoryAbstraction with pointer depth >= 2.
      **/
-    virtual void pointer_store(void *source_ptr, long dest_index);
+    virtual void pointer_store(void *source_ptr, long dest_index) =0;
 
     virtual void *get_base_ptr();
 

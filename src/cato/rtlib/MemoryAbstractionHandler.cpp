@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Sat Jul 22 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -68,7 +68,7 @@ void MemoryAbstractionHandler::free_memory(void *base_ptr)
 }
 
 MemoryAbstraction* MemoryAbstractionHandler::dereference_pointers(MemoryAbstraction* const memory_abstraction,
-                                                                    const std::vector<long> indices)
+                                                                    const std::vector<long>& indices)
 {
     size_t dimensions = indices.size();
     MemoryAbstraction* current_memory = memory_abstraction;
@@ -125,8 +125,8 @@ MemoryAbstractionHandler::get_elements_per_dimension(MemoryAbstraction* memory_a
     return std::make_pair(num_elements_in_dimension, memory_abstraction);
 }
 
-long MemoryAbstractionHandler::calculate_new_index(const std::vector<long> indices,
-                                                    const std::vector<long> num_elements_in_dimension)
+long MemoryAbstractionHandler::calculate_new_index(const std::vector<long>& indices,
+                                                    const std::vector<long>& num_elements_in_dimension)
 {
     size_t dimensions = indices.size();
     long total_number_of_datapoints = num_elements_in_dimension[dimensions - 1];
@@ -162,7 +162,7 @@ long MemoryAbstractionHandler::calculate_new_index(const std::vector<long> indic
  * middle. So we essentially have to calculate the index on the lowest dimension, which contains all data points, from the
  * sizes of the higher-level dimensions.
  **/
-std::pair<MemoryAbstraction*, long> MemoryAbstractionHandler::get_target_of_operation(void* base_ptr, std::vector<long> indices)
+std::pair<MemoryAbstraction*, long> MemoryAbstractionHandler::get_target_of_operation(void* base_ptr, const std::vector<long>& indices)
 {
     MemoryAbstraction *memory_abstraction = nullptr;
 
@@ -206,8 +206,7 @@ std::pair<MemoryAbstraction*, long> MemoryAbstractionHandler::get_target_of_oper
     }
 }
 
-void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
-                                     std::vector<long> indices)
+void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std::vector<long>& indices)
 {
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
@@ -215,7 +214,7 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr,
     memory_abstraction->store(base_ptr, value_ptr, {index}, &_cache, indices);
 }
 
-void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<long> indices)
+void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<long>& indices)
 {
     Cacheline* cached = _cache.find_cacheline(base_ptr, indices);
     if (cached != nullptr)
@@ -231,7 +230,7 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
 }
 
 void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
-                                                std::vector<long> indices)
+                                                std::vector<long>& indices)
 {
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
@@ -240,7 +239,7 @@ void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
 }
 
 void MemoryAbstractionHandler::sequential_load(void *base_ptr, void *dest_ptr,
-                                               std::vector<long> indices)
+                                               std::vector<long>& indices)
 {
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;

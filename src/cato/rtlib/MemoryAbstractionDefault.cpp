@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Sat Jul 22 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -68,8 +68,8 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
     }
 }
 
-void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, std::vector<long> indices,
-                                    Cache* cache, std::vector<long> initial_indices)
+void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std::vector<long> indices,
+                                    Cache* cache, const std::vector<long>& initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -108,8 +108,8 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, std::vecto
     }
 }
 
-void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<long> indices,
-                                    Cache* cache, std::vector<long> initial_indices)
+void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::vector<long> indices,
+                                    Cache* cache, const std::vector<long>& initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -146,7 +146,7 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<
 }
 
 void MemoryAbstractionDefault::sequential_store(void *base_ptr, void *value_ptr,
-                                                std::vector<long> indices)
+                                                const std::vector<long> indices)
 {
     if (_dimensions == 1)
     {
@@ -184,7 +184,7 @@ void MemoryAbstractionDefault::sequential_store(void *base_ptr, void *value_ptr,
 }
 
 void MemoryAbstractionDefault::sequential_load(void *base_ptr, void *dest_ptr,
-                                               std::vector<long> indices)
+                                               const std::vector<long> indices)
 {
     if (_dimensions == 1)
     {

@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Sat Jul 22 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -45,7 +45,7 @@ class MemoryAbstractionHandler
      * This function and the next two are necessary to deal with v2-style array usage. Check get_target_of_operation in
      * MemoryAbstractionHandler.cpp for a detailed description.
      **/
-    MemoryAbstraction* dereference_pointers(MemoryAbstraction* const memory_abstraction, const std::vector<long> indices);
+    MemoryAbstraction* dereference_pointers(MemoryAbstraction* const memory_abstraction, const std::vector<long>& indices);
 
     /**
      * Traverses the MemoryAbstractions at index 0 and gathers information regarding their element size.
@@ -57,12 +57,12 @@ class MemoryAbstractionHandler
      * Calculates the new index on a one-dimensional array from the previous indices and the
      * elements that are supposed to be in each dimension.
      **/
-    long calculate_new_index(const std::vector<long> indices, const std::vector<long> num_elements_in_dimension);
+    long calculate_new_index(const std::vector<long>& indices, const std::vector<long>& num_elements_in_dimension);
 
     /**
      * Determines the memory abstraction and the index at which the store/load operation should take place.
      **/
-    std::pair<MemoryAbstraction*, long> get_target_of_operation(void* base_ptr, std::vector<long> indices);
+    std::pair<MemoryAbstraction*, long> get_target_of_operation(void* base_ptr, const std::vector<long>& indices);
 
 
   public:
@@ -84,22 +84,22 @@ class MemoryAbstractionHandler
     /**
      * See MemoryAbstraction::store
      **/
-    void store(void *base_ptr, void *value_ptr, std::vector<long> indices);
+    void store(void *base_ptr, void *value_ptr, const std::vector<long>& indices);
 
     /**
      * See MemoryAbstraction::load
      **/
-    void load(void *base_ptr, void *dest_ptr, std::vector<long> indices);
+    void load(void *base_ptr, void *dest_ptr, std::vector<long>& indices);
 
     /**
      * See MemoryAbstraction::sequential_store
      **/
-    void sequential_store(void *base_ptr, void *value_ptr, std::vector<long> indices);
+    void sequential_store(void *base_ptr, void *value_ptr, std::vector<long>& indices);
 
     /**
      * See MemoryAbstraction::sequential_load
      **/
-    void sequential_load(void *base_ptr, void *dest_ptr, std::vector<long> indices);
+    void sequential_load(void *base_ptr, void *dest_ptr, std::vector<long>& indices);
 
     /**
      * See MemoryAbstraction::pointer_store

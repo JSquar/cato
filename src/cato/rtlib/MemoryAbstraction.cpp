@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Sat Jul 22 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -26,21 +26,15 @@ MemoryAbstraction::MemoryAbstraction(long size, MPI_Datatype type, int dimension
 
 MemoryAbstraction::~MemoryAbstraction() {}
 
-void MemoryAbstraction::store(void *base_ptr, void *value_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices) {}
+/*void MemoryAbstraction::store(void *base_ptr, void *value_ptr, const std::vector<long> indices, Cache* cache, const std::vector<long>& initial_indices) {}
 
-void MemoryAbstraction::load(void *base_ptr, void *dest_ptr, std::vector<long> indices, Cache* cache, std::vector<long> initial_indices) {}
+void MemoryAbstraction::load(void *base_ptr, void *dest_ptr, const std::vector<long> indices, Cache* cache, const std::vector<long>& initial_indices) {}
 
-void MemoryAbstraction::sequential_store(void *base_ptr, void *value_ptr,
-                                         std::vector<long> indices)
-{
-}
+void MemoryAbstraction::sequential_store(void *base_ptr, void *value_ptr, const std::vector<long> indices){}
 
-void MemoryAbstraction::sequential_load(void *base_ptr, void *dest_ptr,
-                                        std::vector<long> indices)
-{
-}
+void MemoryAbstraction::sequential_load(void *base_ptr, void *dest_ptr, const std::vector<long> indices){}
 
-void MemoryAbstraction::pointer_store(void *source_ptr, long dest_index) {}
+void MemoryAbstraction::pointer_store(void *source_ptr, long dest_index) {}*/
 
 void *MemoryAbstraction::get_base_ptr() { return _base_ptr; }
 

@@ -2,7 +2,7 @@
  * File: Cache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Sat Jul 22 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -39,7 +39,7 @@ class Cache
     std::unordered_map<std::pair<void*,std::vector<long>>, Cacheline, hash_combiner> _cache;
 
   public:
-    void store_in_cache(void* src, size_t size, void* base_ptr, std::vector<long> initial_indices);
+    void store_in_cache(void* src, size_t size, void* base_ptr, const std::vector<long> initial_indices);
 
     void print_cache();
 
