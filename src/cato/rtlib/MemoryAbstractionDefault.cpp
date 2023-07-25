@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Jul 22 2023
+ * Last Modified: Tue Jul 25 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -13,6 +13,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdio.h>
+#include <algorithm>
 
 #include "../debug.h"
 #include "CatoRuntimeLogger.h"
@@ -128,13 +129,42 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                 *logger << message;
             }
 
-            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
-            MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
-                    _mpi_window);
-            MPI_Win_unlock(rank_and_disp.first, _mpi_window);
+            if (cache->get_read_ahead() && rank_and_disp.first != _mpi_rank)
+            {
+                long nums_elems_in_target = _array_ranges[rank_and_disp.first].second - _array_ranges[rank_and_disp.first].first + 1;
+                long count = std::min(cache->get_read_ahead(), nums_elems_in_target - rank_and_disp.second);
 
-            if (_mpi_rank != rank_and_disp.first)
-            cache->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
+                void* buf = std::malloc(count * _type_size);
+                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
+                MPI_Get(buf, count, _type, rank_and_disp.first, rank_and_disp.second, count, _type,
+                        _mpi_window);
+                MPI_Win_unlock(rank_and_disp.first, _mpi_window);
+
+                for (long i = 0; i < count; i++)
+                {
+                    //The resulting cache elem index might not actually exist, but there is a
+                    //certain overhead attached to keeping track of "legal" indices. If the index does
+                    //not actually exist, the element will just stay in the cache untouched until dropped.
+                    //TODO make some measurements with and without index mngmt
+                    std::vector<long> cache_elem_index = initial_indices;
+                    cache_elem_index.back() += i;
+                    void* addr = static_cast<char*>(buf) + i*_type_size;
+                    cache->store_in_cache(addr, _type_size, base_ptr, cache_elem_index);
+                }
+
+                std::memcpy(dest_ptr, buf, _type_size);
+                std::free(buf);
+            }
+            else
+            {
+                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
+                MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
+                        _mpi_window);
+                MPI_Win_unlock(rank_and_disp.first, _mpi_window);
+
+                if (_mpi_rank != rank_and_disp.first)
+                cache->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
+            }
 
             Debug(std::cout << "IN LOAD ";cache->print_cache(););
         }
