@@ -2,7 +2,7 @@
  * File: Cache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Tue Jul 25 2023
+ * Last Modified: Thu Jul 27 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -27,9 +27,14 @@ class Cache
         size_t operator()(std::pair<void*,std::vector<long>> const& key) const
         {
             size_t seed = (size_t) key.first;
-            for (auto& elem : key.second)
+            for (auto elem : key.second)
             {
                 //https://stackoverflow.com/a/27216842
+                //seed ^= elem + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                //https://stackoverflow.com/a/72073933
+                elem = ((elem >> 16) ^ elem) * 0x45d9f3b;
+                elem = ((elem >> 16) ^ elem) * 0x45d9f3b;
+                elem = (elem >> 16) ^ elem;
                 seed ^= elem + 0x9e3779b9 + (seed << 6) + (seed >> 2);
             }
             return seed;
