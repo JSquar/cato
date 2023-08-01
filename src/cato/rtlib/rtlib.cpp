@@ -422,7 +422,9 @@ int io_get_vara_int(int ncid, int varid, long int num_bytes, int *buffer)
     int err;
     Debug(llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n";); //TODO
 
-    size_t start, count;
+    size_t start, count, count_max, count_adjusted;
+    // count_max = 1024ULL*1024ULL*1024ULL*6ULL/ sizeof(*buffer); // max 6GB
+    count_max = 1024ULL*100ULL/ sizeof(*buffer); // max 100kiB
     long int num_elements = num_bytes / sizeof(*buffer);
     count = num_elements / MPI_SIZE;
     if (MPI_RANK < (num_elements % MPI_SIZE))
@@ -436,6 +438,8 @@ int io_get_vara_int(int ncid, int varid, long int num_bytes, int *buffer)
         start += num_elements % MPI_SIZE;
     }
 
+
+    
     Debug(llvm::errs() << "Rang "<< MPI_RANK << ": Load distribution from " << start <<"\t with\t "<< count << "\t entries to distribute " << num_elements << "elements\n";); //TODO
     // int *buffer2 = (int*)malloc(sizeof(int) * 1073741824/4);
 
@@ -445,8 +449,25 @@ int io_get_vara_int(int ncid, int varid, long int num_bytes, int *buffer)
     // llvm::errs() << "Rang "<< MPI_RANK << ": count " << count << "\n";
     // llvm::errs() << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
 
-    err = nc_get_vara_int(ncid, varid, &start, &count, buffer);
-    check_error_code(err, "io_get_vara_int (netCDF backend)");
+    llvm::errs() <<  MPI_RANK << ": Get from " << start << " for " << count << " elements. Count max is " << count_max << "\n";
+
+    if (count <= count_max)
+    {
+        err = nc_get_vara_int(ncid, varid, &start, &count, buffer);
+        check_error_code(err, "io_put_vara_int (netCDF backend)"); 
+    }
+    else
+    {
+        for (size_t index = 0; index < count / count_max + 1; index++)
+        {
+            size_t start_adjusted = start + index * count_max;
+            size_t count_adjusted = start_adjusted - start + count_max > count ? count - (start_adjusted - start) : count_max;
+            llvm::errs() <<  MPI_RANK << ": Get " << count_adjusted << " elements from " << start_adjusted << "\n";
+            err = nc_get_vara_int(ncid, varid, &start_adjusted, &count_adjusted, &buffer[index*count_max]);
+            check_error_code(err, "io_put_vara_int (netCDF backend)"); 
+        }
+        
+    }
 
     return err;
 }
@@ -489,7 +510,8 @@ int io_close(int ncid)
 
 int io_put_vara_int(int ncid, int varid, long int num_bytes, int *buffer) {
     int err;
-    size_t start, count;
+    size_t start, count, count_max;
+    count_max = 1024ULL*1024ULL*1024ULL*6ULL/ sizeof(*buffer); // max 6GB
 
     size_t num_elements = num_bytes / sizeof(*buffer);
     count = num_elements / MPI_SIZE;
@@ -504,9 +526,26 @@ int io_put_vara_int(int ncid, int varid, long int num_bytes, int *buffer) {
         start += num_elements % MPI_SIZE;
     }
 
-    err = nc_put_vara_int(ncid, varid, &start, &count, buffer);
-    check_error_code(err, "io_put_vara_int (netCDF backend)"); 
+    std::cout <<  MPI_RANK << ": Put from " << start << " for " << count << " elements. Count max is " << count_max << "\n";
 
+    if (count <= count_max)
+    {
+        err = nc_put_vara_int(ncid, varid, &start, &count, buffer);
+        check_error_code(err, "io_put_vara_int (netCDF backend)"); 
+    }
+    else
+    {
+        for (size_t index = 0; index < count / count_max + 1; index++)
+        {
+            size_t start_adjusted = start + index * count_max;
+            size_t count_adjusted = start_adjusted - start + count_max > count ? count - (start_adjusted - start) : count_max;
+            llvm::errs() <<  MPI_RANK << ": Put from " << start_adjusted << " for " << count_adjusted << " elements\n";
+            err = nc_put_vara_int(ncid, varid, &start_adjusted, &count_adjusted, buffer);
+            check_error_code(err, "io_put_vara_int (netCDF backend)"); 
+        }
+        
+    }
+    
     return err;
 }
 
