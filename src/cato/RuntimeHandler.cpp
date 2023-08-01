@@ -88,7 +88,7 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.get_mpi_rank, "_Z12get_mpi_rankv");
     match_function(&functions.get_mpi_size, "_Z12get_mpi_sizev");
     match_function(&functions.mpi_barrier, "_Z11mpi_barrierv");
-    match_function(&functions.allocate_shared_memory, "_Z22allocate_shared_memorylii");
+    match_function(&functions.allocate_shared_memory, "_Z22allocate_shared_memorymii");
     match_function(&functions.shared_memory_store, "_Z19shared_memory_storePvS_iz");
     match_function(&functions.shared_memory_load, "_Z18shared_memory_loadPvS_iz");
     match_function(&functions.shared_memory_free, "_Z18shared_memory_freePv");
@@ -97,7 +97,7 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.shared_memory_sequential_load,
                    "_Z29shared_memory_sequential_loadPvS_iz");
     match_function(&functions.shared_memory_pointer_store,
-                   "_Z27shared_memory_pointer_storePvS_l");
+                   "_Z27shared_memory_pointer_storePvS_m");
     match_function(&functions.allocate_shared_value, "_Z21allocate_shared_valuePvi");
     match_function(&functions.shared_value_store, "_Z18shared_value_storePvS_");
     match_function(&functions.shared_value_load, "_Z17shared_value_loadPvS_");
@@ -106,7 +106,7 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.modify_parallel_for_bounds_4,
                    "_Z26modify_parallel_for_boundsPiS_i");
     match_function(&functions.modify_parallel_for_bounds_8,
-                   "_Z26modify_parallel_for_boundsPlS_l");
+                   "_Z26modify_parallel_for_boundsPmS_m");
     match_function(&functions.critical_section_init, "_Z21critical_section_initv");
     match_function(&functions.critical_section_enter, "_Z22critical_section_enterPv");
     match_function(&functions.critical_section_leave, "_Z22critical_section_leavePv");
@@ -122,11 +122,11 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.io_inq_varid, "_Z12io_inq_varidiPcPi");
     // match_function(&functions.io_get_var_int, "_Z14io_get_var_intiiPi");
     // match_function(&functions.io_get_var_float, "_Z16io_get_var_floatiiPi");
-    match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiilPi");
-    match_function(&functions.io_get_vara_float, "_Z17io_get_vara_floatiilPi");
+    match_function(&functions.io_get_vara_int, "_Z15io_get_vara_intiimPi");
+    match_function(&functions.io_get_vara_float, "_Z17io_get_vara_floatiimPf");
     match_function(&functions.io_close, "_Z8io_closei");
-    match_function(&functions.io_put_vara_int, "_Z15io_put_vara_intiilPi");
-    match_function(&functions.io_put_vara_float, "_Z17io_put_vara_floatiilPf");
+    match_function(&functions.io_put_vara_int, "_Z15io_put_vara_intiimPi");
+    match_function(&functions.io_put_vara_float, "_Z17io_put_vara_floatiimPf");
     match_function(&functions.io_def_var, "_Z10io_def_variPKciiPKiPi");
 
     
@@ -261,7 +261,7 @@ void RuntimeHandler::adjust_netcdf_regions()
     std::vector<llvm::User *>  users_put_var_float = get_function_users(*_M, "nc_put_var_float");
     
     std::vector<llvm::User *>  users_def_var = get_function_users(*_M, "nc_def_var");
-    std::vector<llvm::User *>  users_shared_memory = get_function_users(*_M, "_Z22allocate_shared_memorylii"); //TODO
+    std::vector<llvm::User *>  users_shared_memory = get_function_users(*_M, "_Z22allocate_shared_memorymii"); //TODO
     
     llvm::errs() << "Found " << users_get_var_int.size() << " many nc_get_var_int calls\n"; //TODO
     llvm::errs() << "Found " << users_get_var_float.size() << " many nc_get_var_float calls\n"; //TODO
@@ -272,7 +272,6 @@ void RuntimeHandler::adjust_netcdf_regions()
 
     llvm::IRBuilder<> builder(_M->getContext());
     llvm::LLVMContext &Ctx = _M->getContext();
-
     llvm::User *memory_call_user = users_shared_memory.at(0);
     llvm::CallInst *memory_call = llvm::dyn_cast<llvm::CallInst>(memory_call_user);
     llvm::Value *num_bytes = memory_call->getArgOperand(0);

@@ -7,7 +7,7 @@
 #include "../debug.h"
 #include "CatoRuntimeLogger.h"
 
-MemoryAbstractionDefault::MemoryAbstractionDefault(long size, MPI_Datatype type,
+MemoryAbstractionDefault::MemoryAbstractionDefault(size_t size, MPI_Datatype type,
                                                    int dimensions)
     : MemoryAbstraction(size, type, dimensions)
 {
@@ -24,7 +24,7 @@ MemoryAbstractionDefault::MemoryAbstractionDefault(long size, MPI_Datatype type,
         if (auto *logger = CatoRuntimeLogger::get_logger())
         {
             std::string message = std::string("Created 2D MemoryAbstractionDefault:\n") +
-                                  "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+                                  "   base ptr: " + std::to_string((size_t)_base_ptr) + "\n" +
                                   "   byte size: " + std::to_string(size);
             *logger << message;
         }
@@ -38,7 +38,7 @@ MemoryAbstractionDefault::MemoryAbstractionDefault(long size, MPI_Datatype type,
         if (auto *logger = CatoRuntimeLogger::get_logger())
         {
             std::string message = std::string("Created 3D MemoryAbstractionDefault:\n") +
-                                  "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+                                  "   base ptr: " + std::to_string((size_t)_base_ptr) + "\n" +
                                   "   byte size: " + std::to_string(size);
             *logger << message;
         }
@@ -54,7 +54,7 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
     if (auto *logger = CatoRuntimeLogger::get_logger())
     {
         std::string message = std::string("Freeing MemoryAbstractionDefault in destructor:") +
-                              "\n" + "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+                              "\n" + "   base ptr: " + std::to_string((size_t)_base_ptr) + "\n" +
                               "   dimensions: " + std::to_string(_dimensions) + "\n" +
                               "   byte size: " + std::to_string(_size_bytes);
         *logger << message;
@@ -97,7 +97,7 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
 }
 
 void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr,
-                                     std::vector<long> indices)
+                                     std::vector<size_t> indices)
 {
     if (_dimensions == 1)
     {
@@ -109,7 +109,7 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr,
             {
                 std::string message =
                     std::string("Store in 1D MemoryAbstractionDefault:\n") +
-                    "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+                    "   base ptr: " + std::to_string((size_t)_base_ptr) + "\n" +
                     "   local element count: " + std::to_string(_local_num_elements) + "\n" +
                     "   global element count: " + std::to_string(_global_num_elements) + "\n" +
                     "   store index: " + std::to_string(rank_and_disp.second);
@@ -136,7 +136,7 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr,
     }
 }
 
-void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<long> indices)
+void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<size_t> indices)
 {
     if (_dimensions == 1)
     {
@@ -148,7 +148,7 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<
             {
                 std::string message =
                     std::string("Load in 1D MemoryAbstractionDefault:\n") +
-                    "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+                    "   base ptr: " + std::to_string((size_t)_base_ptr) + "\n" +
                     "   local element count: " + std::to_string(_local_num_elements) + "\n" +
                     "   global element count: " + std::to_string(_global_num_elements) + "\n" +
                     "   load index: " + std::to_string(rank_and_disp.second);
@@ -168,7 +168,7 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, std::vector<
 }
 
 void MemoryAbstractionDefault::sequential_store(void *base_ptr, void *value_ptr,
-                                                std::vector<long> indices)
+                                                std::vector<size_t> indices)
 {
     if (_dimensions == 1)
     {
@@ -180,7 +180,7 @@ void MemoryAbstractionDefault::sequential_store(void *base_ptr, void *value_ptr,
             {
                 std::string message =
                     std::string("Sequential store in 1D MemoryAbstractionDefault:\n") +
-                    "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+                    "   base ptr: " + std::to_string((size_t)_base_ptr) + "\n" +
                     "   local element count: " + std::to_string(_local_num_elements) + "\n" +
                     "   global element count: " + std::to_string(_global_num_elements) + "\n" +
                     "   store index: " + std::to_string(rank_and_disp.second);
@@ -204,7 +204,7 @@ void MemoryAbstractionDefault::sequential_store(void *base_ptr, void *value_ptr,
 }
 
 void MemoryAbstractionDefault::sequential_load(void *base_ptr, void *dest_ptr,
-                                               std::vector<long> indices)
+                                               std::vector<size_t> indices)
 {
     if (_dimensions == 1)
     {
@@ -216,7 +216,7 @@ void MemoryAbstractionDefault::sequential_load(void *base_ptr, void *dest_ptr,
             {
                 std::string message =
                     std::string("Sequential load in 1D MemoryAbstractionDefault:\n") +
-                    "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+                    "   base ptr: " + std::to_string((size_t)_base_ptr) + "\n" +
                     "   local element count: " + std::to_string(_local_num_elements) + "\n" +
                     "   global element count: " + std::to_string(_global_num_elements) + "\n" +
                     "   load index: " + std::to_string(rank_and_disp.second);
@@ -237,16 +237,16 @@ void MemoryAbstractionDefault::sequential_load(void *base_ptr, void *dest_ptr,
     }
 }
 
-std::pair<int, long> MemoryAbstractionDefault::get_target_rank_and_disp_for_offset(long offset)
+std::pair<int, size_t> MemoryAbstractionDefault::get_target_rank_and_disp_for_offset(size_t offset)
 {
     if (_dimensions == 1)
     {
-        std::pair<int, long> ret;
+        std::pair<int, size_t> ret;
         for (int i = 0; i < _mpi_size; i++)
         {
             if (offset >= _array_ranges[i].first && offset <= _array_ranges[i].second)
             {
-                long target_disp = offset - _array_ranges[i].first;
+                size_t target_disp = offset - _array_ranges[i].first;
                 ret = {i, target_disp};
             }
         }
@@ -258,7 +258,7 @@ std::pair<int, long> MemoryAbstractionDefault::get_target_rank_and_disp_for_offs
     }
 }
 
-void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int dimensions)
+void MemoryAbstractionDefault::create_1d_array(size_t size, MPI_Datatype type, int dimensions)
 {
     int type_size;
 
@@ -268,19 +268,19 @@ void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int
     MPI_Type_size(type, &type_size);
     _global_num_elements = size / type_size;
 
-    int div = _global_num_elements / _mpi_size;
-    int rest = _global_num_elements % _mpi_size;
+    size_t div = _global_num_elements / _mpi_size;
+    size_t rest = _global_num_elements % _mpi_size;
 
     if (_mpi_size > _global_num_elements)
     {
         // TODO Handle this case
-        std::cerr << "Error: There are more MPI processes ("<< _mpi_size << ")  than array elements (" << _global_num_elements << ")\n";
+        llvm::errs() << "Error: There are more MPI processes ("<< _mpi_size << ")  than array elements (" << _global_num_elements << ")\n";
     }
 
     _array_ranges.reserve(_mpi_size);
     for (int rank = 0; rank < _mpi_size; rank++)
     {
-        long local_num_elements, local_from, local_to;
+        size_t local_num_elements, local_from, local_to;
 
         if (rank < rest)
         {
@@ -312,7 +312,7 @@ void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int
     {
         std::string message =
             std::string("Created 1D MemoryAbstractionDefault:\n") +
-            "   base ptr: " + std::to_string((long)_base_ptr) + "\n" +
+            "   base ptr: " + std::to_string((size_t)_base_ptr) + "\n" +
             "   local element count: " + std::to_string(_local_num_elements) + "\n" +
             "   global element count: " + std::to_string(_global_num_elements) + "\n" +
             "   type size: " + std::to_string(type_size) + "\n";
@@ -320,7 +320,7 @@ void MemoryAbstractionDefault::create_1d_array(long size, MPI_Datatype type, int
     }
 }
 
-void MemoryAbstractionDefault::pointer_store(void *source_ptr, long dest_index)
+void MemoryAbstractionDefault::pointer_store(void *source_ptr, size_t dest_index)
 {
     if (auto *logger = CatoRuntimeLogger::get_logger())
     {
@@ -328,7 +328,7 @@ void MemoryAbstractionDefault::pointer_store(void *source_ptr, long dest_index)
         *logger << message;
     }
 
-    ((long **)_base_ptr)[dest_index] = (long *)source_ptr;
+    ((size_t **)_base_ptr)[dest_index] = (size_t *)source_ptr;
     Debug(std::cout << "Saved Pointer into Array abstraction : "
-                    << ((long **)_base_ptr)[dest_index] << "\n";);
+                    << ((size_t **)_base_ptr)[dest_index] << "\n";);
 }

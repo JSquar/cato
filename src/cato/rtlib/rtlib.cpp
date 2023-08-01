@@ -97,10 +97,10 @@ void cato_finalize()
         }
         if(check_string_in_vector("MEM", metrics).has_value()) {
             // Process local memory consumption
-            long my_ru_maxrss = _end_usage.ru_maxrss - _start_usage.ru_maxrss;
+            size_t my_ru_maxrss = _end_usage.ru_maxrss - _start_usage.ru_maxrss;
 
             if(MPI_RANK == 0) {
-                long ru_maxrss_sum;
+                size_t ru_maxrss_sum;
                 MPI_Reduce(&my_ru_maxrss, &ru_maxrss_sum, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
                 double avg_mem = ru_maxrss_sum / MPI_SIZE;
                 std::cerr << "Total memory consumption [kB] over " << MPI_SIZE << " processes: " << ru_maxrss_sum << "\n";
@@ -123,7 +123,7 @@ int get_mpi_size() { return MPI_SIZE; }
 
 void mpi_barrier() { MPI_Barrier(MPI_COMM_WORLD); }
 
-void *allocate_shared_memory(long size, MPI_Datatype type, int dimensions)
+void *allocate_shared_memory(size_t size, MPI_Datatype type, int dimensions)
 {
     return _memory_handler->create_memory(size, type, dimensions);
 }
@@ -132,14 +132,14 @@ void shared_memory_free(void *base_ptr) { _memory_handler->free_memory(base_ptr)
 
 void shared_memory_store(void *base_ptr, void *value_ptr, int num_indices, ...)
 {
-    std::vector<long> indices;
+    std::vector<size_t> indices;
 
     // Read the pointer access indices
     va_list ap;
     va_start(ap, num_indices);
     for (int i = 0; i < num_indices; i++)
     {
-        indices.push_back(va_arg(ap, long));
+        indices.push_back(va_arg(ap, size_t));
     }
     va_end(ap);
 
@@ -148,14 +148,14 @@ void shared_memory_store(void *base_ptr, void *value_ptr, int num_indices, ...)
 
 void shared_memory_load(void *base_ptr, void *dest_ptr, int num_indices, ...)
 {
-    std::vector<long> indices;
+    std::vector<size_t> indices;
 
     // Read the pointer access indices
     va_list ap;
     va_start(ap, num_indices);
     for (int i = 0; i < num_indices; i++)
     {
-        indices.push_back(va_arg(ap, long));
+        indices.push_back(va_arg(ap, size_t));
     }
     va_end(ap);
 
@@ -164,14 +164,14 @@ void shared_memory_load(void *base_ptr, void *dest_ptr, int num_indices, ...)
 
 void shared_memory_sequential_store(void *base_ptr, void *value_ptr, int num_indices, ...)
 {
-    std::vector<long> indices;
+    std::vector<size_t> indices;
 
     // Read the pointer access indices
     va_list ap;
     va_start(ap, num_indices);
     for (int i = 0; i < num_indices; i++)
     {
-        indices.push_back(va_arg(ap, long));
+        indices.push_back(va_arg(ap, size_t));
     }
     va_end(ap);
 
@@ -180,21 +180,21 @@ void shared_memory_sequential_store(void *base_ptr, void *value_ptr, int num_ind
 
 void shared_memory_sequential_load(void *base_ptr, void *dest_ptr, int num_indices, ...)
 {
-    std::vector<long> indices;
+    std::vector<size_t> indices;
 
     // Read the pointer access indices
     va_list ap;
     va_start(ap, num_indices);
     for (int i = 0; i < num_indices; i++)
     {
-        indices.push_back(va_arg(ap, long));
+        indices.push_back(va_arg(ap, size_t));
     }
     va_end(ap);
 
     _memory_handler->sequential_load(base_ptr, dest_ptr, indices);
 }
 
-void shared_memory_pointer_store(void *dest_ptr, void *source_ptr, long dest_index)
+void shared_memory_pointer_store(void *dest_ptr, void *source_ptr, size_t dest_index)
 {
     _memory_handler->pointer_store(dest_ptr, source_ptr, dest_index);
 }
@@ -224,9 +224,9 @@ void modify_parallel_for_bounds(int *lower_bound, int *upper_bound, int incremen
     modify_parallel_for_bounds<int>(lower_bound, upper_bound, increment);
 }
 
-void modify_parallel_for_bounds(long *lower_bound, long *upper_bound, long increment)
+void modify_parallel_for_bounds(size_t *lower_bound, size_t *upper_bound, size_t increment)
 {
-    modify_parallel_for_bounds<long>(lower_bound, upper_bound, increment);
+    modify_parallel_for_bounds<size_t>(lower_bound, upper_bound, increment);
 }
 
 void *critical_section_init()
@@ -417,15 +417,15 @@ int io_inq_varid(int ncid, char *name, int *varidp)
     return err;
 }
 
-int io_get_vara_int(int ncid, int varid, long int num_bytes, int *buffer)
+int io_get_vara_int(int ncid, int varid, size_t num_bytes, int *buffer)
 {
     int err;
     Debug(llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n";); //TODO
 
-    size_t start, count, count_max, count_adjusted;
+    size_t start, count;//, count_max, count_adjusted;
     // count_max = 1024ULL*1024ULL*1024ULL*6ULL/ sizeof(*buffer); // max 6GB
-    count_max = 1024ULL*100ULL/ sizeof(*buffer); // max 100kiB
-    long int num_elements = num_bytes / sizeof(*buffer);
+    // count_max = 1024ULL*100ULL/ sizeof(*buffer); // max 100kiB
+    size_t num_elements = num_bytes / sizeof(*buffer);
     count = num_elements / MPI_SIZE;
     if (MPI_RANK < (num_elements % MPI_SIZE))
     {
@@ -449,30 +449,30 @@ int io_get_vara_int(int ncid, int varid, long int num_bytes, int *buffer)
     // llvm::errs() << "Rang "<< MPI_RANK << ": count " << count << "\n";
     // llvm::errs() << "Rang "<< MPI_RANK << ": buffer " << buffer << "\n";
 
-    llvm::errs() <<  MPI_RANK << ": Get from " << start << " for " << count << " elements. Count max is " << count_max << "\n";
+    // llvm::errs() <<  MPI_RANK << ": Get from " << start << " for " << count << " elements. Count max is " << count_max << "\n";
 
-    if (count <= count_max)
-    {
+    // if (count <= count_max)
+    // {
         err = nc_get_vara_int(ncid, varid, &start, &count, buffer);
         check_error_code(err, "io_put_vara_int (netCDF backend)"); 
-    }
-    else
-    {
-        for (size_t index = 0; index < count / count_max + 1; index++)
-        {
-            size_t start_adjusted = start + index * count_max;
-            size_t count_adjusted = start_adjusted - start + count_max > count ? count - (start_adjusted - start) : count_max;
-            llvm::errs() <<  MPI_RANK << ": Get " << count_adjusted << " elements from " << start_adjusted << "\n";
-            err = nc_get_vara_int(ncid, varid, &start_adjusted, &count_adjusted, &buffer[index*count_max]);
-            check_error_code(err, "io_put_vara_int (netCDF backend)"); 
-        }
+    // }
+    // else
+    // {
+    //     for (size_t index = 0; index < count / count_max + 1; index++)
+    //     {
+    //         size_t start_adjusted = start + index * count_max;
+    //         size_t count_adjusted = start_adjusted - start + count_max > count ? count - (start_adjusted - start) : count_max;
+    //         llvm::errs() <<  MPI_RANK << ": Get " << count_adjusted << " elements from " << start_adjusted << "\n";
+    //         err = nc_get_vara_int(ncid, varid, &start_adjusted, &count_adjusted, &buffer[index*count_max]);
+    //         check_error_code(err, "io_put_vara_int (netCDF backend)"); 
+    //     }
         
-    }
+    // }
 
     return err;
 }
 
-int io_get_vara_float(int ncid, int varid, long int num_bytes, float *buffer)
+int io_get_vara_float(int ncid, int varid, size_t num_bytes, float *buffer)
 {
     int err;
     Debug(llvm::errs() << "Hello from rank " << MPI_RANK << " (" << MPI_SIZE << " total)\n";); //TODO
@@ -508,7 +508,7 @@ int io_close(int ncid)
     return err;
 }
 
-int io_put_vara_int(int ncid, int varid, long int num_bytes, int *buffer) {
+int io_put_vara_int(int ncid, int varid, size_t num_bytes, int *buffer) {
     int err;
     size_t start, count, count_max;
     count_max = 1024ULL*1024ULL*1024ULL*6ULL/ sizeof(*buffer); // max 6GB
@@ -549,7 +549,7 @@ int io_put_vara_int(int ncid, int varid, long int num_bytes, int *buffer) {
     return err;
 }
 
-int io_put_vara_float(int ncid, int varid, long int num_bytes, float *buffer) {
+int io_put_vara_float(int ncid, int varid, size_t num_bytes, float *buffer) {
     int err;
     size_t start, count;
 

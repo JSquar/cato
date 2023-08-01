@@ -128,7 +128,7 @@ void mpi_barrier();
 /**
  * Allocate a shared memory segment
  **/
-void *allocate_shared_memory(long size, MPI_Datatype, int dimensions);
+void *allocate_shared_memory(size_t size, MPI_Datatype, int dimensions);
 
 /**
  * Free shared memory segment
@@ -174,7 +174,7 @@ void shared_memory_sequential_load(void *base_ptr, void *dest_ptr, int num_indic
 /**
  * Store the pointer source_ptr into the MemoryAbstraction (dest_ptr) at the given index.
  **/
-void shared_memory_pointer_store(void *dest_ptr, void *source_ptr, long dest_index);
+void shared_memory_pointer_store(void *dest_ptr, void *source_ptr, size_t dest_index);
 
 /**
  * Create a MemoryAbstractionSingleValue for a single value shared variable inside a Microtask.
@@ -204,7 +204,7 @@ void shared_value_synchronize(void *base_ptr);
  * modifies the values for each mpi process.
  **/
 void modify_parallel_for_bounds(int *lower_bound, int *upper_bound, int increment);
-void modify_parallel_for_bounds(long *lower_bound, long *upper_bound, long increment);
+void modify_parallel_for_bounds(size_t *lower_bound, size_t *upper_bound, size_t increment);
 
 template <typename T>
 void modify_parallel_for_bounds(T *lower_bound, T *upper_bound, T increment)
@@ -282,15 +282,15 @@ int io_var_par_access(int, int, int);
 
 int io_inq_varid(int, char *, int *);
 
-int io_get_vara_int(int, int, long int, int *);
+int io_get_vara_int(int, int, size_t, int *);
 
-int io_get_vara_float(int, int, long int, float *);
+int io_get_vara_float(int, int, size_t, float *);
 
 int io_close(int);
 
-int io_put_vara_int(int, int, long int, int *);
+int io_put_vara_int(int, int, size_t, int *);
 
-int io_put_vara_float(int, int, long int, float *);
+int io_put_vara_float(int, int, size_t, float *);
 
 int io_def_var(int, const char *, int, int, const int *, int *);
 

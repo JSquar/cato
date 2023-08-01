@@ -24,30 +24,30 @@ class MemoryAbstractionDefault : public MemoryAbstraction
 
     // global number of elements in the shared memory object and
     // the number of elements stored in the memory of this MPI process.
-    long _global_num_elements, _local_num_elements;
+    size_t _global_num_elements, _local_num_elements;
 
     // Ranges of indices for the elements each MPI process has stored locally
-    std::vector<std::pair<long, long>> _array_ranges;
+    std::vector<std::pair<size_t, size_t>> _array_ranges;
 
     /**
      * Takes an offset and computes the rank of the MPI process that
      * stores the value at that offset. Also returns the local offset
      * of the searched element for the MPI process that stores it.
      **/
-    std::pair<int, long> get_target_rank_and_disp_for_offset(long offset);
+    std::pair<int, size_t> get_target_rank_and_disp_for_offset(size_t offset);
 
     /**
      * Allocate the actual memory on each MPI process and set up the MPI Window
      * and all needed variables for future communication.
      **/
-    void create_1d_array(long size, MPI_Datatype type, int dimensions);
+    void create_1d_array(size_t size, MPI_Datatype type, int dimensions);
 
   public:
     /**
      * Create a MemeoryAbstraction of size (in bytes) with the given type
      * and dimensions.
      **/
-    MemoryAbstractionDefault(long size, MPI_Datatype type, int dimensions);
+    MemoryAbstractionDefault(size_t size, MPI_Datatype type, int dimensions);
 
     /**
      * Free all Memory and MPI Windows
@@ -58,27 +58,27 @@ class MemoryAbstractionDefault : public MemoryAbstraction
      * Stores the value at the address value_ptr into the memory Abstraction at
      * the given indices.
      **/
-    void store(void *base_ptr, void *value_ptr, std::vector<long> indices) override;
+    void store(void *base_ptr, void *value_ptr, std::vector<size_t> indices) override;
 
     /**
      * Loads the value at the given indices and copies it to the given dest_ptr address.
      **/
-    void load(void *base_ptr, void *dest_ptr, std::vector<long> indices) override;
+    void load(void *base_ptr, void *dest_ptr, std::vector<size_t> indices) override;
 
     /**
      * Same as store but each process only continues after the store has been completed.
      **/
-    void sequential_store(void *base_ptr, void *value_ptr, std::vector<long> indices) override;
+    void sequential_store(void *base_ptr, void *value_ptr, std::vector<size_t> indices) override;
 
     /**
      * Same as load but each process only continues after the load has been completed.
      **/
-    void sequential_load(void *base_ptr, void *dest_ptr, std::vector<long> indices) override;
+    void sequential_load(void *base_ptr, void *dest_ptr, std::vector<size_t> indices) override;
 
     /**
      * Stores the source_ptr into the memory abstraction at the given index.
      **/
-    void pointer_store(void *source_ptr, long dest_index) override;
+    void pointer_store(void *source_ptr, size_t dest_index) override;
 };
 
 #endif

@@ -21,9 +21,9 @@ class MemoryAbstractionHandler
      * The shared memory objects are identified by the value of their
      * allocation address.
      **/
-    std::map<long, std::unique_ptr<MemoryAbstraction>> _memory_abstractions;
+    std::map<size_t, std::unique_ptr<MemoryAbstraction>> _memory_abstractions;
 
-    std::map<long, std::unique_ptr<MemoryAbstractionSingleValue>> _single_value_abstractions;
+    std::map<size_t, std::unique_ptr<MemoryAbstractionSingleValue>> _single_value_abstractions;
 
     int _mpi_rank;
     int _mpi_size;
@@ -37,7 +37,7 @@ class MemoryAbstractionHandler
      * Creates a new shared memory object and returns a pointer to the allocated memory.
      * Takes the size of the object in bytes and the type as MPI_Datatype
      **/
-    void *create_memory(long size, MPI_Datatype type, int dimensions);
+    void *create_memory(size_t size, MPI_Datatype type, int dimensions);
 
     /**
      * Deletes the shared memory object and frees all related memory
@@ -47,27 +47,27 @@ class MemoryAbstractionHandler
     /**
      * See MemoryAbstraction::store
      **/
-    void store(void *base_ptr, void *value_ptr, std::vector<long> indices);
+    void store(void *base_ptr, void *value_ptr, std::vector<size_t> indices);
 
     /**
      * See MemoryAbstraction::load
      **/
-    void load(void *base_ptr, void *dest_ptr, std::vector<long> indices);
+    void load(void *base_ptr, void *dest_ptr, std::vector<size_t> indices);
 
     /**
      * See MemoryAbstraction::sequential_store
      **/
-    void sequential_store(void *base_ptr, void *value_ptr, std::vector<long> indices);
+    void sequential_store(void *base_ptr, void *value_ptr, std::vector<size_t> indices);
 
     /**
      * See MemoryAbstraction::sequential_load
      **/
-    void sequential_load(void *base_ptr, void *dest_ptr, std::vector<long> indices);
+    void sequential_load(void *base_ptr, void *dest_ptr, std::vector<size_t> indices);
 
     /**
      * See MemoryAbstraction::pointer_store
      **/
-    void pointer_store(void *dest_ptr, void *source_ptr, long dest_index);
+    void pointer_store(void *dest_ptr, void *source_ptr, size_t dest_index);
 
     /**
      * Creates a MemoryAbstractionSingleValue for the given shared variable (base_ptr)

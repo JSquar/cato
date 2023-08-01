@@ -5,12 +5,12 @@
 int main()
 {
     //Fails with 512 * 4081
-    long size = 512 * 5000;
+    size_t size = 512 * 5000;
 
     int *data = (int*)malloc(size * sizeof(int));
 
 #pragma omp parallel for 
-        for( long i = 0; i < 512 * 5000; i++)
+        for( size_t i = 0; i < 512 * 5000; i++)
         {
             int rank = omp_get_thread_num();
             /* printf("rank: %d, before %ld\n", rank, i); */
