@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Jul 22 2023
+ * Last Modified: Thu Aug 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -13,7 +13,9 @@
 #include "../debug.h"
 #include <mpi.h>
 #include <vector>
-#include "Cache.h"
+
+//Forward decl to go around circular dependency (TODO refactor later)
+class Cache;
 
 /**
  * Base class for a shared memory object

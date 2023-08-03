@@ -2,7 +2,7 @@
  * File: Cacheline.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Jul 19 2023
+ * Last Modified: Wed Aug 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -30,8 +30,8 @@ class Cacheline
     Cacheline(Cacheline&& other);
     Cacheline& operator=(Cacheline&& other);
 
-    void* getData() const {return _data;};
-    size_t getSize() const {return _element_size;}
+    void* get_data() const {return _data;};
+    size_t get_size() const {return _element_size;}
 };
 
 #endif

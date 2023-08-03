@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Tue Jul 25 2023
+ * Last Modified: Thu Aug 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -98,7 +98,15 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
             MPI_Win_unlock(rank_and_disp.first, _mpi_window);
 
             if (_mpi_rank != rank_and_disp.first)
-            cache->store_in_cache(value_ptr, _type_size, base_ptr, initial_indices);
+            {
+                cache->store_in_cache(value_ptr, _type_size, base_ptr, initial_indices);
+                cache->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
+            }
+            else
+            {
+                void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
+                cache->store_in_index_cache_local(target_address, _type_size, base_ptr, initial_indices);
+            }
 
             Debug(std::cout << "IN STORE ";cache->print_cache(););
         }
@@ -154,6 +162,7 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
 
                 std::memcpy(dest_ptr, buf, _type_size);
                 std::free(buf);
+                cache->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
             }
             else
             {
@@ -163,7 +172,15 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                 MPI_Win_unlock(rank_and_disp.first, _mpi_window);
 
                 if (_mpi_rank != rank_and_disp.first)
-                cache->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
+                {
+                    cache->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
+                    cache->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
+                }
+                else
+                {
+                    void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
+                    cache->store_in_index_cache_local(target_address, _type_size, base_ptr, initial_indices);
+                }
             }
 
             Debug(std::cout << "IN LOAD ";cache->print_cache(););

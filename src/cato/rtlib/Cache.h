@@ -2,7 +2,7 @@
  * File: Cache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Jul 27 2023
+ * Last Modified: Wed Aug 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "Cacheline.h"
+#include "Indexline.h"
 
 class Cache
 {
@@ -43,6 +44,8 @@ class Cache
 
     std::unordered_map<std::pair<void*,std::vector<long>>, Cacheline, hash_combiner> _cache;
 
+    std::unordered_map<std::pair<void*,std::vector<long>>, Indexline, hash_combiner> _index_cache;
+
     bool _cache_enabled;
 
     int _read_ahead;
@@ -55,6 +58,12 @@ class Cache
     void print_cache();
 
     Cacheline* find_cacheline(void* const base_ptr, const std::vector<long>& indices);
+
+    void store_in_index_cache_local(void* target, size_t size, void* base_ptr, const std::vector<long>& initial_indices);
+
+    void store_in_index_cache_remote(MemoryAbstraction* mem_abstraction, long index, void* base_ptr, const std::vector<long>& initial_indices);
+
+    Indexline* find_index(void* const base_ptr, const std::vector<long>& indices);
 
     void drop_cache();
 

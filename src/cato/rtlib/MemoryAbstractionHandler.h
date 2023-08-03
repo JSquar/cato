@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Jul 22 2023
+ * Last Modified: Wed Aug 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -17,6 +17,8 @@
 
 #include "MemoryAbstraction.h"
 #include "MemoryAbstractionSingleValue.h"
+
+#include "Cache.h"
 
 /**
  * There is one instance of this class inserted into the compiled program.

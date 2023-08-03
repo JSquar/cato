@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Jul 22 2023
+ * Last Modified: Thu Aug 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -20,7 +20,6 @@
 
 #include "MemoryAbstractionDefault.h"
 #include "MemoryAbstractionSingleValueDefault.h"
-#include "Cache.h"
 
 #include "../debug.h"
 
@@ -210,7 +209,28 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
 {
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
-    std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+
+    Indexline* index_cached = _cache.find_index(base_ptr, indices);
+    if (index_cached != nullptr)
+    {
+        //If the data is local, we can just memcpy to the address,
+        //otherwise we get the correct memory abstraction and index without the pointer chase
+        if (index_cached->is_data_local())
+        {
+            std::memcpy((index_cached->get_data()), value_ptr, index_cached->get_size());
+            return;
+        }
+        else
+        {
+            index = index_cached->get_index();
+            memory_abstraction = index_cached->get_memory_abstraction();
+        }
+    }
+    else
+    {
+        std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+    }
+
     memory_abstraction->store(base_ptr, value_ptr, {index}, &_cache, indices);
 }
 
@@ -219,13 +239,32 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
     Cacheline* cached = _cache.find_cacheline(base_ptr, indices);
     if (cached != nullptr)
     {
-        std::memcpy(dest_ptr, cached->getData(), cached->getSize());
+        std::memcpy(dest_ptr, cached->get_data(), cached->get_size());
         return;
     }
 
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
-    std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+
+    Indexline* index_cached = _cache.find_index(base_ptr, indices);
+    if (index_cached != nullptr)
+    {
+        if (index_cached->is_data_local())
+        {
+            std::memcpy(dest_ptr, (index_cached->get_data()), index_cached->get_size());
+            return;
+        }
+        else
+        {
+            index = index_cached->get_index();
+            memory_abstraction = index_cached->get_memory_abstraction();
+        }
+    }
+    else
+    {
+        std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+    }
+
     memory_abstraction->load(base_ptr, dest_ptr, {index}, &_cache, indices);
 }
 
