@@ -2,7 +2,7 @@
  * File: Cache.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Aug 02 2023
+ * Last Modified: Fri Aug 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -17,8 +17,11 @@
 Cache::Cache()
 {
     char* cache_enable = std::getenv("CATO_ENABLE_CACHE");
+    char* index_cache_enable = std::getenv("CATO_ENABLE_INDEX_CACHE");
     char* read_ahead = std::getenv("CATO_CACHE_READAHEAD");
+
     _cache_enabled = (cache_enable != NULL && std::strcmp(cache_enable, "1") == 0);
+    _index_cache_enabled = (index_cache_enable != NULL && std::strcmp(index_cache_enable, "1") == 0);
 
     if (!_cache_enabled || read_ahead == NULL)
     {
@@ -31,7 +34,9 @@ Cache::Cache()
         if (*end)
         std::cerr << "Could not read value for CATO_CACHE_READAHEAD";
     }
+
     Debug(std::cout << "Cache enabled: " << _cache_enabled << "\n";);
+    Debug(std::cout << "Index cache enabled: " << _index_cache_enabled << "\n";);
     Debug(std::cout << "Cache readahead: " << _read_ahead << "\n";);
 }
 

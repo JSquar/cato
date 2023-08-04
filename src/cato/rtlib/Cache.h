@@ -2,7 +2,7 @@
  * File: Cache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Aug 02 2023
+ * Last Modified: Fri Aug 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -47,6 +47,8 @@ class Cache
     std::unordered_map<std::pair<void*,std::vector<long>>, Indexline, hash_combiner> _index_cache;
 
     bool _cache_enabled;
+
+    bool _index_cache_enabled;
 
     int _read_ahead;
 
