@@ -20,6 +20,8 @@ add_library(CatoRuntime MODULE
     Cacheline.h
     Cacheline.cpp
     Indexline.h
+    Writecache.h
+    Writecache.cpp
 )
 
 find_package(LLVM REQUIRED CONFIG)

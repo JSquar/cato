@@ -2,7 +2,7 @@
  * File: Cache.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Fri Aug 04 2023
+ * Last Modified: Wed Aug 09 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -17,11 +17,13 @@
 Cache::Cache()
 {
     char* cache_enable = std::getenv("CATO_ENABLE_CACHE");
+    char* write_cache_enable = std::getenv("CATO_ENABLE_WRITE_CACHE");
     char* index_cache_enable = std::getenv("CATO_ENABLE_INDEX_CACHE");
     char* read_ahead = std::getenv("CATO_CACHE_READAHEAD");
 
     _cache_enabled = (cache_enable != NULL && std::strcmp(cache_enable, "1") == 0);
     _index_cache_enabled = (index_cache_enable != NULL && std::strcmp(index_cache_enable, "1") == 0);
+    _write_cache_enabled = (write_cache_enable != NULL && std::strcmp(write_cache_enable, "1") == 0);
 
     if (!_cache_enabled || read_ahead == NULL)
     {
@@ -36,6 +38,7 @@ Cache::Cache()
     }
 
     Debug(std::cout << "Cache enabled: " << _cache_enabled << "\n";);
+    Debug(std::cout << "Write component enabled: " << _write_cache_enabled << "\n";);
     Debug(std::cout << "Index cache enabled: " << _index_cache_enabled << "\n";);
     Debug(std::cout << "Cache readahead: " << _read_ahead << "\n";);
 }
@@ -113,9 +116,31 @@ Indexline* Cache::find_index(void* const base_ptr, const std::vector<long>& indi
 void Cache::drop_cache()
 {
     _cache.clear();
+    clear_write_cache();
 }
 
 long Cache::get_read_ahead()
 {
     return _read_ahead;
+}
+
+void Cache::store_in_write_cache(void* data, int target_rank, long displacement, void* mem_abstraction_base, MPI_Datatype type, MPI_Win win)
+{
+    if (_write_cache_enabled)
+    {
+        auto map_entry = _write_cache.insert({mem_abstraction_base, {win, type}});
+        Writecache& cache = map_entry.first->second;
+        cache.insert_element(data, target_rank, displacement);
+    }
+}
+
+void Cache::clear_write_cache()
+{
+    if (_write_cache_enabled)
+    {
+        for (auto& elem : _write_cache)
+        {
+            elem.second.clear_cache();
+        }
+    }
 }

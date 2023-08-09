@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Aug 03 2023
+ * Last Modified: Wed Aug 09 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -89,13 +89,18 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
                 *logger << message;
             }
 
-            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
-
-            MPI_Put(value_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
-                    _mpi_window);
-            // TODO check if flush does something
-            // MPI_Win_flush(rank_and_disp.first, _mpi_window);
-            MPI_Win_unlock(rank_and_disp.first, _mpi_window);
+            if (cache->write_cache_enabled() && rank_and_disp.first != _mpi_rank)
+            {
+                cache->store_in_write_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
+                        _base_ptr, _type, _mpi_window);
+            }
+            else
+            {
+                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
+                MPI_Put(value_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
+                        _mpi_window);
+                MPI_Win_unlock(rank_and_disp.first, _mpi_window);
+            }
 
             if (_mpi_rank != rank_and_disp.first)
             {

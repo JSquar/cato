@@ -2,7 +2,7 @@
  * File: Cache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Fri Aug 04 2023
+ * Last Modified: Wed Aug 09 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -18,6 +18,7 @@
 
 #include "Cacheline.h"
 #include "Indexline.h"
+#include "Writecache.h"
 
 class Cache
 {
@@ -46,9 +47,13 @@ class Cache
 
     std::unordered_map<std::pair<void*,std::vector<long>>, Indexline, hash_combiner> _index_cache;
 
+    std::unordered_map<void*, Writecache> _write_cache;
+
     bool _cache_enabled;
 
     bool _index_cache_enabled;
+
+    bool _write_cache_enabled;
 
     int _read_ahead;
 
@@ -70,6 +75,12 @@ class Cache
     void drop_cache();
 
     long get_read_ahead();
+
+    void store_in_write_cache(void* data, int target_rank, long displacement, void* mem_abstraction_base, MPI_Datatype type, MPI_Win win);
+
+    void clear_write_cache();
+
+    bool write_cache_enabled() const {return _write_cache_enabled;}
 };
 
 #endif
