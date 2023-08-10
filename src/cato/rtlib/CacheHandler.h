@@ -1,8 +1,8 @@
 /*
- * File: Cache.h
+ * File: CacheHandler.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Aug 09 2023
+ * Last Modified: Thu Aug 10 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -20,7 +20,7 @@
 #include "Indexline.h"
 #include "Writecache.h"
 
-class Cache
+class CacheHandler
 {
   private:
 
@@ -43,13 +43,13 @@ class Cache
         }
     };
 
-    std::unordered_map<std::pair<void*,std::vector<long>>, Cacheline, hash_combiner> _cache;
+    std::unordered_map<std::pair<void*,std::vector<long>>, Cacheline, hash_combiner> _read_cache;
 
     std::unordered_map<std::pair<void*,std::vector<long>>, Indexline, hash_combiner> _index_cache;
 
     std::unordered_map<void*, Writecache> _write_cache;
 
-    bool _cache_enabled;
+    bool _read_cache_enabled;
 
     bool _index_cache_enabled;
 
@@ -58,11 +58,9 @@ class Cache
     int _read_ahead;
 
   public:
-    Cache();
+    CacheHandler();
 
     void store_in_cache(void* src, size_t size, void* base_ptr, const std::vector<long>& initial_indices);
-
-    void print_cache();
 
     Cacheline* find_cacheline(void* const base_ptr, const std::vector<long>& indices);
 
@@ -72,13 +70,15 @@ class Cache
 
     Indexline* find_index(void* const base_ptr, const std::vector<long>& indices);
 
-    void drop_cache();
-
-    long get_read_ahead();
+    void drop_caches();
 
     void store_in_write_cache(void* data, int target_rank, long displacement, void* mem_abstraction_base, MPI_Datatype type, MPI_Win win);
 
     void clear_write_cache();
+
+    void clear_read_cache();
+
+    long get_read_ahead() const {return _read_ahead;}
 
     bool write_cache_enabled() const {return _write_cache_enabled;}
 };

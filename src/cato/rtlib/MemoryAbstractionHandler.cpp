@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Aug 03 2023
+ * Last Modified: Thu Aug 10 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -210,7 +210,7 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
 
-    Indexline* index_cached = _cache.find_index(base_ptr, indices);
+    Indexline* index_cached = _cache_handler.find_index(base_ptr, indices);
     if (index_cached != nullptr)
     {
         //If the data is local, we can just memcpy to the address,
@@ -231,12 +231,12 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
         std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
     }
 
-    memory_abstraction->store(base_ptr, value_ptr, {index}, &_cache, indices);
+    memory_abstraction->store(base_ptr, value_ptr, {index}, &_cache_handler, indices);
 }
 
 void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<long>& indices)
 {
-    Cacheline* cached = _cache.find_cacheline(base_ptr, indices);
+    Cacheline* cached = _cache_handler.find_cacheline(base_ptr, indices);
     if (cached != nullptr)
     {
         std::memcpy(dest_ptr, cached->get_data(), cached->get_size());
@@ -246,7 +246,7 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
 
-    Indexline* index_cached = _cache.find_index(base_ptr, indices);
+    Indexline* index_cached = _cache_handler.find_index(base_ptr, indices);
     if (index_cached != nullptr)
     {
         if (index_cached->is_data_local())
@@ -265,7 +265,7 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
         std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
     }
 
-    memory_abstraction->load(base_ptr, dest_ptr, {index}, &_cache, indices);
+    memory_abstraction->load(base_ptr, dest_ptr, {index}, &_cache_handler, indices);
 }
 
 void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
@@ -377,5 +377,5 @@ void MemoryAbstractionHandler::shared_value_synchronize(void *base_ptr)
 
 void MemoryAbstractionHandler::strong_flush()
 {
-    _cache.drop_cache();
+    _cache_handler.drop_caches();
 }

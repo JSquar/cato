@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Wed Aug 02 2023
+ * Last Modified: Thu Aug 10 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -18,7 +18,7 @@
 #include "MemoryAbstraction.h"
 #include "MemoryAbstractionSingleValue.h"
 
-#include "Cache.h"
+#include "CacheHandler.h"
 
 /**
  * There is one instance of this class inserted into the compiled program.
@@ -40,7 +40,7 @@ class MemoryAbstractionHandler
     int _mpi_rank;
     int _mpi_size;
 
-    Cache _cache;
+    CacheHandler _cache_handler;
 
     /**
      * Traverses the MemoryAbstractions starting at memory_abstraction, pointed to by indices, down to the second-to-last-dimension.

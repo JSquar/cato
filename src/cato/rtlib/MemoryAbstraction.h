@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Aug 03 2023
+ * Last Modified: Thu Aug 10 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -15,7 +15,7 @@
 #include <vector>
 
 //Forward decl to go around circular dependency (TODO refactor later)
-class Cache;
+class CacheHandler;
 
 /**
  * Base class for a shared memory object
@@ -56,14 +56,14 @@ class MemoryAbstraction
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void store(void *base_ptr, void *value_ptr, const std::vector<long> indices, Cache* cache, const std::vector<long>& initial_indices) =0;
+    virtual void store(void *base_ptr, void *value_ptr, const std::vector<long> indices, CacheHandler* cache, const std::vector<long>& initial_indices) =0;
 
     /**
      * A load from the shared memory object.
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices, Cache* cache, const std::vector<long>& initial_indices) =0;
+    virtual void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices, CacheHandler* cache, const std::vector<long>& initial_indices) =0;
 
     /**
      * A store to the shared memory object.

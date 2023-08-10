@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Wed Aug 09 2023
+ * Last Modified: Thu Aug 10 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -17,7 +17,7 @@
 
 #include "../debug.h"
 #include "CatoRuntimeLogger.h"
-#include "Cache.h"
+#include "CacheHandler.h"
 
 MemoryAbstractionDefault::MemoryAbstractionDefault(long size, MPI_Datatype type,
                                                    int dimensions)
@@ -70,7 +70,7 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
 }
 
 void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std::vector<long> indices,
-                                    Cache* cache, const std::vector<long>& initial_indices)
+                                    CacheHandler* cache_handler, const std::vector<long>& initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -89,9 +89,9 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
                 *logger << message;
             }
 
-            if (cache->write_cache_enabled() && rank_and_disp.first != _mpi_rank)
+            if (cache_handler->write_cache_enabled() && rank_and_disp.first != _mpi_rank)
             {
-                cache->store_in_write_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
+                cache_handler->store_in_write_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
                         _base_ptr, _type, _mpi_window);
             }
             else
@@ -104,16 +104,14 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
 
             if (_mpi_rank != rank_and_disp.first)
             {
-                cache->store_in_cache(value_ptr, _type_size, base_ptr, initial_indices);
-                cache->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
+                cache_handler->store_in_cache(value_ptr, _type_size, base_ptr, initial_indices);
+                cache_handler->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
             }
             else
             {
                 void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
-                cache->store_in_index_cache_local(target_address, _type_size, base_ptr, initial_indices);
+                cache_handler->store_in_index_cache_local(target_address, _type_size, base_ptr, initial_indices);
             }
-
-            Debug(std::cout << "IN STORE ";cache->print_cache(););
         }
         else
         {
@@ -123,7 +121,7 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
 }
 
 void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::vector<long> indices,
-                                    Cache* cache, const std::vector<long>& initial_indices)
+                                    CacheHandler* cache_handler, const std::vector<long>& initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -142,10 +140,10 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                 *logger << message;
             }
 
-            if (cache->get_read_ahead() && rank_and_disp.first != _mpi_rank)
+            if (cache_handler->get_read_ahead() && rank_and_disp.first != _mpi_rank)
             {
                 long nums_elems_in_target = _array_ranges[rank_and_disp.first].second - _array_ranges[rank_and_disp.first].first + 1;
-                long count = std::min(cache->get_read_ahead(), nums_elems_in_target - rank_and_disp.second);
+                long count = std::min(cache_handler->get_read_ahead(), nums_elems_in_target - rank_and_disp.second);
 
                 void* buf = std::malloc(count * _type_size);
                 MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
@@ -162,12 +160,12 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                     std::vector<long> cache_elem_index = initial_indices;
                     cache_elem_index.back() += i;
                     void* addr = static_cast<char*>(buf) + i*_type_size;
-                    cache->store_in_cache(addr, _type_size, base_ptr, cache_elem_index);
+                    cache_handler->store_in_cache(addr, _type_size, base_ptr, cache_elem_index);
                 }
 
                 std::memcpy(dest_ptr, buf, _type_size);
                 std::free(buf);
-                cache->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
+                cache_handler->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
             }
             else
             {
@@ -178,17 +176,15 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
 
                 if (_mpi_rank != rank_and_disp.first)
                 {
-                    cache->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
-                    cache->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
+                    cache_handler->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
+                    cache_handler->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
                 }
                 else
                 {
                     void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
-                    cache->store_in_index_cache_local(target_address, _type_size, base_ptr, initial_indices);
+                    cache_handler->store_in_index_cache_local(target_address, _type_size, base_ptr, initial_indices);
                 }
             }
-
-            Debug(std::cout << "IN LOAD ";cache->print_cache(););
         }
         else
         {

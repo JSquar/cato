@@ -1,8 +1,8 @@
 /*
- * File: Cache.cpp
+ * File: CacheHandler.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Aug 09 2023
+ * Last Modified: Thu Aug 10 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -11,21 +11,21 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "Cache.h"
+#include "CacheHandler.h"
 #include "../debug.h"
 
-Cache::Cache()
+CacheHandler::CacheHandler()
 {
-    char* cache_enable = std::getenv("CATO_ENABLE_CACHE");
+    char* read_cache_enable = std::getenv("CATO_ENABLE_READ_CACHE");
     char* write_cache_enable = std::getenv("CATO_ENABLE_WRITE_CACHE");
     char* index_cache_enable = std::getenv("CATO_ENABLE_INDEX_CACHE");
     char* read_ahead = std::getenv("CATO_CACHE_READAHEAD");
 
-    _cache_enabled = (cache_enable != NULL && std::strcmp(cache_enable, "1") == 0);
+    _read_cache_enabled = (read_cache_enable != NULL && std::strcmp(read_cache_enable, "1") == 0);
     _index_cache_enabled = (index_cache_enable != NULL && std::strcmp(index_cache_enable, "1") == 0);
     _write_cache_enabled = (write_cache_enable != NULL && std::strcmp(write_cache_enable, "1") == 0);
 
-    if (!_cache_enabled || read_ahead == NULL)
+    if (!_read_cache_enabled || read_ahead == NULL)
     {
         _read_ahead = 0;
     }
@@ -37,39 +37,29 @@ Cache::Cache()
         std::cerr << "Could not read value for CATO_CACHE_READAHEAD";
     }
 
-    Debug(std::cout << "Cache enabled: " << _cache_enabled << "\n";);
+    Debug(std::cout << "Cache enabled: " << _read_cache_enabled << "\n";);
     Debug(std::cout << "Write component enabled: " << _write_cache_enabled << "\n";);
     Debug(std::cout << "Index cache enabled: " << _index_cache_enabled << "\n";);
     Debug(std::cout << "Cache readahead: " << _read_ahead << "\n";);
 }
 
-void Cache::store_in_cache(void* src, size_t size, void* base_ptr, const std::vector<long>& initial_indices)
+void CacheHandler::store_in_cache(void* src, size_t size, void* base_ptr, const std::vector<long>& initial_indices)
 {
-    if (_cache_enabled)
+    if (_read_cache_enabled)
     {
         Cacheline value {src, size};
         auto key = std::make_pair(base_ptr, initial_indices);
-        _cache.insert_or_assign(std::move(key), std::move(value));
+        _read_cache.insert_or_assign(std::move(key), std::move(value));
     }
 }
 
-void Cache::print_cache()
+Cacheline* CacheHandler::find_cacheline(void* const base_ptr, const std::vector<long>& indices)
 {
-    std::cout << "START\n";
-    for (auto const& cache_line: _cache)
-    {
-        std::cout << _cache.hash_function()(cache_line.first) << ": " << *(float*)cache_line.second.get_data() << "\n";
-    }
-    std::cout << "END\n";
-}
-
-Cacheline* Cache::find_cacheline(void* const base_ptr, const std::vector<long>& indices)
-{
-    if (_cache_enabled)
+    if (_read_cache_enabled)
     {
         Cacheline* res = nullptr;
-        auto entry = _cache.find({base_ptr, indices});
-        if (entry != _cache.end())
+        auto entry = _read_cache.find({base_ptr, indices});
+        if (entry != _read_cache.end())
         {
             res = &(entry->second);
         }
@@ -78,9 +68,9 @@ Cacheline* Cache::find_cacheline(void* const base_ptr, const std::vector<long>& 
     return nullptr;
 }
 
-void Cache::store_in_index_cache_local(void* target, size_t size, void* base_ptr, const std::vector<long>& initial_indices)
+void CacheHandler::store_in_index_cache_local(void* target, size_t size, void* base_ptr, const std::vector<long>& initial_indices)
 {
-    if (_cache_enabled)
+    if (_index_cache_enabled)
     {
         Indexline value {target, size};
         auto key = std::make_pair(base_ptr, initial_indices);
@@ -88,9 +78,9 @@ void Cache::store_in_index_cache_local(void* target, size_t size, void* base_ptr
     }
 }
 
-void Cache::store_in_index_cache_remote(MemoryAbstraction* mem_abstraction, long index, void* base_ptr, const std::vector<long>& initial_indices)
+void CacheHandler::store_in_index_cache_remote(MemoryAbstraction* mem_abstraction, long index, void* base_ptr, const std::vector<long>& initial_indices)
 {
-    if (_cache_enabled)
+    if (_index_cache_enabled)
     {
         Indexline value {mem_abstraction, index};
         auto key = std::make_pair(base_ptr, initial_indices);
@@ -98,9 +88,9 @@ void Cache::store_in_index_cache_remote(MemoryAbstraction* mem_abstraction, long
     }
 }
 
-Indexline* Cache::find_index(void* const base_ptr, const std::vector<long>& indices)
+Indexline* CacheHandler::find_index(void* const base_ptr, const std::vector<long>& indices)
 {
-    if (_cache_enabled)
+    if (_index_cache_enabled)
     {
         Indexline* res = nullptr;
         auto entry = _index_cache.find({base_ptr, indices});
@@ -113,18 +103,13 @@ Indexline* Cache::find_index(void* const base_ptr, const std::vector<long>& indi
     return nullptr;
 }
 
-void Cache::drop_cache()
+void CacheHandler::drop_caches()
 {
-    _cache.clear();
+    clear_read_cache();
     clear_write_cache();
 }
 
-long Cache::get_read_ahead()
-{
-    return _read_ahead;
-}
-
-void Cache::store_in_write_cache(void* data, int target_rank, long displacement, void* mem_abstraction_base, MPI_Datatype type, MPI_Win win)
+void CacheHandler::store_in_write_cache(void* data, int target_rank, long displacement, void* mem_abstraction_base, MPI_Datatype type, MPI_Win win)
 {
     if (_write_cache_enabled)
     {
@@ -134,7 +119,7 @@ void Cache::store_in_write_cache(void* data, int target_rank, long displacement,
     }
 }
 
-void Cache::clear_write_cache()
+void CacheHandler::clear_write_cache()
 {
     if (_write_cache_enabled)
     {
@@ -143,4 +128,9 @@ void Cache::clear_write_cache()
             elem.second.clear_cache();
         }
     }
+}
+
+void CacheHandler::clear_read_cache()
+{
+    _read_cache.clear();
 }

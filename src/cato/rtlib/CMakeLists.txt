@@ -15,8 +15,8 @@ add_library(CatoRuntime MODULE
     mpi_mutex.cpp
     CatoRuntimeLogger.h
     CatoRuntimeLogger.cpp
-    Cache.h
-    Cache.cpp
+    CacheHandler.h
+    CacheHandler.cpp
     Cacheline.h
     Cacheline.cpp
     Indexline.h
