@@ -14,7 +14,7 @@
 #include <mpi.h>
 #include <vector>
 
-//Forward decl to go around circular dependency (TODO refactor later)
+//Forward decl to go around circular dependency in IndexCacheElement
 class CacheHandler;
 
 /**
@@ -56,14 +56,14 @@ class MemoryAbstraction
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void store(void *base_ptr, void *value_ptr, const std::vector<long> indices, CacheHandler* cache, const std::vector<long>& initial_indices) =0;
+    virtual void store(void *base_ptr, void *value_ptr, const std::vector<long> indices, CacheHandler* const cache, const std::vector<long>& initial_indices) =0;
 
     /**
      * A load from the shared memory object.
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices, CacheHandler* cache, const std::vector<long>& initial_indices) =0;
+    virtual void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices, CacheHandler* const cache, const std::vector<long>& initial_indices) =0;
 
     /**
      * A store to the shared memory object.

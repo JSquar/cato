@@ -210,7 +210,8 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
 
-    Indexline* index_cached = _cache_handler.find_index(base_ptr, indices);
+    auto index_cache_key = _cache_handler.make_cache_key(base_ptr, indices);
+    IndexCacheElement* index_cached = _cache_handler.get_index_cache().find_element(index_cache_key);
     if (index_cached != nullptr)
     {
         //If the data is local, we can just memcpy to the address,
@@ -236,7 +237,8 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
 
 void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<long>& indices)
 {
-    Cacheline* cached = _cache_handler.find_cacheline(base_ptr, indices);
+    auto read_cache_key = _cache_handler.make_cache_key(base_ptr, indices);
+    CacheElement* cached = _cache_handler.get_read_cache().find_element(read_cache_key);
     if (cached != nullptr)
     {
         std::memcpy(dest_ptr, cached->get_data(), cached->get_size());
@@ -246,7 +248,8 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
 
-    Indexline* index_cached = _cache_handler.find_index(base_ptr, indices);
+    auto index_cache_key = _cache_handler.make_cache_key(base_ptr, indices);
+    IndexCacheElement* index_cached = _cache_handler.get_index_cache().find_element(index_cache_key);
     if (index_cached != nullptr)
     {
         if (index_cached->is_data_local())
@@ -377,5 +380,6 @@ void MemoryAbstractionHandler::shared_value_synchronize(void *base_ptr)
 
 void MemoryAbstractionHandler::strong_flush()
 {
-    _cache_handler.drop_caches();
+    _cache_handler.clear_read_cache();
+    _cache_handler.clear_write_cache();
 }

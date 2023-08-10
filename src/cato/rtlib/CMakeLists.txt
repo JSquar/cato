@@ -17,11 +17,14 @@ add_library(CatoRuntime MODULE
     CatoRuntimeLogger.cpp
     CacheHandler.h
     CacheHandler.cpp
-    Cacheline.h
-    Cacheline.cpp
-    Indexline.h
-    Writecache.h
-    Writecache.cpp
+    CacheElement.h
+    CacheElement.cpp
+    IndexCacheElement.h
+    WriteCacheLine.h
+    WriteCacheLine.cpp
+    ReadCache.h
+    WriteCache.h
+    WriteCache.cpp
 )
 
 find_package(LLVM REQUIRED CONFIG)

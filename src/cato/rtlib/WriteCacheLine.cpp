@@ -1,8 +1,8 @@
 /*
- * File: Writecache.cpp
+ * File: WriteCacheLine.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Aug 09 2023
+ * Last Modified: Thu Aug 10 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -12,9 +12,9 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "Writecache.h"
+#include "WriteCacheLine.h"
 
-Writecache::Writecache(MPI_Win win, MPI_Datatype type)
+WriteCacheLine::WriteCacheLine(MPI_Win win, MPI_Datatype type)
     : _win{win}, _type{type}
 {
     int comm_size;
@@ -23,12 +23,12 @@ Writecache::Writecache(MPI_Win win, MPI_Datatype type)
     _cached_elements.resize(comm_size);
 }
 
-void Writecache::insert_element(void* data, int target_rank, long displacement)
+void WriteCacheLine::insert_element(void* data, int target_rank, long displacement)
 {
     _cached_elements[target_rank].push_back({displacement, {data, static_cast<size_t>(_type_size)}});
 }
 
-void Writecache::clear_cache()
+void WriteCacheLine::clear_cache()
 {
     for (size_t i = 0; i < _cached_elements.size(); i++)
     {
@@ -38,8 +38,11 @@ void Writecache::clear_cache()
             continue;
         }
 
+        //Sorts all cache elements by displacements in ascending order. Then the content of the cache elements is
+        //concatenated and the displacements are extracted. Based on these displacements, a new MPI datatype is
+        //created and used to transfer the data in one operation.
         std::sort(rank_vector.begin(), rank_vector.end(),
-                [](std::pair<long,Cacheline> left, std::pair<long,Cacheline> right) {return left.first < right.first;});
+                [](std::pair<long,CacheElement> left, std::pair<long,CacheElement> right) {return left.first < right.first;});
 
         std::vector<int> displacements;
         void* buffer = std::malloc(_type_size * rank_vector.size());

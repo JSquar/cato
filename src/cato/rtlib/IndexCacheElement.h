@@ -1,16 +1,16 @@
 /*
- * File: Indexline.h
+ * File: IndexCacheElement.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Aug 03 2023
+ * Last Modified: Thu Aug 10 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
  */
 
 
-#ifndef CATO_RTLIB_INDEXLINE_H
-#define CATO_RTLIB_INDEXLINE_H
+#ifndef CATO_RTLIB_INDEXCACHEELEMENT_H
+#define CATO_RTLIB_INDEXCACHEELEMENT_H
 
 #include <cstdlib>
 #include "MemoryAbstraction.h"
@@ -26,7 +26,7 @@
  * return the necessary info to immediately call a load/store on the correct
  * memory abstraction instead of having to follow pointers around.
  **/
-class Indexline
+class IndexCacheElement
 {
   private:
     void* _target;
@@ -36,8 +36,10 @@ class Indexline
     bool _local_data;
 
   public:
-    Indexline(void* target, size_t size) : _target{target}, _element_size{size}, _local_data{true}{};
-    Indexline(MemoryAbstraction* mem_abstraction, long index) : _mem_abstraction{mem_abstraction}, _index{index}, _local_data{false}{};
+    //Constructor for local data
+    IndexCacheElement(void* target, size_t size) : _target{target}, _element_size{size}, _local_data{true}{};
+    //Constructor for remote data
+    IndexCacheElement(MemoryAbstraction* mem_abstraction, long index) : _mem_abstraction{mem_abstraction}, _index{index}, _local_data{false}{};
 
     bool is_data_local() const {return _local_data;}
     void* get_data() const {return _target;}

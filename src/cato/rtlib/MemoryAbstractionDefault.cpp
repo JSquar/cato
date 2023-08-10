@@ -70,7 +70,7 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
 }
 
 void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std::vector<long> indices,
-                                    CacheHandler* cache_handler, const std::vector<long>& initial_indices)
+                                    CacheHandler* const cache_handler, const std::vector<long>& initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -89,9 +89,11 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
                 *logger << message;
             }
 
-            if (cache_handler->write_cache_enabled() && rank_and_disp.first != _mpi_rank)
+            if (cache_handler->get_write_cache().cache_enabled() && rank_and_disp.first != _mpi_rank)
             {
-                cache_handler->store_in_write_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
+                /*cache_handler->store_in_write_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
+                        _base_ptr, _type, _mpi_window);*/
+                cache_handler->get_write_cache().store_in_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
                         _base_ptr, _type, _mpi_window);
             }
             else
@@ -102,15 +104,21 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
                 MPI_Win_unlock(rank_and_disp.first, _mpi_window);
             }
 
+            //Storing to index cache and (if data not local) to read cache
+            auto key = cache_handler->make_cache_key(base_ptr, initial_indices);
             if (_mpi_rank != rank_and_disp.first)
             {
-                cache_handler->store_in_cache(value_ptr, _type_size, base_ptr, initial_indices);
-                cache_handler->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
+                CacheElement read_value {value_ptr, static_cast<size_t>(_type_size)};
+                cache_handler->get_read_cache().store_in_cache(key, read_value);
+
+                IndexCacheElement index_value {this, indices[0]};
+                cache_handler->get_index_cache().store_in_cache(key, index_value);
             }
             else
             {
                 void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
-                cache_handler->store_in_index_cache_local(target_address, _type_size, base_ptr, initial_indices);
+                IndexCacheElement value {target_address, static_cast<size_t>(_type_size)};
+                cache_handler->get_index_cache().store_in_cache(key, value);
             }
         }
         else
@@ -121,7 +129,7 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
 }
 
 void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::vector<long> indices,
-                                    CacheHandler* cache_handler, const std::vector<long>& initial_indices)
+                                    CacheHandler* const cache_handler, const std::vector<long>& initial_indices)
 {
     if (_dimensions == 1)
     {
@@ -160,12 +168,17 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                     std::vector<long> cache_elem_index = initial_indices;
                     cache_elem_index.back() += i;
                     void* addr = static_cast<char*>(buf) + i*_type_size;
-                    cache_handler->store_in_cache(addr, _type_size, base_ptr, cache_elem_index);
+                    auto key = cache_handler->make_cache_key(base_ptr, cache_elem_index);
+                    CacheElement value {addr, static_cast<size_t>(_type_size)};
+                    cache_handler->get_read_cache().store_in_cache(key, value);
                 }
 
                 std::memcpy(dest_ptr, buf, _type_size);
                 std::free(buf);
-                cache_handler->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
+
+                auto key_index = cache_handler->make_cache_key(base_ptr, initial_indices);
+                IndexCacheElement value {this, indices[0]};
+                cache_handler->get_index_cache().store_in_cache(key_index, value);
             }
             else
             {
@@ -174,15 +187,20 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                         _mpi_window);
                 MPI_Win_unlock(rank_and_disp.first, _mpi_window);
 
+                auto key = cache_handler->make_cache_key(base_ptr, initial_indices);
                 if (_mpi_rank != rank_and_disp.first)
                 {
-                    cache_handler->store_in_cache(dest_ptr, _type_size, base_ptr, initial_indices);
-                    cache_handler->store_in_index_cache_remote(this, indices[0], base_ptr, initial_indices);
+                    CacheElement read_value {dest_ptr, static_cast<size_t>(_type_size)};
+                    cache_handler->get_read_cache().store_in_cache(key, read_value);
+
+                    IndexCacheElement index_value {this, indices[0]};
+                    cache_handler->get_index_cache().store_in_cache(key, index_value);
                 }
                 else
                 {
                     void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
-                    cache_handler->store_in_index_cache_local(target_address, _type_size, base_ptr, initial_indices);
+                    IndexCacheElement value {target_address, static_cast<size_t>(_type_size)};
+                    cache_handler->get_index_cache().store_in_cache(key, value);
                 }
             }
         }

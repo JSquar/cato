@@ -8,22 +8,41 @@
  * Copyright (c) 2023 Niclas Schroeter
  */
 
-#ifndef CATO_RTLIB_CACHE_H
-#define CATO_RTLIB_CACHE_H
+#ifndef CATO_RTLIB_CACHEHANDLER_H
+#define CATO_RTLIB_CACHEHANDLER_H
 
 #include <unordered_map>
 #include <cstring>
 #include <memory>
 #include <vector>
 
-#include "Cacheline.h"
-#include "Indexline.h"
-#include "Writecache.h"
+#include "CacheElement.h"
+#include "IndexCacheElement.h"
+#include "WriteCacheLine.h"
+#include "ReadCache.h"
+#include "WriteCache.h"
+
+/**
+ * This class manages and provides access to the different caches. There are three caches in total,
+ * all of them are key-value stores.
+ * The first one is the index cache. This is a TLB-like cache that is supposed to minimize the index
+ * calculations that are necessary to find the correct memory abstractions. The key is made up of the
+ * original address and the indices for the access. The elements are IndexCacheElements (see class for more info).
+ * The second one is the read cache. This cache is used to store elements from remote loads, so that subsequent
+ * accesses to it do not require another MPI call, but rather a local access. It uses the same key as the index
+ * cache (typedef'd to CatoCacheKey), the elements are CacheElement objects (see class for more info). Note that
+ * both of these caches have singular values as their elements.
+ * The third cache is a write cache. This cache aggregates write accesses. See the class for more info.
+ * The caches can be enabled separately, see CacheHandler.cpp for the respective env variables. There is also a
+ * readahead option for loads to get more than just one value in each load operation from remote processes.
+ **/
 
 class CacheHandler
 {
-  private:
+  public:
+    typedef std::pair<void*,std::vector<long>> CatoCacheKey;
 
+  private:
     struct hash_combiner
     {
         size_t operator()(std::pair<void*,std::vector<long>> const& key) const
@@ -43,44 +62,37 @@ class CacheHandler
         }
     };
 
-    std::unordered_map<std::pair<void*,std::vector<long>>, Cacheline, hash_combiner> _read_cache;
+    ReadCache<CatoCacheKey, CacheElement, hash_combiner> _read_cache;
 
-    std::unordered_map<std::pair<void*,std::vector<long>>, Indexline, hash_combiner> _index_cache;
+    ReadCache<CatoCacheKey, IndexCacheElement, hash_combiner> _index_cache;
 
-    std::unordered_map<void*, Writecache> _write_cache;
-
-    bool _read_cache_enabled;
-
-    bool _index_cache_enabled;
-
-    bool _write_cache_enabled;
+    WriteCache _write_cache;
 
     int _read_ahead;
 
+    bool is_enabled(const char* env_var);
+
   public:
+
     CacheHandler();
 
-    void store_in_cache(void* src, size_t size, void* base_ptr, const std::vector<long>& initial_indices);
-
-    Cacheline* find_cacheline(void* const base_ptr, const std::vector<long>& indices);
-
-    void store_in_index_cache_local(void* target, size_t size, void* base_ptr, const std::vector<long>& initial_indices);
-
-    void store_in_index_cache_remote(MemoryAbstraction* mem_abstraction, long index, void* base_ptr, const std::vector<long>& initial_indices);
-
-    Indexline* find_index(void* const base_ptr, const std::vector<long>& indices);
-
-    void drop_caches();
-
-    void store_in_write_cache(void* data, int target_rank, long displacement, void* mem_abstraction_base, MPI_Datatype type, MPI_Win win);
+    /**
+     * The info used for the key is the base pointer in the original access
+     * alongside the indices. This function transforms them into the key.
+     **/
+    CatoCacheKey make_cache_key(void* const base_ptr, const std::vector<long>& indices);
 
     void clear_write_cache();
 
     void clear_read_cache();
 
-    long get_read_ahead() const {return _read_ahead;}
+    ReadCache<CatoCacheKey, CacheElement, hash_combiner>& get_read_cache() {return _read_cache;}
 
-    bool write_cache_enabled() const {return _write_cache_enabled;}
+    ReadCache<CatoCacheKey, IndexCacheElement, hash_combiner>& get_index_cache() {return _index_cache;}
+
+    WriteCache& get_write_cache() {return _write_cache;}
+
+    long get_read_ahead() const {return _read_ahead;}
 };
 
 #endif
