@@ -2,7 +2,7 @@
  * File: CacheHandler.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Fri Aug 11 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -55,5 +55,5 @@ void CacheHandler::clear_write_cache()
 
 void CacheHandler::clear_read_cache()
 {
-    _read_cache.clear();
+    _read_cache.clear_cache();
 }

@@ -48,7 +48,7 @@ class ReadCache
         return nullptr;
     }
 
-    void clear()
+    void clear_cache()
     {
         _read_cache.clear();
     }
