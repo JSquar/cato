@@ -2,7 +2,7 @@
  * File: CacheHandler.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Mon Aug 14 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -34,7 +34,8 @@
  * both of these caches have singular values as their elements.
  * The third cache is a write cache. This cache aggregates write accesses. See the class for more info.
  * The caches can be enabled separately, see CacheHandler.cpp for the respective env variables. There is also a
- * readahead option for loads to get more than just one value in each load operation from remote processes.
+ * readahead option for loads to get more than just one value in each load operation from remote processes,
+ * alongside an option for the write cache to write elements to the target earlier (see WriteCache.h).
  **/
 
 class CacheHandler
@@ -71,6 +72,8 @@ class CacheHandler
     int _read_ahead;
 
     bool is_enabled(const char* env_var);
+
+    int env_var_value(const char* env_var);
 
   public:
 

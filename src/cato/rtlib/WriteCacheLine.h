@@ -2,7 +2,7 @@
  * File: WriteCacheLine.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Mon Aug 14 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -34,10 +34,12 @@ class WriteCacheLine
 
     int _type_size;
 
+    void clear_rank_vector(std::vector<std::pair<long, CacheElement>>& rank_vector, size_t rank);
+
   public:
     WriteCacheLine(MPI_Win win, MPI_Datatype type);
 
-    void insert_element(void* data, int target_rank, long displacement);
+    void insert_element(void* data, int target_rank, long displacement, size_t flush_rank_after_num_elements);
 
     void clear_cache();
 };
