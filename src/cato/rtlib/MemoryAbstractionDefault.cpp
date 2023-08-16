@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Wed Aug 16 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -98,7 +98,7 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
             }
             else
             {
-                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
+                MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, 0, _mpi_window);
                 MPI_Put(value_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
                         _mpi_window);
                 MPI_Win_unlock(rank_and_disp.first, _mpi_window);
@@ -182,7 +182,7 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
             }
             else
             {
-                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
+                MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, 0, _mpi_window);
                 MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
                         _mpi_window);
                 MPI_Win_unlock(rank_and_disp.first, _mpi_window);

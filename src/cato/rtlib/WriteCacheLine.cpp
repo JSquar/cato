@@ -2,7 +2,7 @@
  * File: WriteCacheLine.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 14 2023
+ * Last Modified: Wed Aug 16 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -27,7 +27,7 @@ void WriteCacheLine::insert_element(void* data, int target_rank, long displaceme
 {
     _cached_elements[target_rank].push_back({displacement, {data, static_cast<size_t>(_type_size)}});
 
-    if (_cached_elements[target_rank].size() >= flush_rank_after_num_elements)
+    if (_cached_elements[target_rank].size() == flush_rank_after_num_elements)
     {
         clear_rank_vector(_cached_elements[target_rank], target_rank);
     }
