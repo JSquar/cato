@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Wed Aug 16 2023
+ * Last Modified: Mon Aug 21 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -91,8 +91,6 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
 
             if (cache_handler->get_write_cache().cache_enabled() && rank_and_disp.first != _mpi_rank)
             {
-                /*cache_handler->store_in_write_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
-                        _base_ptr, _type, _mpi_window);*/
                 cache_handler->get_write_cache().store_in_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
                         _base_ptr, _type, _mpi_window);
             }
@@ -111,13 +109,13 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
                 CacheElement read_value {value_ptr, static_cast<size_t>(_type_size)};
                 cache_handler->get_read_cache().store_in_cache(key, read_value);
 
-                IndexCacheElement index_value {this, indices[0]};
+                IndexCacheElement index_value = IndexCacheElement::create_element_for_remote_address(this, indices[0]);
                 cache_handler->get_index_cache().store_in_cache(key, index_value);
             }
             else
             {
                 void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
-                IndexCacheElement value {target_address, static_cast<size_t>(_type_size)};
+                IndexCacheElement value = IndexCacheElement::create_element_for_local_address(target_address, static_cast<size_t>(_type_size));
                 cache_handler->get_index_cache().store_in_cache(key, value);
             }
         }
@@ -177,7 +175,7 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                 std::free(buf);
 
                 auto key_index = cache_handler->make_cache_key(base_ptr, initial_indices);
-                IndexCacheElement value {this, indices[0]};
+                IndexCacheElement value = IndexCacheElement::create_element_for_remote_address(this, indices[0]);
                 cache_handler->get_index_cache().store_in_cache(key_index, value);
             }
             else
@@ -193,13 +191,13 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                     CacheElement read_value {dest_ptr, static_cast<size_t>(_type_size)};
                     cache_handler->get_read_cache().store_in_cache(key, read_value);
 
-                    IndexCacheElement index_value {this, indices[0]};
+                    IndexCacheElement index_value = IndexCacheElement::create_element_for_remote_address(this, indices[0]);
                     cache_handler->get_index_cache().store_in_cache(key, index_value);
                 }
                 else
                 {
                     void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
-                    IndexCacheElement value {target_address, static_cast<size_t>(_type_size)};
+                    IndexCacheElement value = IndexCacheElement::create_element_for_local_address(target_address, static_cast<size_t>(_type_size));
                     cache_handler->get_index_cache().store_in_cache(key, value);
                 }
             }

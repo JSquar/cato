@@ -2,7 +2,7 @@
  * File: IndexCacheElement.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Mon Aug 21 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -35,11 +35,20 @@ class IndexCacheElement
     long _index;
     bool _local_data;
 
-  public:
     //Constructor for local data
     IndexCacheElement(void* target, size_t size) : _target{target}, _element_size{size}, _local_data{true}{};
     //Constructor for remote data
     IndexCacheElement(MemoryAbstraction* mem_abstraction, long index) : _mem_abstraction{mem_abstraction}, _index{index}, _local_data{false}{};
+
+  public:
+    static IndexCacheElement create_element_for_local_address(void* target, size_t size)
+    {
+        return IndexCacheElement(target, size);
+    }
+    static IndexCacheElement create_element_for_remote_address(MemoryAbstraction* mem_abstraction, long index)
+    {
+        return IndexCacheElement(mem_abstraction, index);
+    }
 
     bool is_data_local() const {return _local_data;}
     void* get_data() const {return _target;}
