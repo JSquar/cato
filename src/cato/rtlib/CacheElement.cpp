@@ -2,7 +2,7 @@
  * File: CacheElement.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Mon Aug 21 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -17,6 +17,11 @@ CacheElement::CacheElement(void* data, size_t element_size)
     : _element_size{element_size}
 {
     _data = std::malloc(element_size);
+    if (_data == nullptr)
+    {
+        std::bad_alloc ex;
+        throw ex;
+    }
     std::memcpy(_data, data, element_size);
 }
 
