@@ -2,7 +2,7 @@
  * File: WriteCacheLine.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Aug 16 2023
+ * Last Modified: Mon Aug 21 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -13,6 +13,8 @@
 #include <cstring>
 
 #include "WriteCacheLine.h"
+
+#include "PerformanceMetrics.h"
 
 WriteCacheLine::WriteCacheLine(MPI_Win win, MPI_Datatype type)
     : _win{win}, _type{type}
@@ -80,4 +82,5 @@ void WriteCacheLine::clear_rank_vector(std::vector<std::pair<long, CacheElement>
     MPI_Type_free(&dt);
     std::free(buffer);
     rank_vector.clear();
+    report_aggregated_elements(displacements.size());
 }

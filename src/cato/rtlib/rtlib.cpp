@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Mon Aug 21 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -22,6 +22,8 @@
 
 #include "mpi_mutex.h"
 #include <sys/stat.h>
+
+#include "PerformanceMetrics.h"
 // #include <fstream>
 // #include <llvm/Support/raw_ostream.h>
 
@@ -46,6 +48,8 @@ void cato_initialize(bool logging)
 
     MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
+    peak_memory_usage_at_start();
+
     _memory_handler = std::make_unique<MemoryAbstractionHandler>(MPI_RANK, MPI_SIZE);
     // TODO: IO Handler hier initialisieren?
 
@@ -60,6 +64,9 @@ void cato_finalize()
     _memory_handler.reset();
 
     CatoRuntimeLogger::stop_logger();
+
+    peak_memory_usage_at_end();
+    print_metrics();
 
     MPI_Finalize();
 }

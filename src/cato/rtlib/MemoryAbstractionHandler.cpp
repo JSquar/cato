@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Mon Aug 21 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -22,6 +22,7 @@
 #include "MemoryAbstractionSingleValueDefault.h"
 
 #include "../debug.h"
+#include "PerformanceMetrics.h"
 
 MemoryAbstractionHandler::MemoryAbstractionHandler(int rank, int size)
 {
@@ -214,6 +215,7 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
     IndexCacheElement* index_cached = _cache_handler.get_index_cache().find_element(index_cache_key);
     if (index_cached != nullptr)
     {
+        cache_hit(CACHETYPE::INDEX);
         //If the data is local, we can just memcpy to the address,
         //otherwise we get the correct memory abstraction and index without the pointer chase
         if (index_cached->is_data_local())
@@ -229,6 +231,7 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
     }
     else
     {
+        cache_miss(CACHETYPE::INDEX);
         std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
     }
 
@@ -241,9 +244,11 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
     CacheElement* cached = _cache_handler.get_read_cache().find_element(read_cache_key);
     if (cached != nullptr)
     {
+        cache_hit(CACHETYPE::READ);
         std::memcpy(dest_ptr, cached->get_data(), cached->get_size());
         return;
     }
+    cache_miss(CACHETYPE::READ);
 
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
@@ -252,6 +257,8 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
     IndexCacheElement* index_cached = _cache_handler.get_index_cache().find_element(index_cache_key);
     if (index_cached != nullptr)
     {
+        cache_hit(CACHETYPE::INDEX);
+
         if (index_cached->is_data_local())
         {
             std::memcpy(dest_ptr, (index_cached->get_data()), index_cached->get_size());
@@ -265,6 +272,7 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
     }
     else
     {
+        cache_miss(CACHETYPE::INDEX);
         std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
     }
 
