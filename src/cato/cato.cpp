@@ -104,12 +104,21 @@ struct CatoPass : public ModulePass
         return memory_deallocations;
     }
 
+    /**
+     * Occasionally, a path contains a load for which the preceding load to the shared memory variable
+     * (an argument to the outlined function) is missing from said path. This can happen when the result
+     * of a load from one shared memory variable is used as an index for another shared memory variable
+     * (i.e. in a basic SpMV kernel). If this happens, the instruction should not be categorized alongside
+     * the given path, but rather with the path that actually contains all the instructions from which
+     * the relevant info can be extracted later on. This function detects such paths and returns
+     * true if the relevant instructions are present.
+     **/
     bool isLoadChainPresentInPath(LoadInst* load, size_t index_in_path, std::vector<Value *> path)
     {
         Value* pointer_operand = load->getPointerOperand();
         Function* current_func = load->getFunction();
 
-        while (!isa<AllocaInst>(pointer_operand) && !isa<Argument>(pointer_operand))
+        while (!isa<Argument>(pointer_operand))
         {
             Debug(errs() << "Checking pointer operand: ";);
             Debug(pointer_operand->dump());
