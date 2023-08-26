@@ -53,6 +53,8 @@ class UserTree
      **/
     void delete_tree(UserTreeNode *curr_node);
 
+    bool has_cycle_with_user(UserTreeNode *curr_node, llvm::User* user);
+
   public:
     /**
      * Constructor automatically creates the full UserTree for the passed root instruction

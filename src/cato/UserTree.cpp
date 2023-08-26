@@ -17,6 +17,14 @@ UserTree::UserTree(Value *root)
 
 UserTree::~UserTree() { delete_tree(_root); }
 
+bool UserTree::has_cycle_with_user(UserTreeNode *curr_node, llvm::User* user)
+{
+    if (curr_node->parent == nullptr)
+    return false;
+
+    return user == curr_node->parent->value;
+}
+
 void UserTree::generate_tree(UserTreeNode *curr_node)
 {
     // If the current instruction has users we extend the tree
@@ -26,6 +34,12 @@ void UserTree::generate_tree(UserTreeNode *curr_node)
         // recursively call this function again to keep generating the tree
         for (auto *user : curr_node->value->users())
         {
+            if (has_cycle_with_user(curr_node, user))
+            {
+                Debug(errs() << "!!Found cyclic dependency!!\n";);
+                return;
+            }
+
             auto new_node = new UserTreeNode;
             new_node->value = user;
             new_node->parent = curr_node;

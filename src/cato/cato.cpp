@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Sat Aug 26 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -104,6 +104,50 @@ struct CatoPass : public ModulePass
         return memory_deallocations;
     }
 
+    bool isLoadChainPresentInPath(LoadInst* load, size_t index_in_path, std::vector<Value *> path)
+    {
+        Value* pointer_operand = load->getPointerOperand();
+        Function* current_func = load->getFunction();
+
+        while (!isa<AllocaInst>(pointer_operand) && !isa<Argument>(pointer_operand))
+        {
+            Debug(errs() << "Checking pointer operand: ";);
+            Debug(pointer_operand->dump());
+
+            auto found = find(path.begin(), path.begin() + index_in_path, pointer_operand);
+            if (found == path.begin() + index_in_path)
+            {
+                Debug(errs() << "Entire chain not present for: ";);
+                Debug(load->dump(););
+                return false;
+            }
+            else
+            {
+                if (auto* gep_instr = dyn_cast<GetElementPtrInst>(pointer_operand))
+                {
+                    pointer_operand = gep_instr->getPointerOperand();
+                }
+                else if (auto* load_instr = dyn_cast<LoadInst>(pointer_operand))
+                {
+                    pointer_operand = load_instr->getPointerOperand();
+                }
+                else if (auto* bitcast_instr = dyn_cast<BitCastInst>(pointer_operand))
+                {
+                    pointer_operand = bitcast_instr->getOperand(0);
+                }
+                else
+                {
+                    errs() << "Problem in path categorization, unfamiliar access pattern\n";
+                    exit(1);
+                }
+            }
+        }
+        Debug(errs() << "Chain is present for: ";);
+        Debug(load->dump(););
+        return true;
+    }
+
+
     /**
      * Takes a vector of paths from a UserTree and categorizes them after load, store and
      * free instructions on the shared memory object from which the UserTree was created
@@ -125,6 +169,12 @@ struct CatoPass : public ModulePass
 
         for (auto &path : paths)
         {
+
+            Debug(errs() << "===== PATH UP FOR CATEG: =====\n";);
+            for (auto u : path)
+            Debug(u->dump(););
+            Debug(errs() << "==============================\n";);
+
             for (unsigned int i = 0; i < path.size(); i++)
             {
                 Value *u = path[i];
@@ -179,12 +229,16 @@ struct CatoPass : public ModulePass
                 }
                 else if (auto *load = dyn_cast<LoadInst>(u))
                 {
+                    Debug(errs() << "Checking load instr: ";);
+                    Debug(load->dump(););
                     if (!load->getType()->isPointerTy())
                     {
-                        // Check if the instructions was already added through a different
-                        // path.
-                        if (categorized_instructions.insert(u).second)
+                        Debug(errs() << "Load is not of pointer type\n";);
+                        // Check if the entire chain of loads and GEPs is present in the path
+                        // and if the instructions was already added through a different path.
+                        if (isLoadChainPresentInPath(load, i, path) && categorized_instructions.insert(u).second)
                         {
+                            Debug(errs() << "Added to load paths\n";);
                             load_paths->push_back({i, path});
                         }
                     }
@@ -1199,6 +1253,8 @@ struct CatoPass : public ModulePass
             for (auto &path : store_paths)
             {
                 Debug(errs() << "STORE PATH:\n";);
+                Debug(errs() << "Checked instruction: ";);
+                Debug(path.second[path.first]->dump(););
                 for (auto &u : path.second)
                 {
                     Debug(u->dump(););
@@ -1209,6 +1265,8 @@ struct CatoPass : public ModulePass
             for (auto &path : ptr_store_paths)
             {
                 Debug(errs() << "PTR STORE PATH:\n";);
+                Debug(errs() << "Checked instruction: ";);
+                Debug(path.second[path.first]->dump(););
                 for (auto &u : path.second)
                 {
                     Debug(u->dump(););
@@ -1219,6 +1277,8 @@ struct CatoPass : public ModulePass
             for (auto &path : load_paths)
             {
                 Debug(errs() << "LOAD PATH:\n";);
+                Debug(errs() << "Checked instruction: ";);
+                Debug(path.second[path.first]->dump(););
                 for (auto &u : path.second)
                 {
                     Debug(u->dump(););
