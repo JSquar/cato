@@ -5,19 +5,29 @@
 #include <omp.h>
 
 #define DIM 10
+#define ITER 10
 
 int main()
 {
-    float** Matrix = (float**)malloc(sizeof(float*) * DIM);
-    float** Matrix2 = (float**)malloc(sizeof(float*) * DIM);
+    float** Matrix = malloc(sizeof(float*) * DIM);
+    float** Matrix2 = malloc(sizeof(float*) * DIM);
 
     for(int i = 0; i < DIM; i++)
     {
-        Matrix[i] = (float*)malloc(sizeof(float) * DIM);
-        Matrix2[i] = (float*)malloc(sizeof(float) * DIM);
+        Matrix[i] = malloc(sizeof(float) * DIM);
+        Matrix2[i] = malloc(sizeof(float) * DIM);
     }
 
     for(int i = 0; i < DIM; i++)
+    {
+        for (int j = 0; j < DIM; j++)
+        {
+            Matrix[i][j] = 0.0;
+            Matrix2[i][j] = 0.0;
+        }
+    }
+
+    for (int i = 0; i < DIM; i++)
     {
         Matrix[0][i] = 1.0;
         Matrix[DIM-1][i] = 1.0;
@@ -30,18 +40,22 @@ int main()
     }
 
 
-    #pragma omp parallel for
+    for(int iter = 0; iter < ITER; iter++)
     {
+        #pragma omp parallel for
         for(int i = 1; i < DIM-1; i++)
         {
             for(int j = 1; j < DIM-1; j++)
             {
-                float star = 4 * Matrix[i][j] - Matrix[i-1][j] - Matrix[i+1][j] - Matrix[i][j-1] - Matrix[i][j+1];
-                Matrix2[i][j] = star * star;
+                float star = 0.25*(Matrix[i-1][j] + Matrix[i+1][j] + Matrix[i][j-1] + Matrix[i][j+1]);
+                Matrix2[i][j] = Matrix[i][j]/2.0 + star/2.0;
             }
         }
-    }
 
+        float** tmp = Matrix;
+        Matrix = Matrix2;
+        Matrix2 = tmp;
+    }
 
 
     #pragma omp parallel
@@ -52,7 +66,7 @@ int main()
             {
                 for(int j = 0; j < DIM; j++)
                 {
-                    printf("%.4f ", Matrix2[i][j]);
+                    printf("%.4f ", Matrix[i][j]);
                 }
                 printf("\n");
             }
