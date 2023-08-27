@@ -37,6 +37,7 @@ void UserTree::generate_tree(UserTreeNode *curr_node)
             if (has_cycle_with_user(curr_node, user))
             {
                 Debug(errs() << "!!Found cyclic dependency!!\n";);
+                _leafs.push_back(curr_node);
                 return;
             }
 
