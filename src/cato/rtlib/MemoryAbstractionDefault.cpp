@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Mon Aug 21 2023
+ * Last Modified: Mon Aug 28 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -18,6 +18,7 @@
 #include "../debug.h"
 #include "CatoRuntimeLogger.h"
 #include "CacheHandler.h"
+#include "Readahead.h"
 
 MemoryAbstractionDefault::MemoryAbstractionDefault(long size, MPI_Datatype type,
                                                    int dimensions)
@@ -151,26 +152,7 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                 long nums_elems_in_target = _array_ranges[rank_and_disp.first].second - _array_ranges[rank_and_disp.first].first + 1;
                 long count = std::min(cache_handler->get_read_ahead(), nums_elems_in_target - rank_and_disp.second);
 
-                void* buf = std::malloc(count * _type_size);
-                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, _mpi_window);
-                MPI_Get(buf, count, _type, rank_and_disp.first, rank_and_disp.second, count, _type,
-                        _mpi_window);
-                MPI_Win_unlock(rank_and_disp.first, _mpi_window);
-
-                for (long i = 0; i < count; i++)
-                {
-                    //The resulting cache elem index might not actually exist, but there is a
-                    //certain overhead attached to keeping track of "legal" indices. If the index does
-                    //not actually exist, the element will just stay in the cache untouched until dropped.
-                    //TODO make some measurements with and without index mngmt
-                    std::vector<long> cache_elem_index = initial_indices;
-                    cache_elem_index.back() += i;
-                    void* addr = static_cast<char*>(buf) + i*_type_size;
-                    auto key = cache_handler->make_cache_key(base_ptr, cache_elem_index);
-                    CacheElement value {addr, static_cast<size_t>(_type_size)};
-                    cache_handler->get_read_cache().store_in_cache(key, value);
-                }
-
+                void* buf = performReadahead(this, base_ptr, cache_handler, initial_indices, rank_and_disp, count);
                 std::memcpy(dest_ptr, buf, _type_size);
                 std::free(buf);
 

@@ -27,6 +27,8 @@ add_library(CatoRuntime MODULE
     WriteCache.cpp
     PerformanceMetrics.h
     PerformanceMetrics.cpp
+    Readahead.h
+    Readahead.cpp
 )
 
 find_package(LLVM REQUIRED CONFIG)
