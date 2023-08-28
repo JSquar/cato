@@ -2,12 +2,14 @@
  * File: PerformanceMetrics.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 21 2023
+ * Last Modified: Mon Aug 28 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
  */
 
+#ifndef CATO_RTLIB_PERFORMANCE_METRICS_H
+#define CATO_RTLIB_PERFORMANCE_METRICS_H
 
 #define CAPTURE_MEMORY_METRICS 0
 
@@ -26,3 +28,5 @@ void cache_miss(enum CACHETYPE cachetype);
 void report_aggregated_elements(unsigned long count);
 
 void print_metrics();
+
+#endif
