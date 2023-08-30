@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Mon Aug 28 2023
+ * Last Modified: Wed Aug 30 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -34,6 +34,8 @@ class MemoryAbstractionDefault : public MemoryAbstraction
     // global number of elements in the shared memory object and
     // the number of elements stored in the memory of this MPI process.
     long _global_num_elements, _local_num_elements;
+
+    MPI_Datatype _readahead_dt;
 
     // Ranges of indices for the elements each MPI process has stored locally
     std::vector<std::pair<long, long>> _array_ranges;
@@ -90,7 +92,7 @@ class MemoryAbstractionDefault : public MemoryAbstraction
     void pointer_store(void *source_ptr, long dest_index) override;
 
     friend void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* cache_handler,
-                        const std::vector<long>& initial_indices, std::pair<int,long> rank_and_disp, long count);
+                        const std::vector<long>& initial_indices, std::pair<int,long> rank_and_disp, std::pair<int,long> readahead_count_stride);
 };
 
 #endif

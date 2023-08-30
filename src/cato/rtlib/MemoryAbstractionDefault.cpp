@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Mon Aug 28 2023
+ * Last Modified: Wed Aug 30 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -22,7 +22,7 @@
 
 MemoryAbstractionDefault::MemoryAbstractionDefault(long size, MPI_Datatype type,
                                                    int dimensions)
-    : MemoryAbstraction(size, type, dimensions)
+    : MemoryAbstraction(size, type, dimensions), _readahead_dt{MPI_DATATYPE_NULL}
 {
     if (dimensions == 1)
     {
@@ -67,6 +67,11 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
     {
         free(_base_ptr);
         _base_ptr = nullptr;
+    }
+
+    if (_readahead_dt != MPI_DATATYPE_NULL)
+    {
+        MPI_Type_free(&_readahead_dt);
     }
 }
 
@@ -149,10 +154,13 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
 
             if (cache_handler->get_read_ahead() && rank_and_disp.first != _mpi_rank)
             {
-                long nums_elems_in_target = _array_ranges[rank_and_disp.first].second - _array_ranges[rank_and_disp.first].first + 1;
-                long count = std::min(cache_handler->get_read_ahead(), nums_elems_in_target - rank_and_disp.second);
+                long stride = 1;
+                long num_elems_in_target = _array_ranges[rank_and_disp.first].second - _array_ranges[rank_and_disp.first].first + 1;
+                long num_elems_left_after_displacement = num_elems_in_target - rank_and_disp.second;
+                long num_elems_left_strided = (num_elems_left_after_displacement / stride) != 0 ? (num_elems_left_after_displacement / stride) : 1;
+                int count = std::min(cache_handler->get_read_ahead(), num_elems_left_strided);
 
-                void* buf = performReadahead(this, base_ptr, cache_handler, initial_indices, rank_and_disp, count);
+                void* buf = performReadahead(this, base_ptr, cache_handler, initial_indices, rank_and_disp, {count,stride});
                 std::memcpy(dest_ptr, buf, _type_size);
                 std::free(buf);
 

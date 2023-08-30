@@ -2,7 +2,7 @@
  * File: Readahead.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 28 2023
+ * Last Modified: Wed Aug 30 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -10,14 +10,37 @@
 
 #include "Readahead.h"
 #include <mpi.h>
+#include <cstdlib>
+
+namespace
+{
+    MPI_Datatype create_readahead_datatype(int stride, MPI_Datatype old_dt)
+    {
+        MPI_Datatype dt;
+        int type_size;
+        MPI_Type_size(old_dt, &type_size);
+        MPI_Type_create_resized(old_dt, 0, stride*type_size, &dt);
+        MPI_Type_commit(&dt);
+        return dt;
+    }
+}
+
 
 void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* cache_handler,
-                        const std::vector<long>& initial_indices, std::pair<int,long> rank_and_disp, long count)
+                        const std::vector<long>& initial_indices, std::pair<int,long> rank_and_disp, std::pair<int,long> readahead_count_stride)
 {
-    void* buf = malloc(mem_abstraction->_type_size * count);
-    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank_and_disp.first, 0, mem_abstraction->_mpi_window);
-    MPI_Get(buf, count, mem_abstraction->_type, rank_and_disp.first, rank_and_disp.second, count, mem_abstraction->_type,
-            mem_abstraction->_mpi_window);
+    int count = readahead_count_stride.first;
+    long stride = readahead_count_stride.second;
+    void* buf = std::malloc(mem_abstraction->_type_size * count);
+
+    if (mem_abstraction->_readahead_dt == MPI_DATATYPE_NULL)
+    {
+        mem_abstraction->_readahead_dt = create_readahead_datatype(stride, mem_abstraction->_type);
+    }
+
+    MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, 0, mem_abstraction->_mpi_window);
+    MPI_Get(buf, count, mem_abstraction->_type, rank_and_disp.first,
+            rank_and_disp.second, count, mem_abstraction->_readahead_dt, mem_abstraction->_mpi_window);
     MPI_Win_unlock(rank_and_disp.first, mem_abstraction->_mpi_window);
 
     for (long i = 0; i < count; i++)
@@ -27,11 +50,12 @@ void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr
         //not actually exist, the element will just stay in the cache untouched until dropped.
         //TODO make some measurements with and without index mngmt
         std::vector<long> cache_elem_index = initial_indices;
-        cache_elem_index.back() += i;
+        cache_elem_index.back() += i*stride;
         void* addr = static_cast<char*>(buf) + i*mem_abstraction->_type_size;
         auto key = cache_handler->make_cache_key(base_ptr, cache_elem_index);
         CacheElement value {addr, static_cast<size_t>(mem_abstraction->_type_size)};
         cache_handler->get_read_cache().store_in_cache(key, value);
     }
+
     return buf;
 }
