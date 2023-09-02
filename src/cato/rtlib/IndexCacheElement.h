@@ -2,7 +2,7 @@
  * File: IndexCacheElement.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 21 2023
+ * Last Modified: Sat Sep 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -13,6 +13,7 @@
 #define CATO_RTLIB_INDEXCACHEELEMENT_H
 
 #include <cstdlib>
+#include <optional>
 #include "MemoryAbstraction.h"
 
 /**
@@ -29,16 +30,16 @@
 class IndexCacheElement
 {
   private:
-    void* _target;
+    void* _data;
     size_t _element_size;
     MemoryAbstraction* _mem_abstraction;
     long _index;
-    bool _local_data;
+    bool _data_is_local;
 
     //Constructor for local data
-    IndexCacheElement(void* target, size_t size) : _target{target}, _element_size{size}, _local_data{true}{};
+    IndexCacheElement(void* target, size_t size) : _data{target}, _element_size{size}, _data_is_local{true}{};
     //Constructor for remote data
-    IndexCacheElement(MemoryAbstraction* mem_abstraction, long index) : _mem_abstraction{mem_abstraction}, _index{index}, _local_data{false}{};
+    IndexCacheElement(MemoryAbstraction* mem_abstraction, long index) : _mem_abstraction{mem_abstraction}, _index{index}, _data_is_local{false}{};
 
   public:
     static IndexCacheElement create_element_for_local_address(void* target, size_t size)
@@ -50,8 +51,12 @@ class IndexCacheElement
         return IndexCacheElement(mem_abstraction, index);
     }
 
-    bool is_data_local() const {return _local_data;}
-    void* get_data() const {return _target;}
+    std::pair<MemoryAbstraction*, long> get_components_for_memory_abstraction_access();
+    void load_from_local_element(void* dest_ptr);
+    void store_to_local_element(void* value_ptr);
+
+    bool is_data_local() const {return _data_is_local;}
+    void* get_data() const {return _data;}
     size_t get_size() const {return _element_size;}
     long get_index() const {return _index;}
     MemoryAbstraction* get_memory_abstraction() const {return _mem_abstraction;}

@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Wed Aug 30 2023
+ * Last Modified: Sat Sep 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -107,23 +107,6 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
                         _mpi_window);
                 MPI_Win_unlock(rank_and_disp.first, _mpi_window);
             }
-
-            //Storing to index cache and (if data not local) to read cache
-            auto key = cache_handler->make_cache_key(base_ptr, initial_indices);
-            if (_mpi_rank != rank_and_disp.first)
-            {
-                CacheElement read_value {value_ptr, static_cast<size_t>(_type_size)};
-                cache_handler->get_read_cache().store_in_cache(key, read_value);
-
-                IndexCacheElement index_value = IndexCacheElement::create_element_for_remote_address(this, indices[0]);
-                cache_handler->get_index_cache().store_in_cache(key, index_value);
-            }
-            else
-            {
-                void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
-                IndexCacheElement value = IndexCacheElement::create_element_for_local_address(target_address, static_cast<size_t>(_type_size));
-                cache_handler->get_index_cache().store_in_cache(key, value);
-            }
         }
         else
         {
@@ -163,10 +146,6 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                 void* buf = performReadahead(this, base_ptr, cache_handler, initial_indices, rank_and_disp, {count,stride});
                 std::memcpy(dest_ptr, buf, _type_size);
                 std::free(buf);
-
-                auto key_index = cache_handler->make_cache_key(base_ptr, initial_indices);
-                IndexCacheElement value = IndexCacheElement::create_element_for_remote_address(this, indices[0]);
-                cache_handler->get_index_cache().store_in_cache(key_index, value);
             }
             else
             {
@@ -174,22 +153,6 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                 MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
                         _mpi_window);
                 MPI_Win_unlock(rank_and_disp.first, _mpi_window);
-
-                auto key = cache_handler->make_cache_key(base_ptr, initial_indices);
-                if (_mpi_rank != rank_and_disp.first)
-                {
-                    CacheElement read_value {dest_ptr, static_cast<size_t>(_type_size)};
-                    cache_handler->get_read_cache().store_in_cache(key, read_value);
-
-                    IndexCacheElement index_value = IndexCacheElement::create_element_for_remote_address(this, indices[0]);
-                    cache_handler->get_index_cache().store_in_cache(key, index_value);
-                }
-                else
-                {
-                    void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
-                    IndexCacheElement value = IndexCacheElement::create_element_for_local_address(target_address, static_cast<size_t>(_type_size));
-                    cache_handler->get_index_cache().store_in_cache(key, value);
-                }
             }
         }
         else
@@ -219,21 +182,18 @@ void MemoryAbstractionDefault::sequential_store(void *base_ptr, void *value_ptr,
                 *logger << message;
             }
 
-            //MPI_Win_fence(0, _mpi_window);
             MPI_Win_fence(MPI_MODE_NOPRECEDE, _mpi_window);
             if (_mpi_rank == rank_and_disp.first)
             {
                 MPI_Put(value_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1,
                         _type, _mpi_window);
             }
-            //MPI_Win_fence(0, _mpi_window);
             MPI_Win_fence(MPI_MODE_NOSUCCEED, _mpi_window);
         }
         else
         {
             std::cerr << "MemoryAbstractionDefault does not support > 1D arrays yet\n";
         }
-        //MPI_Barrier(MPI_COMM_WORLD);
     }
 }
 
@@ -257,20 +217,33 @@ void MemoryAbstractionDefault::sequential_load(void *base_ptr, void *dest_ptr,
                 *logger << message;
             }
 
-            //MPI_Win_fence(0, _mpi_window);
             MPI_Win_fence(MPI_MODE_NOPRECEDE | MPI_MODE_NOPUT, _mpi_window);
             MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
                     _mpi_window);
-            // std::cout << "Rank " << _mpi_rank << " loading " << *((int*)dest_ptr) << "\n";
-            //MPI_Win_fence(0, _mpi_window);
             MPI_Win_fence(MPI_MODE_NOSUCCEED, _mpi_window);
         }
         else
         {
             std::cerr << "MemoryAbstractionDefault does not support > 1D arrays yet\n";
         }
-        //MPI_Barrier(MPI_COMM_WORLD);
     }
+}
+
+bool MemoryAbstractionDefault::is_data_local(const std::vector<long>& indices)
+{
+    auto rank_and_disp = get_target_rank_and_disp_for_offset(indices[0]);
+    return rank_and_disp.first == _mpi_rank;
+}
+
+void* MemoryAbstractionDefault::get_address_of_local_element(const std::vector<long>& indices)
+{
+    auto rank_and_disp = get_target_rank_and_disp_for_offset(indices[0]);
+    if (rank_and_disp.first != _mpi_rank)
+    {
+        return nullptr;
+    }
+    void* target_address = static_cast<char*>(_base_ptr) + rank_and_disp.second * _type_size;
+    return target_address;
 }
 
 std::pair<int, long> MemoryAbstractionDefault::get_target_rank_and_disp_for_offset(long offset)

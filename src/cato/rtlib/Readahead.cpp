@@ -2,7 +2,7 @@
  * File: Readahead.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Wed Aug 30 2023
+ * Last Modified: Sat Sep 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -26,7 +26,7 @@ namespace
 }
 
 
-void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* cache_handler,
+void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* const cache_handler,
                         const std::vector<long>& initial_indices, std::pair<int,long> rank_and_disp, std::pair<int,long> readahead_count_stride)
 {
     int count = readahead_count_stride.first;
@@ -52,9 +52,7 @@ void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr
         std::vector<long> cache_elem_index = initial_indices;
         cache_elem_index.back() += i*stride;
         void* addr = static_cast<char*>(buf) + i*mem_abstraction->_type_size;
-        auto key = cache_handler->make_cache_key(base_ptr, cache_elem_index);
-        CacheElement value {addr, static_cast<size_t>(mem_abstraction->_type_size)};
-        cache_handler->get_read_cache().store_in_cache(key, value);
+        cache_handler->store_in_read_cache(base_ptr, cache_elem_index, addr, static_cast<size_t>(mem_abstraction->_type_size));
     }
 
     return buf;

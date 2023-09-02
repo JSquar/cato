@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Sat Sep 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -87,6 +87,10 @@ class MemoryAbstraction
      * A pointer store to an MemoryAbstraction with pointer depth >= 2.
      **/
     virtual void pointer_store(void *source_ptr, long dest_index) =0;
+
+    virtual bool is_data_local(const std::vector<long>& indices) =0;
+
+    virtual void* get_address_of_local_element(const std::vector<long>& indices) =0;
 
     virtual void *get_base_ptr();
 

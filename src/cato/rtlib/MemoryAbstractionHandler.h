@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Sat Sep 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <optional>
 
 #include "MemoryAbstraction.h"
 #include "MemoryAbstractionSingleValue.h"
@@ -42,6 +43,8 @@ class MemoryAbstractionHandler
 
     CacheHandler _cache_handler;
 
+    enum class LOCAL_PROCESSING_FOR {STORE_OP,LOAD_OP};
+
     /**
      * Traverses the MemoryAbstractions starting at memory_abstraction, pointed to by indices, down to the second-to-last-dimension.
      * This function and the next two are necessary to deal with v2-style array usage. Check get_target_of_operation in
@@ -63,8 +66,12 @@ class MemoryAbstractionHandler
 
     /**
      * Determines the memory abstraction and the index at which the store/load operation should take place.
+     * Will first check the content of the index cache element and return an empty option if the target
+     * is local, as local data is processed immediately via memcpy and doesn't require any further action.
      **/
-    std::pair<MemoryAbstraction*, long> get_target_of_operation(void* base_ptr, const std::vector<long>& indices);
+    std::optional<std::pair<MemoryAbstraction*, long>>
+    get_target_of_operation(void* base_ptr, const std::vector<long>& indices,
+                            IndexCacheElement* cache_element, std::pair<LOCAL_PROCESSING_FOR,void*> target_for_local_entry);
 
 
   public:

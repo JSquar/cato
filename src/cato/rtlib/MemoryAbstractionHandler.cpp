@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Mon Aug 21 2023
+ * Last Modified: Sat Sep 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -22,7 +22,6 @@
 #include "MemoryAbstractionSingleValueDefault.h"
 
 #include "../debug.h"
-#include "PerformanceMetrics.h"
 
 MemoryAbstractionHandler::MemoryAbstractionHandler(int rank, int size)
 {
@@ -154,6 +153,7 @@ long MemoryAbstractionHandler::calculate_new_index(const std::vector<long>& indi
 }
 
 /**
+ * If the cache did not yield a hit, the target memory abstraction needs to be determined.
  * There are different ways to realize nD-arrays in C, as reflected in the test cases for multidimensional arrays,
  * suffixed with v1 and v2 respectively.
  * For v1-style usage, we can just follow our pointers all the way to the lowest dimension, where the actual data is stored and
@@ -162,10 +162,31 @@ long MemoryAbstractionHandler::calculate_new_index(const std::vector<long>& indi
  * middle. So we essentially have to calculate the index on the lowest dimension, which contains all data points, from the
  * sizes of the higher-level dimensions.
  **/
-std::pair<MemoryAbstraction*, long> MemoryAbstractionHandler::get_target_of_operation(void* base_ptr, const std::vector<long>& indices)
+std::optional<std::pair<MemoryAbstraction*, long>>
+MemoryAbstractionHandler::get_target_of_operation(void* base_ptr, const std::vector<long>& indices,
+                                                    IndexCacheElement* cache_element, std::pair<LOCAL_PROCESSING_FOR,void*> target_for_local_entry)
 {
-    MemoryAbstraction *memory_abstraction = nullptr;
+    if (cache_element != nullptr)
+    {
+        if (cache_element->is_data_local())
+        {
+            if (target_for_local_entry.first == LOCAL_PROCESSING_FOR::STORE_OP)
+            {
+                cache_element->store_to_local_element(target_for_local_entry.second);
+            }
+            else
+            {
+                cache_element->load_from_local_element(target_for_local_entry.second);
+            }
+            return std::nullopt;
+        }
+        else
+        {
+            return cache_element->get_components_for_memory_abstraction_access();
+        }
+    }
 
+    MemoryAbstraction *memory_abstraction = nullptr;
     if (_memory_abstractions.find((long)base_ptr) != _memory_abstractions.end())
     {
         memory_abstraction = _memory_abstractions[(long)(base_ptr)].get();
@@ -211,72 +232,62 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
 
-    auto index_cache_key = _cache_handler.make_cache_key(base_ptr, indices);
-    IndexCacheElement* index_cached = _cache_handler.get_index_cache().find_element(index_cache_key);
-    if (index_cached != nullptr)
+    IndexCacheElement* index_cached = _cache_handler.check_index_cache(base_ptr, indices);
+    auto target = get_target_of_operation(base_ptr, indices, index_cached, {LOCAL_PROCESSING_FOR::STORE_OP, value_ptr});
+    if (target.has_value())
     {
-        cache_hit(CACHETYPE::INDEX);
-        //If the data is local, we can just memcpy to the address,
-        //otherwise we get the correct memory abstraction and index without the pointer chase
-        if (index_cached->is_data_local())
-        {
-            std::memcpy((index_cached->get_data()), value_ptr, index_cached->get_size());
-            return;
-        }
-        else
-        {
-            index = index_cached->get_index();
-            memory_abstraction = index_cached->get_memory_abstraction();
-        }
+        std::tie(memory_abstraction, index) = target.value();
     }
     else
     {
-        cache_miss(CACHETYPE::INDEX);
-        std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+        return;
     }
 
     memory_abstraction->store(base_ptr, value_ptr, {index}, &_cache_handler, indices);
+
+    if (index_cached == nullptr)
+    {
+        _cache_handler.store_in_index_cache(base_ptr, indices, memory_abstraction, {index});
+    }
+    if (!memory_abstraction->is_data_local({index}))
+    {
+        _cache_handler.store_in_read_cache(base_ptr, indices, value_ptr, static_cast<size_t>(memory_abstraction->get_type_size()));
+    }
 }
 
 void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<long>& indices)
 {
-    auto read_cache_key = _cache_handler.make_cache_key(base_ptr, indices);
-    CacheElement* cached = _cache_handler.get_read_cache().find_element(read_cache_key);
+    CacheElement* cached = _cache_handler.check_read_cache(base_ptr, indices);
     if (cached != nullptr)
     {
-        cache_hit(CACHETYPE::READ);
         std::memcpy(dest_ptr, cached->get_data(), cached->get_size());
         return;
     }
-    cache_miss(CACHETYPE::READ);
 
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
 
-    auto index_cache_key = _cache_handler.make_cache_key(base_ptr, indices);
-    IndexCacheElement* index_cached = _cache_handler.get_index_cache().find_element(index_cache_key);
-    if (index_cached != nullptr)
+    IndexCacheElement* index_cached = _cache_handler.check_index_cache(base_ptr, indices);
+    auto target = get_target_of_operation(base_ptr, indices, index_cached, {LOCAL_PROCESSING_FOR::LOAD_OP, dest_ptr});
+    if (target.has_value())
     {
-        cache_hit(CACHETYPE::INDEX);
-
-        if (index_cached->is_data_local())
-        {
-            std::memcpy(dest_ptr, (index_cached->get_data()), index_cached->get_size());
-            return;
-        }
-        else
-        {
-            index = index_cached->get_index();
-            memory_abstraction = index_cached->get_memory_abstraction();
-        }
+        std::tie(memory_abstraction, index) = target.value();
     }
     else
     {
-        cache_miss(CACHETYPE::INDEX);
-        std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+        return;
     }
 
     memory_abstraction->load(base_ptr, dest_ptr, {index}, &_cache_handler, indices);
+
+    if (index_cached == nullptr)
+    {
+        _cache_handler.store_in_index_cache(base_ptr, indices, memory_abstraction, {index});
+    }
+    if (!memory_abstraction->is_data_local({index}))
+    {
+        _cache_handler.store_in_read_cache(base_ptr, indices, dest_ptr, static_cast<size_t>(memory_abstraction->get_type_size()));
+    }
 }
 
 void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
@@ -284,7 +295,15 @@ void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
 {
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
-    std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+    auto target = get_target_of_operation(base_ptr, indices, nullptr, {LOCAL_PROCESSING_FOR::STORE_OP, value_ptr});
+    if (target.has_value())
+    {
+        std::tie(memory_abstraction, index) = target.value();
+    }
+    else
+    {
+        return;
+    }
     memory_abstraction->sequential_store(base_ptr, value_ptr, {index});
 }
 
@@ -293,7 +312,15 @@ void MemoryAbstractionHandler::sequential_load(void *base_ptr, void *dest_ptr,
 {
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
-    std::tie(memory_abstraction, index) = get_target_of_operation(base_ptr, indices);
+    auto target = get_target_of_operation(base_ptr, indices, nullptr, {LOCAL_PROCESSING_FOR::LOAD_OP, dest_ptr});
+    if (target.has_value())
+    {
+        std::tie(memory_abstraction, index) = target.value();
+    }
+    else
+    {
+        return;
+    }
     memory_abstraction->sequential_load(base_ptr, dest_ptr, {index});
 }
 

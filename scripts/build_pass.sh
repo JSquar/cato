@@ -7,21 +7,21 @@
 # -----
 # Copyright (c) 2020 Michael Blesel
 # Copyright (c) 2023 Jannek Squar
-# 
+#
 ###
 #!/bin/bash
 
 #nprocs -1 as building rtlib will use one CPU as well
 : ${CPUS:=1}
 
-RTLIBFLAGS=" -O2 -g -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable"
+RTLIBFLAGS=" -O2 -g -fopenmp -Wunknown-pragmas -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -std=c++17 "
 RTLIB_SRC="${CATO_ROOT}/src/cato/rtlib/rtlib.cpp"
 RTLIB_OUT="${CATO_ROOT}/src/build/rtlib.bc"
 
 SRC_PATH="${CATO_ROOT}/src"
 
 if [ -n "$1" ] && [ $1 = "--rebuild" ]; then
-    rm -rf ${SRC_PATH}/build 
+    rm -rf ${SRC_PATH}/build
 elif [ -n "$1" ]; then
     echo "use --rebuild to first clean build dir"
 fi

@@ -2,7 +2,7 @@
  * File: CacheHandler.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 14 2023
+ * Last Modified: Sat Sep 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -13,6 +13,7 @@
 
 #include "CacheHandler.h"
 #include "../debug.h"
+#include "PerformanceMetrics.h"
 
 CacheHandler::CacheHandler()
     : _read_cache{is_enabled("CATO_ENABLE_READ_CACHE")}, _index_cache{is_enabled("CATO_ENABLE_INDEX_CACHE")},
@@ -52,6 +53,61 @@ int CacheHandler::env_var_value(const char* env_var)
         std::cerr << "Could not read value for CATO_CACHE_READAHEAD";
     }
 
+    return res;
+}
+
+void CacheHandler::store_in_index_cache(void* base_ptr, const std::vector<long>& initial_indices,
+                                        MemoryAbstraction* mem_abstraction, const std::vector<long> indices)
+{
+    auto key = make_cache_key(base_ptr, initial_indices);
+    if (mem_abstraction->is_data_local(indices))
+    {
+        size_t type_size = static_cast<size_t>(mem_abstraction->get_type_size());
+        void* target_address = mem_abstraction->get_address_of_local_element(indices);
+        IndexCacheElement local_value = IndexCacheElement::create_element_for_local_address(target_address, static_cast<size_t>(type_size));
+        _index_cache.store_in_cache(key, local_value);
+    }
+    else
+    {
+        IndexCacheElement remote_value = IndexCacheElement::create_element_for_remote_address(mem_abstraction, indices[0]);
+        _index_cache.store_in_cache(key, remote_value);
+    }
+}
+
+void CacheHandler::store_in_read_cache(void* base_ptr, const std::vector<long>& initial_indices, void* dest_ptr, size_t element_size)
+{
+    auto key = make_cache_key(base_ptr, initial_indices);
+    CacheElement read_value {dest_ptr, element_size};
+    _read_cache.store_in_cache(key, read_value);
+}
+
+CacheElement* CacheHandler::check_read_cache(void* base_ptr, const std::vector<long>& indices)
+{
+    auto read_cache_key = make_cache_key(base_ptr, indices);
+    auto res = _read_cache.find_element(read_cache_key);
+    if (res != nullptr)
+    {
+        cache_hit(CACHETYPE::READ);
+    }
+    else
+    {
+        cache_miss(CACHETYPE::READ);
+    }
+    return res;
+}
+
+IndexCacheElement* CacheHandler::check_index_cache(void* base_ptr, const std::vector<long>& indices)
+{
+    auto index_cache_key = make_cache_key(base_ptr, indices);
+    auto res = _index_cache.find_element(index_cache_key);
+    if (res != nullptr)
+    {
+        cache_hit(CACHETYPE::INDEX);
+    }
+    else
+    {
+        cache_miss(CACHETYPE::INDEX);
+    }
     return res;
 }
 

@@ -2,7 +2,7 @@
  * File: CacheHandler.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 14 2023
+ * Last Modified: Sat Sep 02 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -23,7 +23,7 @@
 #include "WriteCache.h"
 
 /**
- * This class manages and provides access to the different caches. There are three caches in total,
+ * This class provides access to the different caches. There are three caches in total,
  * all of them are key-value stores.
  * The first one is the index cache. This is a TLB-like cache that is supposed to minimize the index
  * calculations that are necessary to find the correct memory abstractions. The key is made up of the
@@ -79,19 +79,20 @@ class CacheHandler
 
     CacheHandler();
 
-    /**
-     * The info used for the key is the base pointer in the original access
-     * alongside the indices. This function transforms them into the key.
-     **/
     CatoCacheKey make_cache_key(void* const base_ptr, const std::vector<long>& indices);
+
+    void store_in_index_cache(void* base_ptr, const std::vector<long>& initial_indices,
+                                MemoryAbstraction* mem_abstraction, const std::vector<long> indices);
+
+    void store_in_read_cache(void* base_ptr, const std::vector<long>& initial_indices, void* dest_ptr, size_t element_size);
+
+    CacheElement* check_read_cache(void* base_ptr, const std::vector<long>& indices);
+
+    IndexCacheElement* check_index_cache(void* base_ptr, const std::vector<long>& indices);
 
     void clear_write_cache();
 
     void clear_read_cache();
-
-    ReadCache<CatoCacheKey, CacheElement, hash_combiner>& get_read_cache() {return _read_cache;}
-
-    ReadCache<CatoCacheKey, IndexCacheElement, hash_combiner>& get_index_cache() {return _index_cache;}
 
     WriteCache& get_write_cache() {return _write_cache;}
 
