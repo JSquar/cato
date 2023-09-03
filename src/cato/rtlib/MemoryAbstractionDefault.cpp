@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Sep 02 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -95,10 +95,9 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
                 *logger << message;
             }
 
-            if (cache_handler->get_write_cache().cache_enabled() && rank_and_disp.first != _mpi_rank)
+            if (cache_handler->is_write_cache_enabled() && rank_and_disp.first != _mpi_rank)
             {
-                cache_handler->get_write_cache().store_in_cache(value_ptr, rank_and_disp.first, rank_and_disp.second,
-                        _base_ptr, _type, _mpi_window);
+                cache_handler->store_in_write_cache(_base_ptr, _type, _mpi_window, value_ptr, rank_and_disp.first, rank_and_disp.second);
             }
             else
             {
@@ -137,10 +136,11 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
 
             if (cache_handler->get_read_ahead() && rank_and_disp.first != _mpi_rank)
             {
-                long stride = 1;
-                long num_elems_in_target = _array_ranges[rank_and_disp.first].second - _array_ranges[rank_and_disp.first].first + 1;
-                long num_elems_left_after_displacement = num_elems_in_target - rank_and_disp.second;
-                long num_elems_left_strided = (num_elems_left_after_displacement / stride) != 0 ? (num_elems_left_after_displacement / stride) : 1;
+                int stride = cache_handler->get_readahead_stride_for(base_ptr);
+
+                int num_elems_in_target = _array_ranges[rank_and_disp.first].second - _array_ranges[rank_and_disp.first].first + 1;
+                int num_elems_left_after_displacement = num_elems_in_target - rank_and_disp.second;
+                int num_elems_left_strided = (num_elems_left_after_displacement / stride) != 0 ? (num_elems_left_after_displacement / stride) : 1;
                 int count = std::min(cache_handler->get_read_ahead(), num_elems_left_strided);
 
                 void* buf = performReadahead(this, base_ptr, cache_handler, initial_indices, rank_and_disp, {count,stride});

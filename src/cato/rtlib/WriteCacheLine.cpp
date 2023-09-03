@@ -2,7 +2,7 @@
  * File: WriteCacheLine.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 21 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -82,5 +82,5 @@ void WriteCacheLine::clear_rank_vector(std::vector<std::pair<long, CacheElement>
     MPI_Type_free(&dt);
     std::free(buffer);
     rank_vector.clear();
-    report_aggregated_elements(displacements.size());
+    report_aggregated_write_elements(displacements.size());
 }

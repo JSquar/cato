@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Sep 02 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -168,7 +168,7 @@ MemoryAbstractionHandler::get_target_of_operation(void* base_ptr, const std::vec
 {
     if (cache_element != nullptr)
     {
-        if (cache_element->is_data_local())
+        if (cache_element->is_data_local() && target_for_local_entry.first != LOCAL_PROCESSING_FOR::NO_OP)
         {
             if (target_for_local_entry.first == LOCAL_PROCESSING_FOR::STORE_OP)
             {
@@ -295,7 +295,9 @@ void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
 {
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
-    auto target = get_target_of_operation(base_ptr, indices, nullptr, {LOCAL_PROCESSING_FOR::STORE_OP, value_ptr});
+
+    IndexCacheElement* index_cached = _cache_handler.check_index_cache(base_ptr, indices);
+    auto target = get_target_of_operation(base_ptr, indices, index_cached, {LOCAL_PROCESSING_FOR::NO_OP, nullptr});
     if (target.has_value())
     {
         std::tie(memory_abstraction, index) = target.value();
@@ -304,7 +306,13 @@ void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
     {
         return;
     }
+
     memory_abstraction->sequential_store(base_ptr, value_ptr, {index});
+
+    if (index_cached == nullptr)
+    {
+        _cache_handler.store_in_index_cache(base_ptr, indices, memory_abstraction, {index});
+    }
 }
 
 void MemoryAbstractionHandler::sequential_load(void *base_ptr, void *dest_ptr,
@@ -312,7 +320,9 @@ void MemoryAbstractionHandler::sequential_load(void *base_ptr, void *dest_ptr,
 {
     MemoryAbstraction* memory_abstraction = nullptr;
     long index = 0;
-    auto target = get_target_of_operation(base_ptr, indices, nullptr, {LOCAL_PROCESSING_FOR::LOAD_OP, dest_ptr});
+
+    IndexCacheElement* index_cached = _cache_handler.check_index_cache(base_ptr, indices);
+    auto target = get_target_of_operation(base_ptr, indices, index_cached, {LOCAL_PROCESSING_FOR::NO_OP, nullptr});
     if (target.has_value())
     {
         std::tie(memory_abstraction, index) = target.value();
@@ -321,7 +331,13 @@ void MemoryAbstractionHandler::sequential_load(void *base_ptr, void *dest_ptr,
     {
         return;
     }
+
     memory_abstraction->sequential_load(base_ptr, dest_ptr, {index});
+
+    if (index_cached == nullptr)
+    {
+        _cache_handler.store_in_index_cache(base_ptr, indices, memory_abstraction, {index});
+    }
 }
 
 void MemoryAbstractionHandler::pointer_store(void *dest_ptr, void *source_ptr, long dest_index)

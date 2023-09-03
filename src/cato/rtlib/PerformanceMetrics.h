@@ -2,7 +2,7 @@
  * File: PerformanceMetrics.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 28 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -25,7 +25,9 @@ void cache_hit(enum CACHETYPE cachetype);
 
 void cache_miss(enum CACHETYPE cachetype);
 
-void report_aggregated_elements(unsigned long count);
+void report_aggregated_write_elements(unsigned long count);
+
+void report_elements_read_ahead(unsigned long count);
 
 void print_metrics();
 

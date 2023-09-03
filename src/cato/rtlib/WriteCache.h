@@ -2,7 +2,7 @@
  * File: WriteCache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 14 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -34,14 +34,13 @@ class WriteCache
     size_t _flush_rank_after_num_elements;
 
   public:
-    WriteCache(bool enabled, int flush_rank_after)
-        : _enabled{enabled}, _flush_rank_after_num_elements{static_cast<size_t>(flush_rank_after)}{};
+    WriteCache(bool enabled, int flush_rank_after);
 
     /**
      * Stores the content of data in the cache. If the target of this operation is a previously unseen
      * MemoryAbstraction, a new key-value pair is created first and then the content of data is stored.
      **/
-    void store_in_cache(void* data, int target_rank, long displacement, void* mem_abstraction_base, MPI_Datatype type, MPI_Win win);
+    void store_in_cache(void* mem_abstraction_base, MPI_Datatype type, MPI_Win win, void* data, int target_rank, long displacement);
 
     void clear_cache();
 

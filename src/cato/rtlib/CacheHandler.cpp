@@ -2,7 +2,7 @@
  * File: CacheHandler.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sat Sep 02 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -21,7 +21,7 @@ CacheHandler::CacheHandler()
 {
     if (_read_cache.cache_enabled())
     {
-        _read_ahead = env_var_value("CATO_CACHE_READAHEAD");
+        _read_ahead = static_cast<int>(env_var_value("CATO_CACHE_READAHEAD"));
     }
     else
     {
@@ -62,9 +62,7 @@ void CacheHandler::store_in_index_cache(void* base_ptr, const std::vector<long>&
     auto key = make_cache_key(base_ptr, initial_indices);
     if (mem_abstraction->is_data_local(indices))
     {
-        size_t type_size = static_cast<size_t>(mem_abstraction->get_type_size());
-        void* target_address = mem_abstraction->get_address_of_local_element(indices);
-        IndexCacheElement local_value = IndexCacheElement::create_element_for_local_address(target_address, static_cast<size_t>(type_size));
+        IndexCacheElement local_value = IndexCacheElement::create_element_for_local_address(mem_abstraction, indices[0]);
         _index_cache.store_in_cache(key, local_value);
     }
     else
@@ -79,6 +77,11 @@ void CacheHandler::store_in_read_cache(void* base_ptr, const std::vector<long>& 
     auto key = make_cache_key(base_ptr, initial_indices);
     CacheElement read_value {dest_ptr, element_size};
     _read_cache.store_in_cache(key, read_value);
+}
+
+void CacheHandler::store_in_write_cache(void* base_ptr, MPI_Datatype type, MPI_Win win, void* value_ptr, int target_rank, long element_displacement)
+{
+    _write_cache.store_in_cache(base_ptr, type, win, value_ptr, target_rank, element_displacement);
 }
 
 CacheElement* CacheHandler::check_read_cache(void* base_ptr, const std::vector<long>& indices)

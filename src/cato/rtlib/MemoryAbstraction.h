@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Sep 02 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -14,7 +14,6 @@
 #include <mpi.h>
 #include <vector>
 
-//Forward decl to go around circular dependency in IndexCacheElement
 class CacheHandler;
 
 /**

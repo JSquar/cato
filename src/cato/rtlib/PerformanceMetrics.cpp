@@ -2,7 +2,7 @@
  * File: PerformanceMetrics.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Aug 21 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -31,6 +31,9 @@ namespace
 
     unsigned long aggregated_write_calls;
     unsigned long executed_write_calls;
+
+    unsigned long num_elements_read_ahead;
+    unsigned long executed_read_aheads;
     #endif
 }
 
@@ -72,11 +75,19 @@ void cache_miss(enum CACHETYPE cachetype)
     #endif
 }
 
-void report_aggregated_elements(unsigned long count)
+void report_aggregated_write_elements(unsigned long count)
 {
     #if CAPTURE_CACHE_METRICS == 1
     executed_write_calls++;
     aggregated_write_calls+=count;
+    #endif
+}
+
+void report_elements_read_ahead(unsigned long count)
+{
+    #if CAPTURE_CACHE_METRICS == 1
+    executed_read_aheads++;
+    num_elements_read_ahead+=count;
     #endif
 }
 
@@ -120,6 +131,13 @@ void print_metrics()
     unsigned long executed_write_calls_sum;
     MPI_Reduce(&executed_write_calls, &executed_write_calls_sum, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
+    unsigned long elements_read_ahead_sum;
+    MPI_Reduce(&num_elements_read_ahead, &elements_read_ahead_sum, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    unsigned long executed_read_aheads_sum;
+    MPI_Reduce(&executed_read_aheads, &executed_read_aheads_sum, 1, MPI_UNSIGNED_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+
+
     if (rank == 0)
     {
         std::cout << "INDEX CACHE HITS SUMMED: " << cache_hits_index_sum << "\n";
@@ -128,6 +146,8 @@ void print_metrics()
         std::cout << "READ CACHE MISSES SUMMED: " << cache_misses_read_sum << "\n";
         std::cout << "AGGREGATED WRITE CALLS SUMMED: " << aggregated_write_calls_sum << "\n";
         std::cout << "TOTAL WRITE CALLS EXECUTED INSTEAD: " << executed_write_calls_sum << "\n";
+        std::cout << "ELEMENTS READ AHEAD IN TOTAL: " << elements_read_ahead_sum << "\n";
+        std::cout << "NUMBER OF READAHEAD CALLS: " << executed_read_aheads_sum << "\n";
     }
     #endif
 }

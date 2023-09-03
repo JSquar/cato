@@ -2,7 +2,7 @@
  * File: CacheHandler.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sat Sep 02 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -86,6 +86,8 @@ class CacheHandler
 
     void store_in_read_cache(void* base_ptr, const std::vector<long>& initial_indices, void* dest_ptr, size_t element_size);
 
+    void store_in_write_cache(void* base_ptr, MPI_Datatype type, MPI_Win win, void* value_ptr, int target_rank, long element_displacement);
+
     CacheElement* check_read_cache(void* base_ptr, const std::vector<long>& indices);
 
     IndexCacheElement* check_index_cache(void* base_ptr, const std::vector<long>& indices);
@@ -94,9 +96,12 @@ class CacheHandler
 
     void clear_read_cache();
 
-    WriteCache& get_write_cache() {return _write_cache;}
+    bool is_write_cache_enabled() const {return _write_cache.cache_enabled();}
 
-    long get_read_ahead() const {return _read_ahead;}
+    int get_read_ahead() const {return _read_ahead;}
+
+    //For static analysis results later on
+    int get_readahead_stride_for(void* base_ptr) const {return 1;}
 };
 
 #endif

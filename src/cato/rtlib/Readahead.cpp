@@ -2,7 +2,7 @@
  * File: Readahead.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sat Sep 02 2023
+ * Last Modified: Sun Sep 03 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -11,6 +11,8 @@
 #include "Readahead.h"
 #include <mpi.h>
 #include <cstdlib>
+
+#include "PerformanceMetrics.h"
 
 namespace
 {
@@ -54,6 +56,8 @@ void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr
         void* addr = static_cast<char*>(buf) + i*mem_abstraction->_type_size;
         cache_handler->store_in_read_cache(base_ptr, cache_elem_index, addr, static_cast<size_t>(mem_abstraction->_type_size));
     }
+
+    report_elements_read_ahead(count);
 
     return buf;
 }
