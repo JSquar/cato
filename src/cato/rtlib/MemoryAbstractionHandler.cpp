@@ -330,10 +330,12 @@ void MemoryAbstractionHandler::sequential_store(void *base_ptr, void *value_ptr,
 
     memory_abstraction->sequential_store(base_ptr, value_ptr, {index});
 
-    if (index_cached == nullptr)
+    //The sequential regions tend to load/store from many more addresses than the parallel
+    //regions, causing the memory usage to go up dramatically for very little benefit.
+    /*if (index_cached == nullptr)
     {
         _cache_handler.store_in_index_cache(base_ptr, indices, memory_abstraction, {index});
-    }
+    }*/
 }
 
 void MemoryAbstractionHandler::sequential_load(void *base_ptr, void *dest_ptr,
@@ -355,10 +357,10 @@ void MemoryAbstractionHandler::sequential_load(void *base_ptr, void *dest_ptr,
 
     memory_abstraction->sequential_load(base_ptr, dest_ptr, {index});
 
-    if (index_cached == nullptr)
+    /*if (index_cached == nullptr)
     {
         _cache_handler.store_in_index_cache(base_ptr, indices, memory_abstraction, {index});
-    }
+    }*/
 }
 
 void MemoryAbstractionHandler::pointer_store(void *dest_ptr, void *source_ptr, long dest_index)
