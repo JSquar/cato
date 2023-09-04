@@ -25,6 +25,20 @@ namespace
         MPI_Type_commit(&dt);
         return dt;
     }
+
+    int calculate_element_count_with_stride(std::pair<long,long> array_bounds, long displacement, int stride)
+    {
+        int num_elems_in_target = array_bounds.second - array_bounds.first + 1;
+        int num_elems_left_after_displacement = num_elems_in_target - displacement;
+        int num_elems_left_strided = num_elems_left_after_displacement / stride;
+
+        if (num_elems_left_strided == 0)
+        {
+            return 1;
+        }
+
+        return num_elems_left_strided;
+    }
 }
 
 
@@ -34,10 +48,9 @@ void* perform_readahead(MemoryAbstractionDefault* mem_abstraction, void* base_pt
     auto rank_and_disp = mem_abstraction->get_target_rank_and_disp_for_offset(indices[0]);
     int stride = cache_handler->get_readahead_stride_for(base_ptr);
 
-    int num_elems_in_target = mem_abstraction->_array_ranges[rank_and_disp.first].second - mem_abstraction->_array_ranges[rank_and_disp.first].first + 1;
-    int num_elems_left_after_displacement = num_elems_in_target - rank_and_disp.second;
-    int num_elems_left_strided = (num_elems_left_after_displacement / stride) != 0 ? (num_elems_left_after_displacement / stride) : 1;
-    int count = std::min(cache_handler->get_read_ahead(), num_elems_left_strided);
+    std::pair<long,long> array_bounds = mem_abstraction->_array_ranges[rank_and_disp.first];
+    int element_count_strided = calculate_element_count_with_stride(array_bounds, rank_and_disp.second, stride);
+    int count = std::min(cache_handler->get_read_ahead(), element_count_strided);
 
     void* buf = std::malloc(mem_abstraction->_type_size * count);
     if (buf == nullptr)
