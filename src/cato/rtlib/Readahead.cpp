@@ -2,7 +2,7 @@
  * File: Readahead.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sun Sep 03 2023
+ * Last Modified: Mon Sep 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -28,12 +28,22 @@ namespace
 }
 
 
-void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* const cache_handler,
-                        const std::vector<long>& initial_indices, std::pair<int,long> rank_and_disp, std::pair<int,long> readahead_count_stride)
+void* perform_readahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* const cache_handler,
+                        const std::vector<long>& initial_indices, const std::vector<long>& indices)
 {
-    int count = readahead_count_stride.first;
-    long stride = readahead_count_stride.second;
+    auto rank_and_disp = mem_abstraction->get_target_rank_and_disp_for_offset(indices[0]);
+    int stride = cache_handler->get_readahead_stride_for(base_ptr);
+
+    int num_elems_in_target = mem_abstraction->_array_ranges[rank_and_disp.first].second - mem_abstraction->_array_ranges[rank_and_disp.first].first + 1;
+    int num_elems_left_after_displacement = num_elems_in_target - rank_and_disp.second;
+    int num_elems_left_strided = (num_elems_left_after_displacement / stride) != 0 ? (num_elems_left_after_displacement / stride) : 1;
+    int count = std::min(cache_handler->get_read_ahead(), num_elems_left_strided);
+
     void* buf = std::malloc(mem_abstraction->_type_size * count);
+    if (buf == nullptr)
+    {
+        throw std::bad_alloc();
+    }
 
     if (mem_abstraction->_readahead_dt == MPI_DATATYPE_NULL)
     {

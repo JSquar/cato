@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sun Sep 03 2023
+ * Last Modified: Mon Sep 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -55,20 +55,20 @@ class MemoryAbstraction
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void store(void *base_ptr, void *value_ptr, const std::vector<long> indices, CacheHandler* const cache, const std::vector<long>& initial_indices) =0;
+    virtual void store(void *base_ptr, void *value_ptr, const std::vector<long> indices) =0;
 
     /**
      * A load from the shared memory object.
      * This gets called from prallelized sections of the original
      * program.
      **/
-    virtual void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices, CacheHandler* const cache, const std::vector<long>& initial_indices) =0;
+    virtual void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices) =0;
 
     /**
      * A store to the shared memory object.
      * This gets called from non OpenMP sections of the original program.
      * Depending on the communication pattern this function needs to make sure
-     * that it can be called by all MPI processes simultaniously and that
+     * that it can be called by all MPI processes simultaneously and that
      * this is a synchronous operation between all processes.
      **/
     virtual void sequential_store(void *base_ptr, void *value_ptr, const std::vector<long> indices) =0;
@@ -77,7 +77,7 @@ class MemoryAbstraction
      * A load from the shared memory object.
      * This gets called from non OpenMP sections of the original program.
      * Depending on the communication pattern this function needs to make sure
-     * that it can be called by all MPI processes simultaniously and that
+     * that it can be called by all MPI processes simultaneously and that
      * this is a synchronous operation between all processes.
      **/
     virtual void sequential_load(void *base_ptr, void *dest_ptr, const std::vector<long> indices) =0;

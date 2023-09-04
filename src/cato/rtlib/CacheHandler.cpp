@@ -2,7 +2,7 @@
  * File: CacheHandler.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sun Sep 03 2023
+ * Last Modified: Mon Sep 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -79,9 +79,9 @@ void CacheHandler::store_in_read_cache(void* base_ptr, const std::vector<long>& 
     _read_cache.store_in_cache(key, read_value);
 }
 
-void CacheHandler::store_in_write_cache(void* base_ptr, MPI_Datatype type, MPI_Win win, void* value_ptr, int target_rank, long element_displacement)
+void CacheHandler::store_in_write_cache(void* data, MemoryAbstractionDefault* mem_abstraction, const std::vector<long> indices)
 {
-    _write_cache.store_in_cache(base_ptr, type, win, value_ptr, target_rank, element_displacement);
+    _write_cache.store_in_cache(data, mem_abstraction, indices);
 }
 
 CacheElement* CacheHandler::check_read_cache(void* base_ptr, const std::vector<long>& indices)

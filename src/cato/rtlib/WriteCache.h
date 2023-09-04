@@ -2,7 +2,7 @@
  * File: WriteCache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sun Sep 03 2023
+ * Last Modified: Mon Sep 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <mpi.h>
 #include "WriteCacheLine.h"
+#include "MemoryAbstractionDefault.h"
 
 /**
  * Instead of writing single elements to remote processes, the elements are aggregated in this cache.
@@ -40,7 +41,7 @@ class WriteCache
      * Stores the content of data in the cache. If the target of this operation is a previously unseen
      * MemoryAbstraction, a new key-value pair is created first and then the content of data is stored.
      **/
-    void store_in_cache(void* mem_abstraction_base, MPI_Datatype type, MPI_Win win, void* data, int target_rank, long displacement);
+    void store_in_cache(void* data, MemoryAbstractionDefault* mem_abstraction, const std::vector<long> indices);
 
     void clear_cache();
 

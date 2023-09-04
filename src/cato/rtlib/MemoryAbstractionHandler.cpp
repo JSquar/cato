@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sun Sep 03 2023
+ * Last Modified: Mon Sep 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -20,6 +20,7 @@
 
 #include "MemoryAbstractionDefault.h"
 #include "MemoryAbstractionSingleValueDefault.h"
+#include "Readahead.h"
 
 #include "../debug.h"
 
@@ -243,7 +244,16 @@ void MemoryAbstractionHandler::store(void *base_ptr, void *value_ptr, const std:
         return;
     }
 
-    memory_abstraction->store(base_ptr, value_ptr, {index}, &_cache_handler, indices);
+    if (_cache_handler.is_write_cache_enabled() && !memory_abstraction->is_data_local({index}))
+    {
+        //rtti is disabled, so no dynamic_cast
+        MemoryAbstractionDefault* down_cast = (MemoryAbstractionDefault*)memory_abstraction;
+        _cache_handler.store_in_write_cache(value_ptr, down_cast, {index});
+    }
+    else
+    {
+        memory_abstraction->store(base_ptr, value_ptr, {index});
+    }
 
     if (index_cached == nullptr)
     {
@@ -278,15 +288,26 @@ void MemoryAbstractionHandler::load(void *base_ptr, void *dest_ptr, std::vector<
         return;
     }
 
-    memory_abstraction->load(base_ptr, dest_ptr, {index}, &_cache_handler, indices);
+    if (_cache_handler.get_read_ahead() && !memory_abstraction->is_data_local({index}))
+    {
+        MemoryAbstractionDefault* down_cast = (MemoryAbstractionDefault*)memory_abstraction;
+        void* buf = perform_readahead(down_cast, base_ptr, &_cache_handler, indices, {index});
+        std::memcpy(dest_ptr, buf, memory_abstraction->get_type_size());
+        std::free(buf);
+    }
+    else
+    {
+        memory_abstraction->load(base_ptr, dest_ptr, {index});
+
+        if (!memory_abstraction->is_data_local({index}))
+        {
+            _cache_handler.store_in_read_cache(base_ptr, indices, dest_ptr, static_cast<size_t>(memory_abstraction->get_type_size()));
+        }
+    }
 
     if (index_cached == nullptr)
     {
         _cache_handler.store_in_index_cache(base_ptr, indices, memory_abstraction, {index});
-    }
-    if (!memory_abstraction->is_data_local({index}))
-    {
-        _cache_handler.store_in_read_cache(base_ptr, indices, dest_ptr, static_cast<size_t>(memory_abstraction->get_type_size()));
     }
 }
 

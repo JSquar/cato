@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sun Sep 03 2023
+ * Last Modified: Mon Sep 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -75,8 +75,7 @@ MemoryAbstractionDefault::~MemoryAbstractionDefault()
     }
 }
 
-void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std::vector<long> indices,
-                                    CacheHandler* const cache_handler, const std::vector<long>& initial_indices)
+void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std::vector<long> indices)
 {
     if (_dimensions == 1)
     {
@@ -95,17 +94,10 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
                 *logger << message;
             }
 
-            if (cache_handler->is_write_cache_enabled() && rank_and_disp.first != _mpi_rank)
-            {
-                cache_handler->store_in_write_cache(_base_ptr, _type, _mpi_window, value_ptr, rank_and_disp.first, rank_and_disp.second);
-            }
-            else
-            {
-                MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, 0, _mpi_window);
-                MPI_Put(value_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
-                        _mpi_window);
-                MPI_Win_unlock(rank_and_disp.first, _mpi_window);
-            }
+            MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, 0, _mpi_window);
+            MPI_Put(value_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
+                    _mpi_window);
+            MPI_Win_unlock(rank_and_disp.first, _mpi_window);
         }
         else
         {
@@ -114,8 +106,7 @@ void MemoryAbstractionDefault::store(void *base_ptr, void *value_ptr, const std:
     }
 }
 
-void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::vector<long> indices,
-                                    CacheHandler* const cache_handler, const std::vector<long>& initial_indices)
+void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::vector<long> indices)
 {
     if (_dimensions == 1)
     {
@@ -134,26 +125,10 @@ void MemoryAbstractionDefault::load(void *base_ptr, void *dest_ptr, const std::v
                 *logger << message;
             }
 
-            if (cache_handler->get_read_ahead() && rank_and_disp.first != _mpi_rank)
-            {
-                int stride = cache_handler->get_readahead_stride_for(base_ptr);
-
-                int num_elems_in_target = _array_ranges[rank_and_disp.first].second - _array_ranges[rank_and_disp.first].first + 1;
-                int num_elems_left_after_displacement = num_elems_in_target - rank_and_disp.second;
-                int num_elems_left_strided = (num_elems_left_after_displacement / stride) != 0 ? (num_elems_left_after_displacement / stride) : 1;
-                int count = std::min(cache_handler->get_read_ahead(), num_elems_left_strided);
-
-                void* buf = performReadahead(this, base_ptr, cache_handler, initial_indices, rank_and_disp, {count,stride});
-                std::memcpy(dest_ptr, buf, _type_size);
-                std::free(buf);
-            }
-            else
-            {
-                MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, 0, _mpi_window);
-                MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
-                        _mpi_window);
-                MPI_Win_unlock(rank_and_disp.first, _mpi_window);
-            }
+            MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, 0, _mpi_window);
+            MPI_Get(dest_ptr, 1, _type, rank_and_disp.first, rank_and_disp.second, 1, _type,
+                    _mpi_window);
+            MPI_Win_unlock(rank_and_disp.first, _mpi_window);
         }
         else
         {

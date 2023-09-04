@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Sep 02 2023
+ * Last Modified: Mon Sep 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -53,9 +53,11 @@ class MemoryAbstractionDefault : public MemoryAbstraction
      **/
     void create_1d_array(long size, MPI_Datatype type, int dimensions);
 
+    friend class WriteCache;
+
   public:
     /**
-     * Create a MemeoryAbstraction of size (in bytes) with the given type
+     * Create a MemoryAbstraction of size (in bytes) with the given type
      * and dimensions.
      **/
     MemoryAbstractionDefault(long size, MPI_Datatype type, int dimensions);
@@ -69,12 +71,12 @@ class MemoryAbstractionDefault : public MemoryAbstraction
      * Stores the value at the address value_ptr into the memory Abstraction at
      * the given indices.
      **/
-    void store(void *base_ptr, void *value_ptr, const std::vector<long> indices, CacheHandler* const cache, const std::vector<long>& initial_indices) override;
+    void store(void *base_ptr, void *value_ptr, const std::vector<long> indices) override;
 
     /**
      * Loads the value at the given indices and copies it to the given dest_ptr address.
      **/
-    void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices, CacheHandler* const cache, const std::vector<long>& initial_indices) override;
+    void load(void *base_ptr, void *dest_ptr, const std::vector<long> indices) override;
 
     /**
      * Same as store but each process only continues after the store has been completed.
@@ -95,8 +97,8 @@ class MemoryAbstractionDefault : public MemoryAbstraction
 
     void* get_address_of_local_element(const std::vector<long>& indices) override;
 
-    friend void* performReadahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* const cache_handler,
-                        const std::vector<long>& initial_indices, std::pair<int,long> rank_and_disp, std::pair<int,long> readahead_count_stride);
+    friend void* perform_readahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* const cache_handler,
+                        const std::vector<long>& initial_indices, const std::vector<long>& indices);
 };
 
 #endif
