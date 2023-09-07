@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Aug 26 2023
+ * Last Modified: Thu Sep 07 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -25,6 +25,11 @@
 #include <llvm/Support/AtomicOrdering.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
+
+#include <llvm/Analysis/ScalarEvolution.h>
+#include <llvm/Analysis/ScalarEvolutionExpressions.h>
+#include <unordered_map>
+#include <numeric>
 
 #include <memory>
 #include <set>
@@ -2023,6 +2028,144 @@ struct CatoPass : public ModulePass
         }
     }
 
+    void set_array_access_stride_for_read_cache(std::vector<std::unique_ptr<Microtask>>& microtasks, RuntimeHandler& runtime)
+    {
+        Debug(errs() << "*----------------------------------*\n";);
+        Debug(errs() << "|             SCEV DUMP:           |\n";);
+        Debug(errs() << "*----------------------------------*\n";);
+        for (auto& task : microtasks)
+        {
+            std::unordered_map<Value*,std::vector<int>> access_strides_for_mem_abstractions;
+
+            Debug(errs() << "*----------------------------------*\n";);
+            Debug(errs() << "|          MICROTASK START         |\n";);
+            Debug(errs() << "*----------------------------------*\n";);
+            Function* func = task->get_function();
+            ScalarEvolutionWrapperPass& scev_pass = getAnalysis<ScalarEvolutionWrapperPass>(*func);
+            Debug(scev_pass.dump(););
+            auto& SE = scev_pass.getSE();
+
+            std::vector<CallInst*> shared_loads;
+            for (BasicBlock& BB : *func)
+            {
+                for (Instruction& I: BB)
+                {
+                    if (auto* call = dyn_cast<CallInst>(&I))
+                    {
+                        if (call->getCalledFunction() == runtime.functions.shared_memory_load)
+                        {
+                            shared_loads.push_back(call);
+                        }
+                    }
+                }
+            }
+
+            Debug(errs() << "SHARED LOADS:\n");
+            for (auto entry : shared_loads)
+            Debug(entry->dump(););
+
+
+            for (auto entry : shared_loads)
+            {
+                Value* last_arg = *(entry->arg_end() - 1);
+                Debug(errs() << "Creating SCEV for index arg:";);
+                Debug(last_arg->dump(););
+
+                const SCEV* index_scev = SE.getSCEV(last_arg);
+                Debug(index_scev->dump(););
+
+                if (!SE.containsAddRecurrence(index_scev))
+                {
+                    Debug(errs() << "SCEV contains no AddRecurrence, cannot extract step, skipping the instruction\n";);
+                    continue;
+                }
+
+                const SCEVAddRecExpr* add_rec_expr;
+                if ((add_rec_expr = dyn_cast<SCEVAddRecExpr>(index_scev)))
+                {
+                    Debug(errs() << "Extracted AddRec directly from index SCEV:";);
+                    Debug(add_rec_expr->dump(););
+                }
+                else if (auto* cast_expr = dyn_cast<SCEVCastExpr>(index_scev))
+                {
+                    Debug(errs() << "SCEV inherits from CastExpr\n";);
+                    for (auto* operand : cast_expr->operands())
+                    {
+                        if ((add_rec_expr = dyn_cast<SCEVAddRecExpr>(operand)))
+                        {
+                            Debug(errs() << "Extracted AddRec:";);
+                            Debug(add_rec_expr->dump(););
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    Debug(errs() << "Didn't find AddRec, skipping instruction\n";);
+                    continue;
+                }
+
+                auto step = add_rec_expr->getStepRecurrence(SE);
+                Debug(errs() << "Trying to extract step:";);
+                Debug(step->dump(););
+
+                int stride_of_access = 0;
+
+                if (auto* scev_constant = dyn_cast<SCEVConstant>(step))
+                {
+                    Debug(errs() << "Extracting the int constant\n";);
+                    ConstantInt* constant = scev_constant->getValue();
+                    Debug(constant->dump(););
+                    stride_of_access = constant->getSExtValue();
+                }
+
+                if (stride_of_access != 0)
+                {
+                    BitCastInst* target_addr = dyn_cast<BitCastInst>(entry->getOperand(0));
+                    Value* load_inst = target_addr->getOperand(0);
+                    Debug(errs() << "Stride stored for target load:";);
+                    Debug(load_inst->dump(););
+                    auto map_entry = access_strides_for_mem_abstractions.find(load_inst);
+                    if (map_entry == access_strides_for_mem_abstractions.end())
+                    {
+                        access_strides_for_mem_abstractions.insert({load_inst, {stride_of_access}});
+                    }
+                    else
+                    {
+                        map_entry->second.push_back(stride_of_access);
+                    }
+                }
+            }
+
+            Debug(errs() << "Evaluating mean strides per shared load target:\n";);
+            for (auto map_entry : access_strides_for_mem_abstractions)
+            {
+                LoadInst* load_inst = dyn_cast<LoadInst>(map_entry.first);
+                std::vector<int>& strides = map_entry.second;
+                Debug(load_inst->dump(););
+
+                long sum = std::accumulate(strides.begin(), strides.end(), 0L);
+                if (sum == 0)
+                {
+                    Debug(errs() << "Sum of strides is somehow 0, skipping this instruction\n";);
+                    continue;
+                }
+                int stride = std::round((1.0*sum) / strides.size());
+
+                Debug(errs() << "Setting stride to " << stride << "\n";);
+
+                LLVMContext& ctx = task->get_function()->getContext();
+                IRBuilder<> builder(ctx);
+                builder.SetInsertPoint(task->get_function()->getEntryBlock().getFirstNonPHI());
+                Value* first_load = builder.CreateLoad(load_inst->getPointerOperand());
+                Value* bitcast = builder.CreateBitCast(first_load, Type::getInt8PtrTy(ctx));
+                std::vector<Value*> args {bitcast};
+                args.push_back(ConstantInt::getSigned(Type::getInt32Ty(ctx), stride));
+                builder.CreateCall(runtime.functions.set_read_ahead_stride, args);
+            }
+        }
+    }
+
     /**
      * Only use during development!
      * Inserting the test_func function into the program
@@ -2046,6 +2189,11 @@ struct CatoPass : public ModulePass
         args.push_back(builder.getInt64(42));
 
         builder.CreateCall(runtime.functions.test_func, args);
+    }
+
+    virtual void getAnalysisUsage(AnalysisUsage& Info) const
+    {
+        Info.addRequired<ScalarEvolutionWrapperPass>();
     }
 
     /**
@@ -2095,6 +2243,8 @@ struct CatoPass : public ModulePass
         replace_memory_deallocations(M, runtime);
 
         runtime.adjust_netcdf_regions();
+
+        set_array_access_stride_for_read_cache(microtasks, runtime);
 
         // insert_test_func(M, runtime);
 

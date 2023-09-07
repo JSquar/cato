@@ -2,7 +2,7 @@
  * File: Readahead.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Sep 04 2023
+ * Last Modified: Thu Sep 07 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -46,7 +46,8 @@ void* perform_readahead(MemoryAbstractionDefault* mem_abstraction, void* base_pt
                         const std::vector<long>& initial_indices, const std::vector<long>& indices)
 {
     auto rank_and_disp = mem_abstraction->get_target_rank_and_disp_for_offset(indices[0]);
-    int stride = cache_handler->get_readahead_stride_for(base_ptr);
+    int stride = cache_handler->get_read_ahead_stride_for(base_ptr);
+    Debug(std::cout << "Got stride " << stride << " for " << base_ptr << "\n";);
 
     std::pair<long,long> array_bounds = mem_abstraction->_array_ranges[rank_and_disp.first];
     int element_count_strided = calculate_element_count_with_stride(array_bounds, rank_and_disp.second, stride);

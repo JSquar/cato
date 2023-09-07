@@ -2,7 +2,7 @@
  * File: CacheHandler.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Sep 04 2023
+ * Last Modified: Thu Sep 07 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -127,4 +127,21 @@ void CacheHandler::clear_write_cache()
 void CacheHandler::clear_read_cache()
 {
     _read_cache.clear_cache();
+    _read_ahead_strides.clear();
+}
+
+int CacheHandler::get_read_ahead_stride_for(void* base_ptr) const
+{
+    auto stride_entry = _read_ahead_strides.find(base_ptr);
+    if (stride_entry != _read_ahead_strides.end())
+    {
+        return stride_entry->second;
+    }
+    return 1;
+}
+
+void CacheHandler::set_read_ahead_stride_for(void* base_ptr, int stride)
+{
+    _read_ahead_strides.insert({base_ptr, stride});
+    Debug(std::cout << "Setting stride " << stride << " for " << base_ptr << "\n";);
 }

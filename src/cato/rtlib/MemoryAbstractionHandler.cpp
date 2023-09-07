@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Mon Sep 04 2023
+ * Last Modified: Thu Sep 07 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -456,4 +456,9 @@ void MemoryAbstractionHandler::strong_flush()
 {
     _cache_handler.clear_read_cache();
     _cache_handler.clear_write_cache();
+}
+
+void MemoryAbstractionHandler::set_read_ahead_stride(void* base_ptr, int stride)
+{
+    _cache_handler.set_read_ahead_stride_for(base_ptr, stride);
 }

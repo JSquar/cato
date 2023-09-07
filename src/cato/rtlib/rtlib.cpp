@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Mon Aug 21 2023
+ * Last Modified: Thu Sep 07 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -212,6 +212,11 @@ void critical_section_finalize(void *mpi_mutex)
 void strong_flush()
 {
     _memory_handler->strong_flush();
+}
+
+void set_read_ahead_stride(void* base_ptr, int stride)
+{
+    _memory_handler->set_read_ahead_stride(base_ptr, stride);
 }
 
 void reduce_local_vars(void *local_var, int bin_op, MPI_Datatype type)

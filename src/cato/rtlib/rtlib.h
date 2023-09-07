@@ -5,14 +5,14 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Thu Sep 07 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
  * Copyright (c) 2020 Michael Blesel
  * Copyright (c) 2023 Jannek Squar
  * Copyright (c) 2023 Niclas Schroeter
- * 
+ *
  */
 #ifndef CATO_RTLIB_RTLIB_H
 #define CATO_RTLIB_RTLIB_H
@@ -260,6 +260,11 @@ void critical_section_finalize(void *mpi_mutex);
  * Drops the cache
  **/
 void strong_flush();
+
+/**
+ * Sets the stride for potential readaheads in the shared memory loads.
+ **/
+void set_read_ahead_stride(void* base_ptr, int stride);
 
 /**
  * Performs the given reduction operation on the given values.

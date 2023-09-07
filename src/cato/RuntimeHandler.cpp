@@ -112,6 +112,7 @@ bool RuntimeHandler::load_external_functions()
     match_function(&functions.critical_section_leave, "_Z22critical_section_leavePv");
     match_function(&functions.critical_section_finalize, "_Z25critical_section_finalizePv");
     match_function(&functions.strong_flush, "_Z12strong_flushv");
+    match_function(&functions.set_read_ahead_stride, "_Z21set_read_ahead_stridePvi");
 
     // netCDF library functions
 

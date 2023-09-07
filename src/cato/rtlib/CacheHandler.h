@@ -2,7 +2,7 @@
  * File: CacheHandler.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Sep 04 2023
+ * Last Modified: Thu Sep 07 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -71,6 +71,8 @@ class CacheHandler
 
     int _read_ahead;
 
+    std::unordered_map<void*,int> _read_ahead_strides;
+
     bool is_enabled(const char* env_var);
 
     int env_var_value(const char* env_var);
@@ -101,7 +103,9 @@ class CacheHandler
     int get_read_ahead() const {return _read_ahead;}
 
     //For static analysis results later on
-    int get_readahead_stride_for(void* base_ptr) const {return 1;}
+    int get_read_ahead_stride_for(void* base_ptr) const;// {return 1;}
+
+    void set_read_ahead_stride_for(void* base_ptr, int stride);
 };
 
 #endif

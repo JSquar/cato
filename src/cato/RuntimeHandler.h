@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Jul 20 2023
+ * Last Modified: Thu Sep 07 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2020 Michael Blesel
@@ -59,6 +59,7 @@ struct external_functions
     llvm::Function *critical_section_leave;
     llvm::Function *critical_section_finalize;
     llvm::Function *strong_flush;
+    llvm::Function *set_read_ahead_stride;
     llvm::Function *reduce_local_vars;
 
     // netCDF library functions
