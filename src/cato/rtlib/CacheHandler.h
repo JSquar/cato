@@ -2,7 +2,7 @@
  * File: CacheHandler.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Sep 07 2023
+ * Last Modified: Mon Sep 11 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -102,8 +102,7 @@ class CacheHandler
 
     int get_read_ahead() const {return _read_ahead;}
 
-    //For static analysis results later on
-    int get_read_ahead_stride_for(void* base_ptr) const;// {return 1;}
+    int get_read_ahead_stride_for(void* base_ptr) const;
 
     void set_read_ahead_stride_for(void* base_ptr, int stride);
 };
