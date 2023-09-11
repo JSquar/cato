@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Sep 07 2023
+ * Last Modified: Mon Sep 11 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2019 Tim Jammer
@@ -26,10 +26,7 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 
-#include <llvm/Analysis/ScalarEvolution.h>
-#include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <unordered_map>
-#include <numeric>
 
 #include <memory>
 #include <set>
@@ -41,6 +38,7 @@
 #include "UserTree.h"
 #include "debug.h"
 #include "helper.h"
+#include "SCEVHelper.h"
 
 using namespace llvm;
 
@@ -2045,25 +2043,11 @@ struct CatoPass : public ModulePass
             Debug(scev_pass.dump(););
             auto& SE = scev_pass.getSE();
 
-            std::vector<CallInst*> shared_loads;
-            for (BasicBlock& BB : *func)
-            {
-                for (Instruction& I: BB)
-                {
-                    if (auto* call = dyn_cast<CallInst>(&I))
-                    {
-                        if (call->getCalledFunction() == runtime.functions.shared_memory_load)
-                        {
-                            shared_loads.push_back(call);
-                        }
-                    }
-                }
-            }
+            std::vector<CallInst*> shared_loads = get_shared_memory_loads_for_function(func, runtime);
 
             Debug(errs() << "SHARED LOADS:\n");
             for (auto entry : shared_loads)
             Debug(entry->dump(););
-
 
             for (auto entry : shared_loads)
             {
@@ -2080,28 +2064,9 @@ struct CatoPass : public ModulePass
                     continue;
                 }
 
-                const SCEVAddRecExpr* add_rec_expr;
-                if ((add_rec_expr = dyn_cast<SCEVAddRecExpr>(index_scev)))
+                const SCEVAddRecExpr* add_rec_expr = extract_add_rec_expression(index_scev);
+                if (add_rec_expr == nullptr)
                 {
-                    Debug(errs() << "Extracted AddRec directly from index SCEV:";);
-                    Debug(add_rec_expr->dump(););
-                }
-                else if (auto* cast_expr = dyn_cast<SCEVCastExpr>(index_scev))
-                {
-                    Debug(errs() << "SCEV inherits from CastExpr\n";);
-                    for (auto* operand : cast_expr->operands())
-                    {
-                        if ((add_rec_expr = dyn_cast<SCEVAddRecExpr>(operand)))
-                        {
-                            Debug(errs() << "Extracted AddRec:";);
-                            Debug(add_rec_expr->dump(););
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    Debug(errs() << "Didn't find AddRec, skipping instruction\n";);
                     continue;
                 }
 
@@ -2109,59 +2074,26 @@ struct CatoPass : public ModulePass
                 Debug(errs() << "Trying to extract step:";);
                 Debug(step->dump(););
 
-                int stride_of_access = 0;
-
-                if (auto* scev_constant = dyn_cast<SCEVConstant>(step))
-                {
-                    Debug(errs() << "Extracting the int constant\n";);
-                    ConstantInt* constant = scev_constant->getValue();
-                    Debug(constant->dump(););
-                    stride_of_access = constant->getSExtValue();
-                }
+                int stride_of_access = extract_stride_from_step_scev(step);
 
                 if (stride_of_access != 0)
                 {
-                    BitCastInst* target_addr = dyn_cast<BitCastInst>(entry->getOperand(0));
-                    Value* load_inst = target_addr->getOperand(0);
-                    Debug(errs() << "Stride stored for target load:";);
-                    Debug(load_inst->dump(););
-                    auto map_entry = access_strides_for_mem_abstractions.find(load_inst);
-                    if (map_entry == access_strides_for_mem_abstractions.end())
-                    {
-                        access_strides_for_mem_abstractions.insert({load_inst, {stride_of_access}});
-                    }
-                    else
-                    {
-                        map_entry->second.push_back(stride_of_access);
-                    }
+                    store_stride_for_mem_abstraction(access_strides_for_mem_abstractions, entry, stride_of_access);
                 }
             }
 
             Debug(errs() << "Evaluating mean strides per shared load target:\n";);
             for (auto map_entry : access_strides_for_mem_abstractions)
             {
-                LoadInst* load_inst = dyn_cast<LoadInst>(map_entry.first);
-                std::vector<int>& strides = map_entry.second;
-                Debug(load_inst->dump(););
-
-                long sum = std::accumulate(strides.begin(), strides.end(), 0L);
-                if (sum == 0)
+                int stride = average_strides(map_entry.second);
+                if (stride == 0)
                 {
-                    Debug(errs() << "Sum of strides is somehow 0, skipping this instruction\n";);
                     continue;
                 }
-                int stride = std::round((1.0*sum) / strides.size());
 
                 Debug(errs() << "Setting stride to " << stride << "\n";);
 
-                LLVMContext& ctx = task->get_function()->getContext();
-                IRBuilder<> builder(ctx);
-                builder.SetInsertPoint(task->get_function()->getEntryBlock().getFirstNonPHI());
-                Value* first_load = builder.CreateLoad(load_inst->getPointerOperand());
-                Value* bitcast = builder.CreateBitCast(first_load, Type::getInt8PtrTy(ctx));
-                std::vector<Value*> args {bitcast};
-                args.push_back(ConstantInt::getSigned(Type::getInt32Ty(ctx), stride));
-                builder.CreateCall(runtime.functions.set_read_ahead_stride, args);
+                insert_set_stride(task->get_function(), map_entry.first, stride, runtime);
             }
         }
     }

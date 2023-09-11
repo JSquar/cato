@@ -4,8 +4,8 @@ add_subdirectory(rtlib)
 add_library(CatoPass MODULE
 	#List your source files here.
     cato.cpp
-    debug.cpp    
-    debug.h    
+    debug.cpp
+    debug.h
     helper.cpp
     helper.h
     NetCDFRegion.cpp
@@ -24,11 +24,16 @@ add_library(CatoPass MODULE
     SharedVariable.h
     UserTree.cpp
     UserTree.h
+    SCEVHelper.h
+    SCEVHelper.cpp
 )
 
 target_include_directories(CatoPass PRIVATE ${MPI_CXX_INCLUDE_PATH})
 target_compile_options(CatoPass PRIVATE ${MPI_CXX_COMPILE_FLAGS})
 target_link_libraries(CatoPass PRIVATE ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+
+pkg_search_module(NETCDF REQUIRED netcdf)
+include_directories(${NETCDF_INCLUDE_DIRS})
 
 #target_compile_features(omp2mpiPass PRIVATE cxx_range_for cxx_auto_type)
 #need c++ 17 now
