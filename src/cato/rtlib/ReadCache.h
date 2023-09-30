@@ -77,10 +77,7 @@ class ReadCache
     void clear_cache()
     {
         _read_cache.clear();
-        if (_capacity)
-        {
-            _lru_list.clear();
-        }
+        _lru_list.clear();
     }
 
     bool cache_enabled() const {return _enabled;}
