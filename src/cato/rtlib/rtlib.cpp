@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Sep 07 2023
+ * Last Modified: Sat Sep 30 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -75,7 +75,11 @@ int get_mpi_rank() { return MPI_RANK; }
 
 int get_mpi_size() { return MPI_SIZE; }
 
-void mpi_barrier() { MPI_Barrier(MPI_COMM_WORLD); }
+void mpi_barrier()
+{
+    _memory_handler->strong_flush();
+    MPI_Barrier(MPI_COMM_WORLD);
+}
 
 void *allocate_shared_memory(long size, MPI_Datatype type, int dimensions)
 {
@@ -192,12 +196,14 @@ void *critical_section_init()
 
 void critical_section_enter(void *mpi_mutex)
 {
+    _memory_handler->acquire_flush();
     MPI_Mutex *mutex = (MPI_Mutex *)mpi_mutex;
     MPI_Mutex_lock(mutex);
 }
 
 void critical_section_leave(void *mpi_mutex)
 {
+    _memory_handler->release_flush();
     MPI_Mutex *mutex = (MPI_Mutex *)mpi_mutex;
     MPI_Mutex_unlock(mutex);
 }

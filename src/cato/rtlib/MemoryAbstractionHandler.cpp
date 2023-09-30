@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Sep 07 2023
+ * Last Modified: Sat Sep 30 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -455,6 +455,16 @@ void MemoryAbstractionHandler::shared_value_synchronize(void *base_ptr)
 void MemoryAbstractionHandler::strong_flush()
 {
     _cache_handler.clear_read_cache();
+    _cache_handler.clear_write_cache();
+}
+
+void MemoryAbstractionHandler::acquire_flush()
+{
+    _cache_handler.clear_read_cache();
+}
+
+void MemoryAbstractionHandler::release_flush()
+{
     _cache_handler.clear_write_cache();
 }
 

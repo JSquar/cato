@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Thu Sep 07 2023
+ * Last Modified: Sat Sep 30 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -143,6 +143,10 @@ class MemoryAbstractionHandler
      * See OpenMP memory model. Used to drop the cache at implied flushes
      **/
     void strong_flush();
+
+    void acquire_flush();
+
+    void release_flush();
 
     void set_read_ahead_stride(void* base_ptr, int stride);
 };
