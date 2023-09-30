@@ -2,7 +2,7 @@
  * File: ReadCache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Aug 10 2023
+ * Last Modified: Sat Sep 30 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -12,6 +12,7 @@
 #define CATO_RTLIB_READCACHE_H
 
 #include <unordered_map>
+#include <list>
 
 
 template <class K, class V, class H = std::hash<K>>
@@ -20,16 +21,35 @@ class ReadCache
   private:
     std::unordered_map<K, V, H> _read_cache;
 
+    std::list<typename std::unordered_map<K, V, H>::iterator> _lru_list;
+
     bool _enabled;
 
+    size_t _capacity;
+
   public:
-    ReadCache(bool enabled) : _enabled{enabled}{};
+    ReadCache(bool enabled, size_t capacity) : _enabled{enabled}, _capacity{capacity}{};
 
     void store_in_cache(K& key, V& value)
     {
         if (_enabled)
         {
-            _read_cache.insert_or_assign(std::move(key), std::move(value));
+            auto entry = _read_cache.insert_or_assign(std::move(key), std::move(value));
+            if (_capacity)
+            {
+                if (!entry.second)
+                {
+                    _lru_list.remove(entry.first);
+                }
+                _lru_list.push_front(entry.first);
+
+                if (_lru_list.size() > _capacity)
+                {
+                    auto last_element = _lru_list.back();
+                    _read_cache.erase(last_element);
+                    _lru_list.pop_back();
+                }
+            }
         }
     }
 
@@ -42,6 +62,12 @@ class ReadCache
             if (entry != _read_cache.end())
             {
                 res = &(entry->second);
+
+                if (_capacity)
+                {
+                    _lru_list.remove(entry);
+                    _lru_list.push_front(entry);
+                }
             }
             return res;
         }
@@ -51,6 +77,10 @@ class ReadCache
     void clear_cache()
     {
         _read_cache.clear();
+        if (_capacity)
+        {
+            _lru_list.clear();
+        }
     }
 
     bool cache_enabled() const {return _enabled;}

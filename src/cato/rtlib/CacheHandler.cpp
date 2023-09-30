@@ -2,7 +2,7 @@
  * File: CacheHandler.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Sep 07 2023
+ * Last Modified: Sat Sep 30 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -16,7 +16,7 @@
 #include "PerformanceMetrics.h"
 
 CacheHandler::CacheHandler()
-    : _read_cache{is_enabled("CATO_ENABLE_READ_CACHE")}, _index_cache{is_enabled("CATO_ENABLE_INDEX_CACHE")},
+    : _read_cache{is_enabled("CATO_ENABLE_READ_CACHE"), 0}, _index_cache{is_enabled("CATO_ENABLE_INDEX_CACHE"), 0},
       _write_cache{is_enabled("CATO_ENABLE_WRITE_CACHE"), env_var_value("CATO_FLUSH_WRITE_AFTER")}
 {
     if (_read_cache.cache_enabled())
