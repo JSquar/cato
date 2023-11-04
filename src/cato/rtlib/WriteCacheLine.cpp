@@ -2,7 +2,7 @@
  * File: WriteCacheLine.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sun Sep 03 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -75,7 +75,7 @@ void WriteCacheLine::clear_rank_vector(std::vector<std::pair<long, CacheElement>
     MPI_Type_indexed(displacements.size(), block_lengths.data(), displacements.data(), _type, &dt);
     MPI_Type_commit(&dt);
 
-    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, _win);
+    MPI_Win_lock(MPI_LOCK_SHARED, rank, 0, _win);
     MPI_Put(buffer, displacements.size(), _type, rank, 0, 1, dt, _win);
     MPI_Win_unlock(rank, _win);
 

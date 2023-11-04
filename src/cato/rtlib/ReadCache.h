@@ -2,7 +2,7 @@
  * File: ReadCache.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sat Sep 30 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -28,50 +28,50 @@ class ReadCache
     size_t _capacity;
 
   public:
-    ReadCache(bool enabled, size_t capacity) : _enabled{enabled}, _capacity{capacity}{};
+    ReadCache(bool enabled, size_t capacity) : _enabled{enabled}, _capacity{capacity}
+    {
+        if (enabled)
+        {
+            _read_cache.reserve(1000000);
+            _read_cache.max_load_factor(0.25);
+        }
+    }
 
     void store_in_cache(K& key, V& value)
     {
-        if (_enabled)
+        auto entry = _read_cache.insert_or_assign(std::move(key), std::move(value));
+        if (_capacity)
         {
-            auto entry = _read_cache.insert_or_assign(std::move(key), std::move(value));
-            if (_capacity)
+            if (!entry.second)
             {
-                if (!entry.second)
-                {
-                    _lru_list.remove(entry.first);
-                }
-                _lru_list.push_front(entry.first);
+                _lru_list.remove(entry.first);
+            }
+            _lru_list.push_front(entry.first);
 
-                if (_lru_list.size() > _capacity)
-                {
-                    auto last_element = _lru_list.back();
-                    _read_cache.erase(last_element);
-                    _lru_list.pop_back();
-                }
+            if (_lru_list.size() > _capacity)
+            {
+                auto last_element = _lru_list.back();
+                _read_cache.erase(last_element);
+                _lru_list.pop_back();
             }
         }
     }
 
     V* find_element(K& key)
     {
-        if (_enabled)
+        V* res = nullptr;
+        auto entry = _read_cache.find(key);
+        if (entry != _read_cache.end())
         {
-            V* res = nullptr;
-            auto entry = _read_cache.find(key);
-            if (entry != _read_cache.end())
-            {
-                res = &(entry->second);
+            res = &(entry->second);
 
-                if (_capacity)
-                {
-                    _lru_list.remove(entry);
-                    _lru_list.push_front(entry);
-                }
+            if (_capacity)
+            {
+                _lru_list.remove(entry);
+                _lru_list.push_front(entry);
             }
-            return res;
         }
-        return nullptr;
+        return res;
     }
 
     void clear_cache()
@@ -81,6 +81,10 @@ class ReadCache
     }
 
     bool cache_enabled() const {return _enabled;}
+
+    void enable() {_enabled = true;}
+
+    void disable() {_enabled = false;}
 };
 
 #endif

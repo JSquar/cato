@@ -2,7 +2,7 @@
  * File: Readahead.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Thu Sep 07 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -43,7 +43,7 @@ namespace
 
 
 void* perform_readahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* const cache_handler,
-                        const std::vector<long>& initial_indices, const std::vector<long>& indices)
+                        std::vector<long>& initial_indices, const std::vector<long>& indices)
 {
     auto rank_and_disp = mem_abstraction->get_target_rank_and_disp_for_offset(indices[0]);
     int stride = cache_handler->get_read_ahead_stride_for(base_ptr);
@@ -64,22 +64,23 @@ void* perform_readahead(MemoryAbstractionDefault* mem_abstraction, void* base_pt
         mem_abstraction->_readahead_dt = create_readahead_datatype(stride, mem_abstraction->_type);
     }
 
-    MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, 0, mem_abstraction->_mpi_window);
+    MPI_Win_lock(MPI_LOCK_SHARED, rank_and_disp.first, MPI_MODE_NOCHECK, mem_abstraction->_mpi_window);
     MPI_Get(buf, count, mem_abstraction->_type, rank_and_disp.first,
             rank_and_disp.second, count, mem_abstraction->_readahead_dt, mem_abstraction->_mpi_window);
     MPI_Win_unlock(rank_and_disp.first, mem_abstraction->_mpi_window);
+
+    std::vector<long> original = initial_indices;
 
     for (long i = 0; i < count; i++)
     {
         //The resulting cache elem index might not actually exist, but there is a
         //certain overhead attached to keeping track of "legal" indices. If the index does
         //not actually exist, the element will just stay in the cache untouched until dropped.
-        //TODO make some measurements with and without index mngmt
-        std::vector<long> cache_elem_index = initial_indices;
-        cache_elem_index.back() += i*stride;
         void* addr = static_cast<char*>(buf) + i*mem_abstraction->_type_size;
-        cache_handler->store_in_read_cache(base_ptr, cache_elem_index, addr, static_cast<size_t>(mem_abstraction->_type_size));
+        cache_handler->store_in_read_cache(base_ptr, initial_indices, addr, static_cast<size_t>(mem_abstraction->_type_size));
+        initial_indices.back() += stride;
     }
+    initial_indices = std::move(original);
 
     report_elements_read_ahead(count);
 

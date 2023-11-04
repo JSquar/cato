@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Sep 30 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -471,4 +471,24 @@ void MemoryAbstractionHandler::release_flush()
 void MemoryAbstractionHandler::set_read_ahead_stride(void* base_ptr, int stride)
 {
     _cache_handler.set_read_ahead_stride_for(base_ptr, stride);
+}
+
+void MemoryAbstractionHandler::enable_read_cache()
+{
+    _cache_handler.enable_read_cache();
+}
+
+void MemoryAbstractionHandler::disable_read_cache()
+{
+    _cache_handler.disable_read_cache();
+}
+
+void MemoryAbstractionHandler::enable_index_cache()
+{
+    _cache_handler.enable_index_cache();
+}
+
+void MemoryAbstractionHandler::disable_index_cache()
+{
+    _cache_handler.disable_index_cache();
 }

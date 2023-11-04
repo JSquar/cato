@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Sep 30 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -46,7 +46,7 @@ void cato_initialize(bool logging)
     MPI_Comm_rank(MPI_COMM_WORLD, &MPI_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &MPI_SIZE);
 
-    MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     peak_memory_usage_at_start();
 
@@ -223,6 +223,26 @@ void strong_flush()
 void set_read_ahead_stride(void* base_ptr, int stride)
 {
     _memory_handler->set_read_ahead_stride(base_ptr, stride);
+}
+
+extern "C" void enable_read_cache()
+{
+    _memory_handler->enable_read_cache();
+}
+
+extern "C" void disable_read_cache()
+{
+    _memory_handler->disable_read_cache();
+}
+
+extern "C" void enable_index_cache()
+{
+    _memory_handler->enable_index_cache();
+}
+
+extern "C" void disable_index_cache()
+{
+    _memory_handler->disable_index_cache();
 }
 
 void reduce_local_vars(void *local_var, int bin_op, MPI_Datatype type)

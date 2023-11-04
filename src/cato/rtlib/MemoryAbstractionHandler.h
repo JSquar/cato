@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Sat Sep 30 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -149,6 +149,11 @@ class MemoryAbstractionHandler
     void release_flush();
 
     void set_read_ahead_stride(void* base_ptr, int stride);
+
+    void enable_read_cache();
+    void disable_read_cache();
+    void enable_index_cache();
+    void disable_index_cache();
 };
 
 #endif

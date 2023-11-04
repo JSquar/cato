@@ -3,7 +3,7 @@
  * -----
  *
  * -----
- * Last Modified: Mon Sep 04 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  */
@@ -98,7 +98,7 @@ class MemoryAbstractionDefault : public MemoryAbstraction
     void* get_address_of_local_element(const std::vector<long>& indices) override;
 
     friend void* perform_readahead(MemoryAbstractionDefault* mem_abstraction, void* base_ptr, CacheHandler* const cache_handler,
-                        const std::vector<long>& initial_indices, const std::vector<long>& indices);
+                                    std::vector<long>& initial_indices, const std::vector<long>& indices);
 };
 
 #endif

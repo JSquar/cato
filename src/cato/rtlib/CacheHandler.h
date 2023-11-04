@@ -2,7 +2,7 @@
  * File: CacheHandler.h
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Mon Sep 11 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -49,7 +49,7 @@ class CacheHandler
         size_t operator()(std::pair<void*,std::vector<long>> const& key) const
         {
             size_t seed = (size_t) key.first;
-            for (auto elem : key.second)
+            /*for (auto elem : key.second)
             {
                 //https://stackoverflow.com/a/27216842
                 //seed ^= elem + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -59,7 +59,8 @@ class CacheHandler
                 elem = (elem >> 16) ^ elem;
                 seed ^= elem + 0x9e3779b9 + (seed << 6) + (seed >> 2);
             }
-            return seed;
+            return seed;*/
+            return seed + key.second[0];
         }
     };
 
@@ -100,11 +101,19 @@ class CacheHandler
 
     bool is_write_cache_enabled() const {return _write_cache.cache_enabled();}
 
-    int get_read_ahead() const {return _read_ahead;}
+    int get_read_ahead() const {return _read_cache.cache_enabled() ? _read_ahead : 0;}
 
     int get_read_ahead_stride_for(void* base_ptr) const;
 
     void set_read_ahead_stride_for(void* base_ptr, int stride);
+
+    void enable_read_cache();
+
+    void disable_read_cache();
+
+    void enable_index_cache();
+
+    void disable_index_cache();
 };
 
 #endif

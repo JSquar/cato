@@ -2,7 +2,7 @@
  * File: CacheHandler.cpp
  * Author: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
- * Last Modified: Sat Sep 30 2023
+ * Last Modified: Sat Nov 04 2023
  * Modified By: Niclas Schroeter (niclas.schroeter@uni-hamburg.de)
  * -----
  * Copyright (c) 2023 Niclas Schroeter
@@ -19,14 +19,7 @@ CacheHandler::CacheHandler()
     : _read_cache{is_enabled("CATO_ENABLE_READ_CACHE"), 0}, _index_cache{is_enabled("CATO_ENABLE_INDEX_CACHE"), 0},
       _write_cache{is_enabled("CATO_ENABLE_WRITE_CACHE"), env_var_value("CATO_FLUSH_WRITE_AFTER")}
 {
-    if (_read_cache.cache_enabled())
-    {
-        _read_ahead = static_cast<int>(env_var_value("CATO_CACHE_READAHEAD"));
-    }
-    else
-    {
-        _read_ahead = 0;
-    }
+    _read_ahead = static_cast<int>(env_var_value("CATO_CACHE_READAHEAD"));
 
     Debug(std::cout << "Cache enabled: " << _read_cache.cache_enabled() << "\n";);
     Debug(std::cout << "Write component enabled: " << _write_cache.cache_enabled() << "\n";);
@@ -59,59 +52,74 @@ int CacheHandler::env_var_value(const char* env_var)
 void CacheHandler::store_in_index_cache(void* base_ptr, const std::vector<long>& initial_indices,
                                         MemoryAbstraction* mem_abstraction, const std::vector<long> indices)
 {
-    auto key = make_cache_key(base_ptr, initial_indices);
-    if (mem_abstraction->is_data_local(indices))
+    if (_index_cache.cache_enabled())
     {
-        IndexCacheElement local_value = IndexCacheElement::create_element_for_local_address(mem_abstraction, indices[0]);
-        _index_cache.store_in_cache(key, local_value);
-    }
-    else
-    {
-        IndexCacheElement remote_value = IndexCacheElement::create_element_for_remote_address(mem_abstraction, indices[0]);
-        _index_cache.store_in_cache(key, remote_value);
+        auto key = make_cache_key(base_ptr, initial_indices);
+        if (mem_abstraction->is_data_local(indices))
+        {
+            IndexCacheElement local_value = IndexCacheElement::create_element_for_local_address(mem_abstraction, indices[0]);
+            _index_cache.store_in_cache(key, local_value);
+        }
+        else
+        {
+            IndexCacheElement remote_value = IndexCacheElement::create_element_for_remote_address(mem_abstraction, indices[0]);
+            _index_cache.store_in_cache(key, remote_value);
+        }
     }
 }
 
 void CacheHandler::store_in_read_cache(void* base_ptr, const std::vector<long>& initial_indices, void* dest_ptr, size_t element_size)
 {
-    auto key = make_cache_key(base_ptr, initial_indices);
-    CacheElement read_value {dest_ptr, element_size};
-    _read_cache.store_in_cache(key, read_value);
+    if (_read_cache.cache_enabled())
+    {
+        auto key = make_cache_key(base_ptr, initial_indices);
+        CacheElement read_value {dest_ptr, element_size};
+        _read_cache.store_in_cache(key, read_value);
+    }
 }
 
 void CacheHandler::store_in_write_cache(void* data, MemoryAbstractionDefault* mem_abstraction, const std::vector<long> indices)
 {
+    if (_write_cache.cache_enabled())
     _write_cache.store_in_cache(data, mem_abstraction, indices);
 }
 
 CacheElement* CacheHandler::check_read_cache(void* base_ptr, const std::vector<long>& indices)
 {
-    auto read_cache_key = make_cache_key(base_ptr, indices);
-    auto res = _read_cache.find_element(read_cache_key);
-    if (res != nullptr)
+    if (_read_cache.cache_enabled())
     {
-        cache_hit(CACHETYPE::READ);
+        auto read_cache_key = make_cache_key(base_ptr, indices);
+        auto res = _read_cache.find_element(read_cache_key);
+        if (res != nullptr)
+        {
+            cache_hit(CACHETYPE::READ);
+        }
+        else
+        {
+            cache_miss(CACHETYPE::READ);
+        }
+        return res;
     }
-    else
-    {
-        cache_miss(CACHETYPE::READ);
-    }
-    return res;
+    return nullptr;
 }
 
 IndexCacheElement* CacheHandler::check_index_cache(void* base_ptr, const std::vector<long>& indices)
 {
-    auto index_cache_key = make_cache_key(base_ptr, indices);
-    auto res = _index_cache.find_element(index_cache_key);
-    if (res != nullptr)
+    if (_index_cache.cache_enabled())
     {
-        cache_hit(CACHETYPE::INDEX);
+        auto index_cache_key = make_cache_key(base_ptr, indices);
+        auto res = _index_cache.find_element(index_cache_key);
+        if (res != nullptr)
+        {
+            cache_hit(CACHETYPE::INDEX);
+        }
+        else
+        {
+            cache_miss(CACHETYPE::INDEX);
+        }
+        return res;
     }
-    else
-    {
-        cache_miss(CACHETYPE::INDEX);
-    }
-    return res;
+    return nullptr;
 }
 
 CacheHandler::CatoCacheKey CacheHandler::make_cache_key(void* const base_ptr, const std::vector<long>& indices)
@@ -121,6 +129,7 @@ CacheHandler::CatoCacheKey CacheHandler::make_cache_key(void* const base_ptr, co
 
 void CacheHandler::clear_write_cache()
 {
+    if (_write_cache.cache_enabled())
     _write_cache.clear_cache();
 }
 
@@ -144,4 +153,24 @@ void CacheHandler::set_read_ahead_stride_for(void* base_ptr, int stride)
 {
     _read_ahead_strides.insert({base_ptr, stride});
     Debug(std::cout << "Setting stride " << stride << " for " << base_ptr << "\n";);
+}
+
+void CacheHandler::enable_read_cache()
+{
+    _read_cache.enable();
+}
+
+void CacheHandler::disable_read_cache()
+{
+    _read_cache.disable();
+}
+
+void CacheHandler::enable_index_cache()
+{
+    _index_cache.enable();
+}
+
+void CacheHandler::disable_index_cache()
+{
+    _index_cache.disable();
 }
