@@ -49,18 +49,17 @@ class CacheHandler
         size_t operator()(std::pair<void*,std::vector<long>> const& key) const
         {
             size_t seed = (size_t) key.first;
-            /*for (auto elem : key.second)
+            for (auto elem : key.second)
             {
-                //https://stackoverflow.com/a/27216842
-                //seed ^= elem + 0x9e3779b9 + (seed << 6) + (seed >> 2);
                 //https://stackoverflow.com/a/72073933
                 elem = ((elem >> 16) ^ elem) * 0x45d9f3b;
                 elem = ((elem >> 16) ^ elem) * 0x45d9f3b;
                 elem = (elem >> 16) ^ elem;
                 seed ^= elem + 0x9e3779b9 + (seed << 6) + (seed >> 2);
             }
-            return seed;*/
-            return seed + key.second[0];
+            return seed;
+	    //TODO improve the hash function to be faster to compute
+            //return seed + key.second[0];
         }
     };
 
